@@ -1,0 +1,58 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: Compile pythoneemps to master
+
+on:
+  push:
+    branches: [ "master" ]
+
+permissions:
+  contents: read
+
+
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.10"
+    - name: Install dependencies
+
+      run: |
+        ls -l
+        
+        python -m pip install --upgrade pip
+        pip install flake8 pytest
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        
+        python -m pip list
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v2
+      with:
+        node-version: ${{ matrix.node-version }}
+    - name: npm install, build, and test example
+      working-directory: .
+      run: |
+        npm install
+        npm run build --if-present
+
+    - name: Run script file
+      env:
+        SCREEP_TOKEN: ${{ secrets.SCREEP_TOKEN }}
+      run: |
+         chmod +x ./create_auth.sh
+         bash create_auth.sh "$SCREEP_TOKEN"
+         cat config.json
+
+    - name: Run the build
+      run: |
+        export PYTHONPATH=$PWD
+        python build.py
