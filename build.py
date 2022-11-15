@@ -2,6 +2,7 @@
 import errno
 import json
 import os
+import ssl
 import subprocess
 import sys
 import urllib.parse
@@ -308,6 +309,8 @@ def upload(config):
     else:
         auth_pair = config.username.encode('utf-8') + b':' + config.password.encode('utf-8')
         headers['Authorization'] = b'Basic ' + base64.b64encode(auth_pair)
+
+    ssl._create_default_https_context = ssl._create_unverified_context
 
     request = urllib.request.Request(post_url, post_data, headers)
     if config.url != 'https://screeps.com':
