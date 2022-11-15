@@ -20,7 +20,7 @@ def main():
     spaces = '  ' + str(countdown)
     for i in range(countdown):
         spaces = '}>-' + spaces
-    print('-  NEW test TICK -' + spaces)
+    print('-  NEW TICK -' + spaces)
     if countdown >= 10:
         Memory.countdown = 0
     for spawn_name in Object.keys(Game.spawns):
