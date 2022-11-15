@@ -177,6 +177,7 @@ class SpawnRunner:
 
         if self.spawn.memory.lorries == 0 or self.spawn.memory.miners == 0:
             worker_to_starter = _(self.spawn.room.find(FIND_CREEPS)
+                                  .filter(lambda c: c.memory != undefined)
                                   .filter(lambda c: c.memory.job == 'worker')).sample()
             if worker_to_starter:
                 worker_to_starter.memory.job = 'starter'
@@ -185,6 +186,7 @@ class SpawnRunner:
 
         if self.spawn.memory.lorries > 0 and self.spawn.memory.miners > 0:
             starter_to_worker = _(self.spawn.room.find(FIND_CREEPS)
+                                  .filter(lambda c: c.memory != undefined)
                                   .filter(lambda c: c.memory.job == 'starter')).sample()
             if starter_to_worker:
                 starter_to_worker.memory.job = 'worker'
@@ -220,23 +222,23 @@ class SpawnRunner:
 class CreepRunner:
     def __init__(self, creep):
         self.creep = creep
-        self.job = creep.memory.job
 
     def creeping_creep(self):
-        if self.job == 'starter':
-            self.run_starter()
-        if self.job == 'miner':
-            self.run_miner()
-        if self.job == 'worker':
-            self.run_worker()
-        if self.job == 'lorry':
-            self.run_lorry()
-        if self.job == 'defender':
-            self.run_defender()
-        if self.job[:10] == 'reservator':
-            self.run_reservator()
-        if self.job[:7] == 'stealer':
-            self.run_stealer()
+        if self.creep.memory != undefined:
+            if self.creep.memory.job == 'starter':
+                self.run_starter()
+            if self.creep.memory.job == 'miner':
+                self.run_miner()
+            if self.creep.memory.job == 'worker':
+                self.run_worker()
+            if self.creep.memory.job == 'lorry':
+                self.run_lorry()
+            if self.creep.memory.job == 'defender':
+                self.run_defender()
+            if self.creep.memory.job[:10] == 'reservator':
+                self.run_reservator()
+            if self.creep.memory.job[:7] == 'stealer':
+                self.run_stealer()
 
     def run_starter(self):
         if self.creep.memory.target:
@@ -350,20 +352,21 @@ class CreepRunner:
                             self.define_going_home()
 
     def define_target(self):
-        if self.job == 'starter':
-            self.define_starter_target()
-        elif self.job == 'miner':
-            self.define_miner_targets()
-        elif self.job == 'lorry':
-            self.define_lorry_target()
-        elif self.job == 'worker':
-            self.define_worker_target()
-        elif self.job == 'defender':
-            self.define_defender_targets()
-        if self.job[:10] == 'reservator':
-            self.define_reservator_targets()
-        if self.job[:7] == 'stealer':
-            self.define_stealer_targets()
+        if self.creep.memory != undefined:
+            if self.creep.memory.job == 'starter':
+                self.define_starter_target()
+            elif self.creep.memory.job == 'miner':
+                self.define_miner_targets()
+            elif self.creep.memory.job == 'lorry':
+                self.define_lorry_target()
+            elif self.creep.memory.job == 'worker':
+                self.define_worker_target()
+            elif self.creep.memory.job == 'defender':
+                self.define_defender_targets()
+            if self.creep.memory.job[:10] == 'reservator':
+                self.define_reservator_targets()
+            if self.creep.memory.job[:7] == 'stealer':
+                self.define_stealer_targets()
 
     def define_starter_target(self):
         del self.creep.memory.duty
