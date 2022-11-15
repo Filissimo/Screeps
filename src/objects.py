@@ -38,7 +38,8 @@ class SpawnRunner:
         jobs = ['defender', 'miner', 'lorry', 'worker', 'starter', 'reservator1', 'reservator2', 'stealer1', 'stealer2']
         for job_name in jobs:
             my_creeps = _.filter(Game.creeps, lambda c: c.memory != undefined)
-            creeps_filtered = _.filter(my_creeps,
+            my_creeps_with_memory = _.filter(my_creeps, lambda c: c.memory.job != undefined)
+            creeps_filtered = _.filter(my_creeps_with_memory,
                                        lambda c: c.memory.home == self.spawn.id and c.memory.job == job_name and
                                                  c.ticksToLive > 30)
             number_of_creeps_filtered = len(creeps_filtered)
