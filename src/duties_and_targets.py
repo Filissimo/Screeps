@@ -80,7 +80,7 @@ def define_repairing_target(creep):
     return target
 
 
-def define_lorry_to_pickup_tombstone(creep):
+def define_creep_to_pickup_tombstone(creep):
     target = undefined
     if _.sum(creep.carry) < creep.carryCapacity:
         target = _(creep.room.find(FIND_TOMBSTONES)) \
@@ -88,7 +88,8 @@ def define_lorry_to_pickup_tombstone(creep):
         if target != undefined:
             creep_to_pickup = _(creep.room.find(FIND_CREEPS)) \
                 .filter(lambda c: (c.carryCapacity > _.sum(c.carry)) and
-                                  c.memory.job == 'lorry') \
+                                  (c.memory.job == 'lorry' or
+                                   c.memory.job[:7] == 'stealer')) \
                 .sortBy(lambda c: (c.pos.getRangeTo(target))).first()
             if creep_to_pickup:
                 creep_to_pickup.memory.duty = 'picking_up_tombstone'
@@ -188,7 +189,7 @@ def define_closest_to_transfer(creep):
         target = _(creep.room.find(FIND_STRUCTURES)) \
             .filter(lambda s: (s.structureType == STRUCTURE_CONTAINER or
                                s.structureType == STRUCTURE_STORAGE)) \
-            .sortBy(lambda s: s.pos.getRangeTo(self.creep)).first()
+            .sortBy(lambda s: s.pos.getRangeTo(creep)).first()
         if target:
             creep.memory.duty = 'transferring_to_closest'
             creep.memory.target = target.id

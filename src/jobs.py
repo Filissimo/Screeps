@@ -157,7 +157,7 @@ def run_lorry(creep):
 def define_lorry_target(creep):
     del creep.memory.duty
     del creep.memory.target
-    if not duties_and_targets.define_lorry_to_pickup_tombstone(creep):
+    if not duties_and_targets.define_creep_to_pickup_tombstone(creep):
         if not duties_and_targets.define_fullest(creep):
             if not duties_and_targets.define_deliver_for_spawn_target(creep):
                 if not duties_and_targets.define_emptiest(creep):
@@ -213,6 +213,8 @@ def run_stealer(creep):
     if creep.memory.duty:
         if creep.memory.duty == 'go_to_flag':
             actions.going_to_flag(creep)
+        elif creep.memory.duty == 'picking_up_tombstone':
+            actions.pick_up_tombstone(creep)
         elif creep.memory.duty == 'mining':
             actions.creep_mining(creep)
         elif creep.memory.duty == 'repairing':
@@ -232,8 +234,9 @@ def define_stealer_targets(creep):
     del creep.memory.target
     del creep.memory.flag
     if not duties_and_targets.define_stealers_flag(creep):
-        if not duties_and_targets.define_mining_target(creep):
-            if not duties_and_targets.define_closest_to_transfer(creep):
-                if not duties_and_targets.define_repairing_target(creep):
-                    if not duties_and_targets.define_building_target(creep):
-                        duties_and_targets.define_going_home(creep)
+        if not duties_and_targets.define_creep_to_pickup_tombstone(creep):
+            if not duties_and_targets.define_mining_target(creep):
+                if not duties_and_targets.define_closest_to_transfer(creep):
+                    if not duties_and_targets.define_repairing_target(creep):
+                        if not duties_and_targets.define_building_target(creep):
+                            duties_and_targets.define_going_home(creep)
