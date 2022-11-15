@@ -86,7 +86,7 @@ def define_creep_to_pickup_tombstone(creep):
         target = _(creep.room.find(FIND_TOMBSTONES)) \
             .filter(lambda t: (t.store[RESOURCE_ENERGY] > 0)).first()
         if target != undefined:
-            creep_to_pickup = _(creep.room.find(FIND_CREEPS)) \
+            creep_to_pickup = _(creep.room.find(FIND_MY_CREEPS)) \
                 .filter(lambda c: (c.carryCapacity > _.sum(c.carry)) and
                                   (c.memory.job == 'lorry' or
                                    c.memory.job[:7] == 'stealer')) \
@@ -197,7 +197,8 @@ def define_closest_to_transfer(creep):
 
 
 def define_stealers_needed(creep):
-    target = Game.getObjectById(creep.memory.target)
-    if creep.memory.job[7:8] == '1':
-        need_stealer1s =
+    pass
+    # target = Game.getObjectById(creep.memory.target)
+    # if creep.memory.job[7:8] == '1':
+    #     need_stealer1s =
 

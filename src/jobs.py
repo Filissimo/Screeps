@@ -99,7 +99,7 @@ def define_miner_targets(creep):
                                    s.pos.inRangeTo(source, 2))) \
                 .sample()
             if container_near_mine:
-                miners = _.filter(creep.room.find(FIND_CREEPS),
+                miners = _.filter(creep.room.find(FIND_MY_CREEPS),
                                   lambda c: c.memory.job == 'miner' and
                                             c.memory.container == container_near_mine.id and
                                             c.ticksToLive > 70)

@@ -36,8 +36,9 @@ class SpawnRunner:
     def creep_needed_to_spawn(self):
         desired_job = False
         self.spawn.memory.need_starters = False
-        jobs = ['defender', 'miner', 'lorry', 'worker', 'starter', 'reservator1', 'reservator2', 'stealer1', 'stealer2']
-        for job_name in jobs:
+        spawn_jobs = ['defender', 'miner', 'lorry', 'worker', 'starter',
+                      'reservator1', 'reservator2', 'stealer1', 'stealer2']
+        for job_name in spawn_jobs:
             my_creeps = _.filter(Game.creeps, lambda c: c.memory != undefined)
             my_creeps_with_memory = _.filter(my_creeps, lambda c: c.memory.job != undefined)
             creeps_filtered = _.filter(my_creeps_with_memory,
@@ -157,7 +158,7 @@ class SpawnRunner:
             elif job_name == 'stealer1':
                 self.spawn.memory.stealer1s = number_of_creeps_filtered
                 if 4 > number_of_creeps_filtered:
-                    worker_to_stealer = _(self.spawn.room.find(FIND_CREEPS)) \
+                    worker_to_stealer = _(self.spawn.room.find(FIND_MY_CREEPS)) \
                         .filter(lambda c: c.memory.job == 'worker' and
                                           c.store[RESOURCE_ENERGY] == 0).sample()
                     if worker_to_stealer:
@@ -168,7 +169,7 @@ class SpawnRunner:
             elif job_name == 'stealer2':
                 self.spawn.memory.stealer2s = number_of_creeps_filtered
                 if self.spawn.memory.need_stealer2s > number_of_creeps_filtered:
-                    worker_to_stealer = _(self.spawn.room.find(FIND_CREEPS)) \
+                    worker_to_stealer = _(self.spawn.room.find(FIND_MY_CREEPS)) \
                         .filter(lambda c: c.memory.job == 'worker' and
                                           c.store[RESOURCE_ENERGY] == 0).sample()
                     if worker_to_stealer:
@@ -177,7 +178,7 @@ class SpawnRunner:
                         worker_to_stealer.memory.job = 'stealer2'
 
         if self.spawn.memory.lorries == 0 or self.spawn.memory.miners == 0:
-            worker_to_starter = _(self.spawn.room.find(FIND_CREEPS)
+            worker_to_starter = _(self.spawn.room.find(FIND_MY_CREEPS)
                                   .filter(lambda c: c.memory != undefined)
                                   .filter(lambda c: c.memory.job == 'worker')).sample()
             if worker_to_starter:
@@ -186,7 +187,7 @@ class SpawnRunner:
                 del worker_to_starter.memory.target
 
         if self.spawn.memory.lorries > 0 and self.spawn.memory.miners > 0:
-            starter_to_worker = _(self.spawn.room.find(FIND_CREEPS)
+            starter_to_worker = _(self.spawn.room.find(FIND_MY_CREEPS)
                                   .filter(lambda c: c.memory != undefined)
                                   .filter(lambda c: c.memory.job == 'starter')).sample()
             if starter_to_worker:
