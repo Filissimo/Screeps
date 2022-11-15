@@ -187,10 +187,17 @@ def define_closest_to_transfer(creep):
     target = undefined
     if creep.store[RESOURCE_ENERGY] > 0:
         target = _(creep.room.find(FIND_STRUCTURES)) \
-            .filter(lambda s: (s.structureType == STRUCTURE_CONTAINER or
-                               s.structureType == STRUCTURE_STORAGE)) \
+            .filter(lambda s: s.structureType == STRUCTURE_CONTAINER or
+                              s.structureType == STRUCTURE_STORAGE) \
             .sortBy(lambda s: s.pos.getRangeTo(creep)).first()
         if target:
             creep.memory.duty = 'transferring_to_closest'
             creep.memory.target = target.id
     return target
+
+
+def define_stealers_needed(creep):
+    target = Game.getObjectById(creep.memory.target)
+    if creep.memory.job[7:8] == '1':
+        need_stealer1s =
+

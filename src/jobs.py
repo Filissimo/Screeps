@@ -217,6 +217,7 @@ def run_stealer(creep):
             actions.pick_up_tombstone(creep)
         elif creep.memory.duty == 'mining':
             actions.creep_mining(creep)
+            duties_and_targets.define_stealers_needed(creep)
         elif creep.memory.duty == 'repairing':
             actions.creep_repairing(creep)
         elif creep.memory.duty == 'building':
