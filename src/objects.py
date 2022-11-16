@@ -60,7 +60,7 @@ class SpawnRunner:
                 containers_near_mine = containers_near_mine + container_near_mine
             if job_name == 'defender':
                 need_defenders = len(self.spawn.room.find(FIND_HOSTILE_CREEPS))
-                self.spawn.memory.need_defenders = (need_defenders * 2) + 1
+                self.spawn.memory.need_defenders = (need_defenders * 2) + 2
                 self.spawn.memory.starters = number_of_creeps_filtered
                 if self.spawn.memory.need_defenders > number_of_creeps_filtered:
                     desired_job = job_name
@@ -83,18 +83,20 @@ class SpawnRunner:
                     need_workers = containers_near_mine
                 if container_fullest:
                     if container_fullest.store[RESOURCE_ENERGY] >= container_fullest.store.getCapacity() * 0.7:
-                        need_additional_lorries = need_additional_lorries + 0.01
-                        self.spawn.memory.need_additional_lorries = need_additional_lorries
+                        if need_additional_lorries < 5:
+                            need_additional_lorries = need_additional_lorries + 0.01
+                            self.spawn.memory.need_additional_lorries = need_additional_lorries
                     if container_fullest.store[RESOURCE_ENERGY] < container_fullest.store.getCapacity() * 0.7:
                         if need_additional_lorries > -2:
                             need_additional_lorries = need_additional_lorries - 0.05
                             self.spawn.memory.need_additional_lorries = need_additional_lorries
                 if container_emptiest:
                     if container_emptiest.store[RESOURCE_ENERGY] > container_emptiest.store.getCapacity() * 0.5:
-                        need_additional_workers = need_additional_workers + 0.01
-                        self.spawn.memory.need_additional_workers = need_additional_workers
+                        if need_additional_workers < 7:
+                            need_additional_workers = need_additional_workers + 0.01
+                            self.spawn.memory.need_additional_workers = need_additional_workers
                     if container_emptiest.store[RESOURCE_ENERGY] <= container_emptiest.store.getCapacity() * 0.3:
-                        if need_additional_workers > -2:
+                        if need_additional_workers > -1:
                             need_additional_workers = need_additional_workers - 0.01
                             self.spawn.memory.need_additional_workers = need_additional_workers
                 need_lorries = 0
@@ -182,9 +184,10 @@ class SpawnRunner:
                                   .filter(lambda c: c.memory != undefined)
                                   .filter(lambda c: c.memory.job == 'worker')).sample()
             if worker_to_starter:
-                worker_to_starter.memory.job = 'starter'
-                del worker_to_starter.memory.duty
-                del worker_to_starter.memory.target
+                if self.spawn.memory.workers > 1:
+                    worker_to_starter.memory.job = 'starter'
+                    del worker_to_starter.memory.duty
+                    del worker_to_starter.memory.target
 
         if self.spawn.memory.lorries > 0 and self.spawn.memory.miners > 0:
             starter_to_worker = _(self.spawn.room.find(FIND_MY_CREEPS)
@@ -201,10 +204,10 @@ class SpawnRunner:
         desired_body = []
         if job_name == 'defender':
             for a in range(1, 10):
-                if self.spawn.room.energyCapacityAvailable >= a * 300:
-                    desired_body.extend([TOUGH, TOUGH, TOUGH, TOUGH, TOUGH])
+                if self.spawn.room.energyCapacityAvailable >= a * 260:
+                    desired_body.extend([TOUGH])
             for a in range(1, 10):
-                if self.spawn.room.energyCapacityAvailable >= a * 300:
+                if self.spawn.room.energyCapacityAvailable >= a * 260:
                     desired_body.extend([RANGED_ATTACK, MOVE, MOVE])
         elif job_name == 'starter':
             desired_body = [WORK, CARRY, MOVE]

@@ -307,9 +307,9 @@ def move_away_from_source(creep):
 
 def not_fleeing(creep):
     not_fleeing_bool = True
-    source = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS)
-    if source:
-        if creep.pos.inRangeTo(source, 5):
+    enemy = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS)
+    if enemy:
+        if creep.pos.inRangeTo(enemy, 5):
             creep.say('🏳️')
             flee_condition = _.map(creep.room.find(FIND_HOSTILE_CREEPS), lambda c: {'pos': c.pos, 'range': 7})
             flee_path = PathFinder.search(
@@ -319,6 +319,16 @@ def not_fleeing(creep):
             ).path
             creep.moveByPath(flee_path)
             not_fleeing_bool = False
+            my_creeps = _.filter(Game.creeps, lambda c: c.memory != undefined)
+            my_creeps_with_memory = _.filter(my_creeps, lambda c: c.memory.job != undefined)
+            creeps_filtered = _.filter(my_creeps_with_memory,
+                                       lambda c: c.memory.home == creep.memory.home and c.memory.job == 'defender' and
+                                                 c.ticksToLive > 50)
+
+            for defender in creeps_filtered:
+                if defender.memory.duty == 'defending' and defender.memory.fleeing_creep is None:
+                    defender.memory.fleeing_creep = creep.id
+                    defender.memory.duty = 'going_to_help'
     return not_fleeing_bool
 
 
@@ -578,6 +588,23 @@ def transferring_to_closest(creep):
                     'opacity': .1
                 }, range: 0})
         else:
+            jobs.define_target(creep)
+    else:
+        jobs.define_target(creep)
+
+
+def going_to_help(creep):
+    creep.say('🗡️')
+    fleeing_creep = Game.getObjectById(creep.memory.fleeing_creep)
+    if fleeing_creep:
+        creep.moveTo(fleeing_creep, {'visualizePathStyle': {
+            'fill': 'transparent',
+            'stroke': '#fff',
+            'lineStyle': 'dashed',
+            'strokeWidth': .15,
+            'opacity': .1
+        }, range: 0})
+        if creep.pos.inRangeTo(fleeing_creep, 5):
             jobs.define_target(creep)
     else:
         jobs.define_target(creep)

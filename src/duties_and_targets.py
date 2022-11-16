@@ -282,7 +282,8 @@ def define_stealers_needed(creep):
         if creep.memory.job[7:8] == '1':
             need_stealer1s = home.memory.need_stealer1s
             if target.energy > target.ticksToRegeneration * 12 or target.energy >= 2000:
-                need_stealer1s = need_stealer1s + 0.01
+                if need_stealer1s < 8:
+                    need_stealer1s = need_stealer1s + 0.01
             if target.energy / target.ticksToRegeneration < 9:
                 if need_stealer1s > 1:
                     need_stealer1s = need_stealer1s - 0.01

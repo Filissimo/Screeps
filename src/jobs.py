@@ -174,11 +174,14 @@ def run_defender(creep):
             actions.attacking(creep)
         elif creep.memory.duty == 'defending':
             actions.defending(creep)
+        elif creep.memory.duty == 'going_to_help':
+            actions.going_to_help(creep)
     else:
         define_defender_targets(creep)
 
 
 def define_defender_targets(creep):
+    creep.memory.fleeing_creep = None
     enemy = creep.room.find(FIND_HOSTILE_CREEPS)
     if len(enemy) == 0:
         creep.memory.duty = 'defending'
