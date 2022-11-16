@@ -229,7 +229,7 @@ def paving_roads(creep):
             str_road_memory = str(road_memory)
             str_road_coors = '{\'' + real_coors_str + '\': ' + str(road_memory[real_coors_str]) + '}'
             if str_road_memory == str_road_coors:
-                new_counter = road_memory[real_coors_str] + 10
+                new_counter = road_memory[real_coors_str] + 13
                 roads_memory.remove(road_memory)
         if str(roads_memory) == '[]':
             roads_memory.append(road_coors_new_object)
@@ -238,7 +238,7 @@ def paving_roads(creep):
                 if new_counter >= 2000:
                     construction_sites = _.sum(creep.room.find(FIND_CONSTRUCTION_SITES),
                                                lambda cs: cs.progress < cs.progressTotal)
-                    if construction_sites <= 1:
+                    if construction_sites <= 3:
                         result = creep.pos.createConstructionSite(STRUCTURE_ROAD)
                         if result != OK:
                             print(creep + ': no road, on construction site ' + creep.pos +
@@ -540,8 +540,8 @@ def transferring_to_closest(creep):
                 if result != OK:
                     del creep.memory.target
                     jobs.define_target(creep)
-                    print("[{}] Unknown result from creep.withdraw({}):"
-                          " {}".format(creep.name, 'withdraw', result))
+                    print("[{}] Unknown result from creep.transfer({}):"
+                          " {}".format(creep.name, 'transfer', result))
             else:
                 creep.moveTo(target, {'visualizePathStyle': {
                     'fill': 'transparent',

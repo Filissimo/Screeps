@@ -43,7 +43,7 @@ class SpawnRunner:
             my_creeps_with_memory = _.filter(my_creeps, lambda c: c.memory.job != undefined)
             creeps_filtered = _.filter(my_creeps_with_memory,
                                        lambda c: c.memory.home == self.spawn.id and c.memory.job == job_name and
-                                                 c.ticksToLive > 30)
+                                                 c.ticksToLive > 50)
             number_of_creeps_filtered = len(creeps_filtered)
             sources = self.spawn.room.find(FIND_SOURCES)
             containers_near_mine = 0
@@ -85,7 +85,7 @@ class SpawnRunner:
                     if container_fullest.store[RESOURCE_ENERGY] >= container_fullest.store.getCapacity() * 0.7:
                         need_additional_lorries = need_additional_lorries + 0.01
                         self.spawn.memory.need_additional_lorries = need_additional_lorries
-                    if container_fullest.store[RESOURCE_ENERGY] < container_fullest.store.getCapacity() * 0.5:
+                    if container_fullest.store[RESOURCE_ENERGY] < container_fullest.store.getCapacity() * 0.7:
                         if need_additional_lorries > -2:
                             need_additional_lorries = need_additional_lorries - 0.01
                             self.spawn.memory.need_additional_lorries = need_additional_lorries
@@ -157,7 +157,7 @@ class SpawnRunner:
 
             elif job_name == 'stealer1':
                 self.spawn.memory.stealer1s = number_of_creeps_filtered
-                if 4 > number_of_creeps_filtered:
+                if self.spawn.memory.need_stealer1s > number_of_creeps_filtered:
                     worker_to_stealer = _(self.spawn.room.find(FIND_MY_CREEPS)) \
                         .filter(lambda c: c.memory.job == 'worker' and
                                           c.store[RESOURCE_ENERGY] == 0).sample()
@@ -212,8 +212,10 @@ class SpawnRunner:
             if self.spawn.room.energyCapacityAvailable >= 550:
                 desired_body.extend([WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE])
         elif job_name == 'lorry':
-            if self.spawn.room.energyCapacityAvailable >= 450:
-                desired_body.extend([CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE])
+            range_max = self.spawn.memory.need_lorries
+            for a in range(1, range_max):
+                if self.spawn.room.energyCapacityAvailable >= a * 150:
+                    desired_body.extend([CARRY, CARRY, MOVE])
         elif job_name[:10] == 'reservator':
             if self.spawn.room.energyCapacityAvailable >= 700:
                 desired_body = [CLAIM, MOVE, MOVE]

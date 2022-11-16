@@ -199,11 +199,13 @@ def define_closest_to_transfer(creep):
 def define_stealers_needed(creep):
     target = Game.getObjectById(creep.memory.target)
     home = Game.getObjectById(creep.memory.home)
-    if creep.memory.job[7:8] == '1':
-        need_stealer1s = home.memory.need_stealer1s
-        if target.energy > target.ticksToRegeneration * 11:
-            need_stealer1s = need_stealer1s + 0.01
-        if target.energy < target.ticksToRegeneration * 9:
-            need_stealer1s = need_stealer1s - 0.01
-        home.memory.need_stealer1s = round(need_stealer1s, 2)
+    if target:
+        if creep.memory.job[7:8] == '1':
+            need_stealer1s = home.memory.need_stealer1s
+            if target.energy > target.ticksToRegeneration * 11 or target.energy >= 2900:
+                need_stealer1s = need_stealer1s + 0.01
+            if target.energy < target.ticksToRegeneration * 9:
+                if need_stealer1s > 1:
+                    need_stealer1s = need_stealer1s - 0.01
+            home.memory.need_stealer1s = round(need_stealer1s, 2)
 
