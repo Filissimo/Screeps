@@ -305,6 +305,23 @@ def move_away_from_source(creep):
             creep.moveByPath(flee_path)
 
 
+def not_fleeing(creep):
+    not_fleeing_bool = True
+    source = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS)
+    if source:
+        if creep.pos.inRangeTo(source, 5):
+            creep.say('🔜')
+            flee_condition = _.map(creep.room.find(FIND_HOSTILE_CREEPS), lambda c: {'pos': c.pos, 'range': 7})
+            flee_path = PathFinder.search(
+                creep.pos,
+                flee_condition,
+                {'flee': True}
+            ).path
+            creep.moveByPath(flee_path)
+            not_fleeing_bool = False
+    return not_fleeing_bool
+
+
 def creep_repairing(creep):
     move_away_from_source(creep)
     if _.sum(creep.carry) > 0:
