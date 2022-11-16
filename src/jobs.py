@@ -179,20 +179,11 @@ def run_defender(creep):
 
 
 def define_defender_targets(creep):
-    if creep.memory.enemy and creep.memory.base:
-        if creep.memory.duty == 'attacking':
-            creep.memory.target = 'attacking'
-        elif creep.memory.duty == 'defending':
-            creep.memory.target = 'defending'
+    enemy = creep.room.find(FIND_HOSTILE_CREEPS)
+    if len(enemy) == 0:
+        creep.memory.duty = 'defending'
     else:
-        enemy = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS)
-        if enemy:
-            creep.memory.duty = 'attacking'
-            creep.memory.enemy = 'enemy'
-        else:
-            creep.memory.duty = 'defending'
-            creep.memory.base = creep.memory.home
-            del creep.memory.enemy
+        creep.memory.duty = 'attacking'
 
 
 def run_reservator(creep):

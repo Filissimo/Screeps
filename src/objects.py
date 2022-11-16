@@ -90,7 +90,7 @@ class SpawnRunner:
                             need_additional_lorries = need_additional_lorries - 0.05
                             self.spawn.memory.need_additional_lorries = need_additional_lorries
                 if container_emptiest:
-                    if container_emptiest.store[RESOURCE_ENERGY] > container_emptiest.store.getCapacity() * 0.4:
+                    if container_emptiest.store[RESOURCE_ENERGY] > container_emptiest.store.getCapacity() * 0.3:
                         need_additional_workers = need_additional_workers + 0.01
                         self.spawn.memory.need_additional_workers = need_additional_workers
                     if container_emptiest.store[RESOURCE_ENERGY] <= container_emptiest.store.getCapacity() * 0.3:
