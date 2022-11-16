@@ -48,7 +48,7 @@ def define_target(creep):
 
 
 def run_starter(creep):
-    if creep.memory.target:
+    if creep.memory.target and actions.not_fleeing(creep):
         actions.paving_roads(creep)
         if creep.memory.duty == 'mining':
             actions.creep_mining(creep)
@@ -75,7 +75,7 @@ def define_starter_target(creep):
 
 
 def run_miner(creep):
-    if creep.memory.source and creep.memory.container and creep.memory.duty:
+    if creep.memory.source and creep.memory.container and creep.memory.duty and actions.not_fleeing(creep):
         if creep.memory.duty == 'mining':
             actions.miner_mines(creep)
         elif creep.memory.duty == 'to_closest_container':
@@ -110,7 +110,7 @@ def define_miner_targets(creep):
 
 
 def run_worker(creep):
-    if creep.memory.target:
+    if creep.memory.target and actions.not_fleeing(creep):
         actions.paving_roads(creep)
         if creep.memory.duty == 'dismantling_road':
             actions.dismantling_from_memory(creep)
@@ -139,7 +139,7 @@ def define_worker_target(creep):
 
 
 def run_lorry(creep):
-    if creep.memory.target:
+    if creep.memory.target and actions.not_fleeing(creep):
         actions.paving_roads(creep)
         if creep.memory.duty == 'picking_up_tombstone':
             actions.pick_up_tombstone(creep)

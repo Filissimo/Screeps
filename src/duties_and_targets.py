@@ -252,8 +252,9 @@ def define_stealers_flag(creep):
         if flag:
             if creep.room == home.room:
                 creep.memory.flag = flag.name
+                creep.memory.target = flag.name
                 creep.memory.duty = 'go_to_flag'
-                if creep.pos.isNearTo(flag):
+                if creep.pos.inRangeTo(flag, 5):
                     flag = undefined
                     del creep.memory.duty
             else:

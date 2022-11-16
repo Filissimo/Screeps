@@ -310,7 +310,7 @@ def not_fleeing(creep):
     source = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS)
     if source:
         if creep.pos.inRangeTo(source, 5):
-            creep.say('🔜')
+            creep.say('🏳️')
             flee_condition = _.map(creep.room.find(FIND_HOSTILE_CREEPS), lambda c: {'pos': c.pos, 'range': 7})
             flee_path = PathFinder.search(
                 creep.pos,
