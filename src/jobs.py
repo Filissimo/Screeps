@@ -49,6 +49,7 @@ def define_target(creep):
 
 def run_starter(creep):
     if creep.memory.target:
+        actions.paving_roads(creep)
         if creep.memory.duty == 'mining':
             actions.creep_mining(creep)
         elif creep.memory.duty == 'withdrawing_from_closest':
@@ -143,7 +144,9 @@ def run_lorry(creep):
         if creep.memory.duty == 'picking_up_tombstone':
             actions.pick_up_tombstone(creep)
         elif creep.memory.duty == 'withdrawing_from_fullest':
-            actions.withdrawing_from_fullest(creep)
+            actions.withdrawing_from_memory(creep)
+        elif creep.memory.duty == 'withdrawing_from_storage':
+            actions.withdrawing_from_memory(creep)
         elif creep.memory.duty == 'delivering_for_spawn':
             actions.delivering_for_spawning(creep)
         elif creep.memory.duty == 'delivering_to_emptiest':
@@ -159,9 +162,10 @@ def define_lorry_target(creep):
     del creep.memory.target
     if not duties_and_targets.define_creep_to_pickup_tombstone(creep):
         if not duties_and_targets.define_fullest(creep):
-            if not duties_and_targets.define_deliver_for_spawn_target(creep):
-                if not duties_and_targets.define_emptiest(creep):
-                    duties_and_targets.define_storage(creep)
+            if not duties_and_targets.define_storage_to_withdraw(creep):
+                if not duties_and_targets.define_deliver_for_spawn_target(creep):
+                    if not duties_and_targets.define_emptiest(creep):
+                        duties_and_targets.define_storage_to_deliver(creep)
 
 
 def run_defender(creep):
@@ -184,7 +188,7 @@ def define_defender_targets(creep):
         enemy = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS)
         if enemy:
             creep.memory.duty = 'attacking'
-            creep.memory.enemy = enemy.id
+            creep.memory.enemy = 'enemy'
         else:
             creep.memory.duty = 'defending'
             creep.memory.base = creep.memory.home

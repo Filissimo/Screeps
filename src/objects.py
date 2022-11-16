@@ -66,7 +66,7 @@ class SpawnRunner:
                     desired_job = job_name
             elif job_name == 'miner':
                 self.spawn.memory.miners = number_of_creeps_filtered
-                need_miners = len(sources) * 2
+                need_miners = containers_near_mine * 2
                 need_starters = len(sources) * 4
                 if not self.spawn.memory.need_additional_workers:
                     self.spawn.memory.need_additional_workers = 0
@@ -87,7 +87,7 @@ class SpawnRunner:
                         self.spawn.memory.need_additional_lorries = need_additional_lorries
                     if container_fullest.store[RESOURCE_ENERGY] < container_fullest.store.getCapacity() * 0.7:
                         if need_additional_lorries > -2:
-                            need_additional_lorries = need_additional_lorries - 0.01
+                            need_additional_lorries = need_additional_lorries - 0.05
                             self.spawn.memory.need_additional_lorries = need_additional_lorries
                 if container_emptiest:
                     if container_emptiest.store[RESOURCE_ENERGY] > container_emptiest.store.getCapacity() * 0.4:
@@ -200,8 +200,12 @@ class SpawnRunner:
     def define_body(self, job_name):
         desired_body = []
         if job_name == 'defender':
-            if self.spawn.room.energyCapacityAvailable >= 210:
-                desired_body = [TOUGH, RANGED_ATTACK, MOVE]
+            for a in range(1, 10):
+                if self.spawn.room.energyCapacityAvailable >= a * 300:
+                    desired_body.extend([TOUGH, TOUGH, TOUGH, TOUGH, TOUGH])
+            for a in range(1, 10):
+                if self.spawn.room.energyCapacityAvailable >= a * 300:
+                    desired_body.extend([RANGED_ATTACK, MOVE, MOVE])
         elif job_name == 'starter':
             desired_body = [WORK, CARRY, MOVE]
         elif job_name == 'worker':

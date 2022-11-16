@@ -68,6 +68,7 @@ def withdraw_from_closest(creep):
 
 def delivering_for_spawning(creep):
     if _.sum(creep.carry) > 0:
+        creep.say('🚼')
         target = _(creep.room.find(FIND_STRUCTURES)) \
             .filter(lambda s: ((s.structureType == STRUCTURE_SPAWN or
                                 s.structureType == STRUCTURE_EXTENSION)
@@ -102,6 +103,7 @@ def delivering_for_spawning(creep):
 def building(creep):
     move_away_from_source(creep)
     if _.sum(creep.carry) > 0:
+        creep.say('⚒')
         target = creep.pos.findClosestByRange(FIND_CONSTRUCTION_SITES)
         if target:
             is_close = creep.pos.inRangeTo(target, 3)
@@ -135,6 +137,7 @@ def building(creep):
 
 def upgrading(creep):
     if _.sum(creep.carry) > 0:
+        creep.say('🔬')
         target = Game.getObjectById(creep.memory.target)
         is_close = creep.pos.inRangeTo(target, 3)
         if is_close:
@@ -166,6 +169,7 @@ def upgrading(creep):
 
 def miner_mines(creep):
     if _.sum(creep.carry) <= 42:
+        creep.say('⛏')
         source = Game.getObjectById(creep.memory.source)
         if creep.pos.isNearTo(source):
             result = creep.harvest(source)
@@ -189,6 +193,7 @@ def miner_mines(creep):
 
 def miner_delivers(creep):
     if _.sum(creep.carry) > 0:
+        creep.say('🧱')
         target = Game.getObjectById(creep.memory.container)
         if target:
             is_close = creep.pos.isNearTo(target)
@@ -289,6 +294,7 @@ def move_away_from_source(creep):
     source = creep.pos.findClosestByRange(FIND_SOURCES)
     if source:
         if creep.pos.inRangeTo(source, 1):
+            creep.say('🔜')
             flee_condition = _.map(creep.room.find(FIND_SOURCES), lambda c: {'pos': c.pos, 'range': 3})
             flee_path = PathFinder.search(
                 creep.pos,
@@ -301,13 +307,16 @@ def move_away_from_source(creep):
 def creep_repairing(creep):
     move_away_from_source(creep)
     if _.sum(creep.carry) > 0:
+        creep.say('🔧')
         target = Game.getObjectById(creep.memory.target)
-        if target.hits < target.hitsMax * 0.8:
+        if target.hits > target.hitsMax * 0.8:
             target = _(creep.room.find(FIND_STRUCTURES)) \
                 .filter(lambda s: (s.hits < s.hitsMax * 0.8)) \
                 .sortBy(lambda s: (s.pos.getRangeTo(target))).first()
             if target:
                 creep.memory.target = target.id
+            else:
+                jobs.define_target(creep)
         if target:
             is_close = creep.pos.inRangeTo(target, 3)
             if is_close:
@@ -342,6 +351,7 @@ def pick_up_tombstone(creep):
     target = Game.getObjectById(creep.memory.target)
     print(str(target) + ' ' + creep.name)
     if target:
+        creep.say('⚰')
         if creep.pos.isNearTo(target):
             result = creep.withdraw(target, RESOURCE_ENERGY)
             print(creep.name + ' picking up ' + result)
@@ -364,8 +374,9 @@ def pick_up_tombstone(creep):
         jobs.define_target(creep)
 
 
-def withdrawing_from_fullest(creep):
+def withdrawing_from_memory(creep):
     if _.sum(creep.carry) <= 0:
+        creep.say('🚚')
         target = Game.getObjectById(creep.memory.target)
         if target:
             is_close = creep.pos.isNearTo(target)
@@ -392,6 +403,7 @@ def withdrawing_from_fullest(creep):
 
 def delivering_to_from_memory(creep):
     if _.sum(creep.carry) > 0:
+        creep.say('🚛')
         target = Game.getObjectById(creep.memory.target)
         if target:
             is_close = creep.pos.isNearTo(target)
@@ -420,9 +432,11 @@ def delivering_to_from_memory(creep):
 
 
 def attacking(creep):
-    hazard = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS)
-    if hazard:
-        if creep.pos.inRangeTo(hazard, 3):
+    enemy = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS)
+    if enemy:
+        creep.say('⚔')
+        if creep.pos.inRangeTo(enemy, 3):
+            creep.rangedAttack(enemy)
             flee_condition = _.map(creep.room.find(FIND_HOSTILE_CREEPS), lambda c: {'pos': c.pos, 'range': 5})
             flee_path = PathFinder.search(
                 creep.pos,
@@ -430,23 +444,6 @@ def attacking(creep):
                 {'flee': True}
             ).path
             creep.moveByPath(flee_path)
-    enemy = Game.getObjectById(creep.memory.enemy)
-    if enemy:
-        is_close = creep.pos.inRangeTo(enemy, 3)
-        if is_close:
-            result = creep.rangedAttack(enemy)
-            if result != OK:
-                del creep.memory.enemy
-                jobs.define_target(creep)
-                print("[{}] Unknown result from creep.ranged attack({}): {}".format(creep.name, 'r a', result))
-            if not creep.pos.isNearTo(enemy):
-                creep.moveTo(enemy, {'visualizePathStyle': {
-                    'fill': 'transparent',
-                    'stroke': '#fff',
-                    'lineStyle': 'dashed',
-                    'strokeWidth': .15,
-                    'opacity': .1
-                }, range: 0})
         else:
             creep.moveTo(enemy, {'visualizePathStyle': {
                 'fill': 'transparent',
@@ -460,12 +457,14 @@ def attacking(creep):
 
 
 def move_away_from_creeps(creep):
+    result = False
     creep_to_flee = _(creep.room.find(FIND_MY_CREEPS)) \
-        .filter(lambda c: (c.id != creep.id)) \
-        .sortBy(lambda c: (c.pos.getRangeTo(creep_to_flee))).last()
+        .filter(lambda c: (c != creep)) \
+        .sortBy(lambda c: (c.pos.getRangeTo(creep_to_flee))).first()
     if creep_to_flee:
         if creep.pos.inRangeTo(creep_to_flee, 3):
-            all_creeps_except_me = _.filter(creep.room.find(FIND_MY_CREEPS), lambda c: (c.id != creep.id))
+            creep.say('🚶')
+            all_creeps_except_me = _.filter(creep.room.find(FIND_MY_CREEPS), lambda c: (c != creep))
             flee_condition = _.map(all_creeps_except_me, lambda c: {'pos': c.pos, 'range': 7})
             flee_path = PathFinder.search(
                 creep.pos,
@@ -473,13 +472,18 @@ def move_away_from_creeps(creep):
                 {'flee': True}
             ).path
             creep.moveByPath(flee_path)
+            result = True
+    return result
 
 
 def defending(creep):
-    move_away_from_creeps(creep)
+    if not move_away_from_creeps(creep):
+        creep.say('🛡️')
+        jobs.define_target(creep)
 
 
 def going_to_flag(creep):
+    creep.say('🏁')
     flag = Game.flags[creep.memory.flag]
     creep.moveTo(flag, {'visualizePathStyle': {
         'fill': 'transparent',
@@ -503,6 +507,7 @@ def reserving(creep):
             'opacity': .1
         }, range: 0})
     if controller:
+        creep.say('📍')
         if controller.reservation:
             if controller.reservation.ticksToEnd > 10:
                 home = Game.getObjectById(creep.memory.home)
@@ -518,6 +523,7 @@ def going_home(creep):
     home = Game.getObjectById(creep.memory.home)
     if creep.room != home.room:
         if _.sum(creep.carry) > 0:
+            creep.say('🏡')
             creep.moveTo(home, {'visualizePathStyle': {
                 'fill': 'transparent',
                 'stroke': '#fff',
@@ -531,6 +537,7 @@ def going_home(creep):
 
 def transferring_to_closest(creep):
     if creep.store[RESOURCE_ENERGY] > 0:
+        creep.say('🧰')
         target = _(creep.room.find(FIND_STRUCTURES)) \
             .filter(lambda s: (s.structureType == STRUCTURE_CONTAINER or
                                s.structureType == STRUCTURE_STORAGE)) \
