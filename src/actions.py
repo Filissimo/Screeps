@@ -13,6 +13,7 @@ __pragma__('noalias', 'update')
 
 def creep_mining(creep):
     if _.sum(creep.carry) < creep.carryCapacity:
+        creep.say('⛏')
         source = Game.getObjectById(creep.memory.target)
         if creep.pos.isNearTo(source):
             result = creep.harvest(source)
@@ -36,6 +37,7 @@ def creep_mining(creep):
 
 def withdraw_from_closest(creep):
     if _.sum(creep.carry) <= 0:
+        creep.say('🛒')
         target = _(creep.room.find(FIND_STRUCTURES)) \
             .filter(lambda s: (s.structureType == STRUCTURE_CONTAINER or
                                s.structureType == STRUCTURE_STORAGE) and
