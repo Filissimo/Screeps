@@ -41,7 +41,7 @@ def define_stealing_target(creep):
             coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
                                  lambda c: (c.memory.target == source.id))
             if len(coworkers) < 2:
-                target = source.id
+                target = source
                 if target:
                     creep.memory.duty = 'mining'
                     creep.memory.target = target.id

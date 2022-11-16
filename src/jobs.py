@@ -205,7 +205,7 @@ def define_reservator_targets(creep):
 
 def run_stealer(creep):
     actions.paving_roads(creep)
-    if creep.memory.duty:
+    if creep.memory.duty and creep.memory.target and actions.not_fleeing(creep):
         if creep.memory.duty == 'go_to_flag':
             actions.going_to_flag(creep)
         elif creep.memory.duty == 'picking_up_tombstone':
