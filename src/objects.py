@@ -90,7 +90,7 @@ class SpawnRunner:
                             need_additional_lorries = need_additional_lorries - 0.05
                             self.spawn.memory.need_additional_lorries = need_additional_lorries
                 if container_emptiest:
-                    if container_emptiest.store[RESOURCE_ENERGY] > container_emptiest.store.getCapacity() * 0.3:
+                    if container_emptiest.store[RESOURCE_ENERGY] > container_emptiest.store.getCapacity() * 0.5:
                         need_additional_workers = need_additional_workers + 0.01
                         self.spawn.memory.need_additional_workers = need_additional_workers
                     if container_emptiest.store[RESOURCE_ENERGY] <= container_emptiest.store.getCapacity() * 0.3:
@@ -217,7 +217,7 @@ class SpawnRunner:
                 desired_body.extend([WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE])
         elif job_name == 'lorry':
             range_max = self.spawn.memory.need_lorries
-            for a in range(1, range_max):
+            for a in range(0, range_max):
                 if self.spawn.room.energyCapacityAvailable >= a * 150:
                     desired_body.extend([CARRY, CARRY, MOVE])
         elif job_name[:10] == 'reservator':

@@ -264,10 +264,11 @@ def paving_roads(creep):
             Memory.roads = roads_memory
 
 
-def dismantling_road(creep):
+def dismantling_from_memory(creep):
     if creep.store[RESOURCE_ENERGY] < creep.store.getCapacity():
         target = Game.getObjectById(creep.memory.target)
         if target:
+            creep.say('💣')
             is_close = creep.pos.isNearTo(target)
             if is_close:
                 result = creep.dismantle(target)
@@ -492,7 +493,7 @@ def going_to_flag(creep):
         'strokeWidth': .15,
         'opacity': .1
     }, range: 0})
-    if creep.pos.isNearTo(flag):
+    if creep.pos.inRangeTo(flag, 5):
         jobs.define_target(creep)
 
 

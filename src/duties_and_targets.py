@@ -33,6 +33,21 @@ def define_mining_target(creep):
     return target
 
 
+def define_stealing_target(creep):
+    target = undefined
+    if _.sum(creep.carry) <= 0:
+        sources = creep.room.find(FIND_SOURCES_ACTIVE)
+        for source in sources:
+            coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
+                                 lambda c: (c.memory.target == source.id))
+            if len(coworkers) < 2:
+                target = source.id
+                if target:
+                    creep.memory.duty = 'mining'
+                    creep.memory.target = target.id
+    return target
+
+
 def define_deliver_for_spawn_target(creep):
     target = undefined
     if _.sum(creep.carry) > 0:
@@ -84,7 +99,8 @@ def define_creep_to_pickup_tombstone(creep):
     target = undefined
     if _.sum(creep.carry) < creep.carryCapacity:
         target = _(creep.room.find(FIND_TOMBSTONES)) \
-            .filter(lambda t: (t.store[RESOURCE_ENERGY] > 0)).first()
+            .filter(lambda t: (t.store[RESOURCE_ENERGY] > 0 and
+                               t.id != creep.memory.target)).first()
         if target != undefined:
             creep_to_pickup = _(creep.room.find(FIND_MY_CREEPS)) \
                 .filter(lambda c: (c.carryCapacity > _.sum(c.carry)) and
@@ -130,7 +146,7 @@ def define_emptiest(creep):
             emptiest_container = _(containers).sortBy(lambda c: c.total_energy_of_container).first()
             print(emptiest_container.total_energy_of_container + '  emptiest  ' + emptiest_container.id)
 
-    if emptiest_container.total_energy_of_container < emptiest_container.store.getCapacity() * 0.5:
+    if emptiest_container.total_energy_of_container < emptiest_container.store.getCapacity():
         creep.memory.duty = 'delivering_to_emptiest'
         target = emptiest_container
         creep.memory.target = target.id
@@ -264,9 +280,21 @@ def define_stealers_needed(creep):
     if target:
         if creep.memory.job[7:8] == '1':
             need_stealer1s = home.memory.need_stealer1s
-            if target.energy > target.ticksToRegeneration * 11 or target.energy >= 2900:
+            if target.energy > target.ticksToRegeneration * 12 or target.energy >= 2000:
                 need_stealer1s = need_stealer1s + 0.01
-            if target.energy < target.ticksToRegeneration * 9:
+            if target.energy / target.ticksToRegeneration < 9:
                 if need_stealer1s > 1:
-                    need_stealer1s = need_stealer1s - 0.05
+                    need_stealer1s = need_stealer1s - 0.01
             home.memory.need_stealer1s = round(need_stealer1s, 2)
+
+
+def define_wall(creep):
+    target = undefined
+    if creep.store[RESOURCE_ENERGY] <= 0:
+        target = _(creep.room.find(FIND_STRUCTURES)) \
+            .filter(lambda s: s.structureType == STRUCTURE_WALL) \
+            .sortBy(lambda s: s.pos.getRangeTo(creep)).first()
+        if target:
+            creep.memory.duty = 'working_with_wall'
+            creep.memory.target = target.id
+    return target
