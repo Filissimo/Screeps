@@ -157,7 +157,8 @@ def define_fullest(creep):
     target = undefined
     if creep.store[RESOURCE_ENERGY] <= 0:
         containers = _.filter(creep.room.find(FIND_STRUCTURES),
-                              lambda s: s.structureType == STRUCTURE_CONTAINER)
+                              lambda s: s.structureType == STRUCTURE_CONTAINER and
+                              s.store[RESOURCE_ENERGY] >= creep.carryCapacity)
         if containers:
             for container in containers:
                 coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
@@ -285,6 +286,9 @@ def define_stealers_needed(creep):
             if target.energy > target.ticksToRegeneration * 12 or target.energy >= 2000:
                 if need_stealer1s <= stealer1s:
                     need_stealer1s = need_stealer1s + 0.01
+                    need_workers = home.memory.need_workers
+                    need_workers = need_workers + 0.01
+                    home.memory.need_workers = need_workers
             if target.energy / target.ticksToRegeneration < 9:
                 if need_stealer1s >= stealer1s - 1.5:
                     need_stealer1s = need_stealer1s - 0.05

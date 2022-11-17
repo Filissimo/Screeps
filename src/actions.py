@@ -102,13 +102,13 @@ def delivering_for_spawning(creep):
 
 def accidentally_delivering_for_spawning(creep):
     if creep.store[RESOURCE_ENERGY] > 0:
-        target = _(creep.room.find(FIND_STRUCTURES)) \
-            .filter(lambda s: ((s.structureType == STRUCTURE_SPAWN or
-                                s.structureType == STRUCTURE_EXTENSION)
-                               and s.energy < s.energyCapacity)) \
-            .sortBy(lambda s: (s.pos.getRangeTo(creep))).first()
-        if target:
-            if creep.pos.isNearTo(target):
+        targets = _.filter(creep.room.find(FIND_STRUCTURES)), \
+                  lambda s: ((s.structureType == STRUCTURE_SPAWN or
+                              s.structureType == STRUCTURE_EXTENSION) and
+                             s.energy < s.energyCapacity and
+                             s.pos.isNearTo(creep))
+        if targets:
+            for target in targets:
                 result = creep.transfer(target, RESOURCE_ENERGY)
                 if result != OK:
                     print("[{}] Unknown result from creep.transfer({}, {}): {}".format(

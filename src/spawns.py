@@ -14,9 +14,9 @@ def spawn_runner(spawn):
     job_name = creep_needed_to_spawn(spawn)
     if not spawn.spawning:
         creep_to_renew = spawn.pos.findClosestByRange(FIND_MY_CREEPS)
-        if creep_to_renew.pos.isNearTo(spawn) and creep_to_renew.ticksToLive < 1000:
+        if creep_to_renew.pos.isNearTo(spawn) and creep_to_renew.ticksToLive < 300:
             spawn.renewCreep(creep_to_renew)
-            print(creep_to_renew.name + ' renewed')
+            print(creep_to_renew.name + ' renewed: ' + creep_to_renew.ticksToLive)
         if job_name:
             if Memory.Number_of_creep is undefined:
                 Memory.Number_of_creep = 0
