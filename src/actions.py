@@ -94,13 +94,15 @@ def accidentally_delivering_for_spawning(creep):
         targets = _.filter((creep.room.find(FIND_STRUCTURES)),
                            lambda s: ((s.structureType == STRUCTURE_SPAWN or
                                        s.structureType == STRUCTURE_EXTENSION) and
-                                      s.energy < s.energyCapacity and
-                                      s.pos.isNearTo(creep)))
+                                      s.energy < s.energyCapacity))
         if targets:
-            result = creep.transfer(targets[0], RESOURCE_ENERGY)
-            if result != OK:
-                print("[{}] Unknown result from creep.transfer({}, {}): {}".format(
-                    creep.name, 'spawning', RESOURCE_ENERGY, result))
+            target_near = _(targets).filter(lambda t: creep.pos.isNearTo(t)).first()
+            if target_near:
+                result = creep.transfer(target_near, RESOURCE_ENERGY)
+                if result != OK:
+                    print("[{}] Unknown result from creep.transfer({}, {}): {}".format(
+                        creep.name, 'accidentally spawning', RESOURCE_ENERGY, result))
+                jobs.define_target(creep)
 
 
 def building(creep):
