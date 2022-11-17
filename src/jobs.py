@@ -52,7 +52,6 @@ def run_starter(creep):
     target = creep.memory.target
     duty = creep.memory.duty
     if target and actions.not_fleeing(creep):
-        actions.paving_roads(creep)
         actions.accidentally_delivering_for_spawning(creep)
         if duty == 'mining':
             actions.creep_mining(creep)
@@ -122,7 +121,6 @@ def run_worker(creep):
     target = creep.memory.target
     duty = creep.memory.duty
     if target and actions.not_fleeing(creep):
-        actions.paving_roads(creep)
         if duty == 'dismantling_road':
             actions.dismantling_wall_for_stealing(creep)
         elif duty == 'withdrawing_from_closest':
@@ -223,10 +221,10 @@ def define_reservator_targets(creep):
 
 
 def run_stealer(creep):
-    actions.paving_roads(creep)
     target = creep.memory.target
     duty = creep.memory.duty
     if duty and target and actions.not_fleeing(creep):
+        actions.paving_roads(creep)
         if duty == 'go_to_flag':
             actions.going_to_flag(creep)
         elif duty == 'picking_up_tombstone':
