@@ -97,11 +97,10 @@ def accidentally_delivering_for_spawning(creep):
                                       s.energy < s.energyCapacity and
                                       s.pos.isNearTo(creep)))
         if targets:
-            for target in targets:
-                result = creep.transfer(target, RESOURCE_ENERGY)
-                if result != OK:
-                    print("[{}] Unknown result from creep.transfer({}, {}): {}".format(
-                        creep.name, 'spawning', RESOURCE_ENERGY, result))
+            result = creep.transfer(targets[0], RESOURCE_ENERGY)
+            if result != OK:
+                print("[{}] Unknown result from creep.transfer({}, {}): {}".format(
+                    creep.name, 'spawning', RESOURCE_ENERGY, result))
 
 
 def building(creep):

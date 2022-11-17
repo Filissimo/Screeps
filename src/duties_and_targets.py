@@ -51,14 +51,19 @@ def define_stealing_target(creep):
 def define_deliver_for_spawn_target(creep):
     target = undefined
     if _.sum(creep.carry) > 0:
-        target = _(creep.room.find(FIND_STRUCTURES)) \
-            .filter(lambda s: ((s.structureType == STRUCTURE_SPAWN or
-                                s.structureType == STRUCTURE_EXTENSION)
-                               and s.energy < s.energyCapacity)) \
-            .sortBy(lambda s: (s.pos.getRangeTo(creep))).last()
-        if target:
-            creep.memory.duty = 'delivering_for_spawn'
-            creep.memory.target = target.id
+        spawning_structures = _.filter(creep.room.find(FIND_STRUCTURES),
+                                       lambda s: (s.structureType == STRUCTURE_SPAWN or
+                                       s.structureType == STRUCTURE_EXTENSION) and
+                                       s.energy < s.energyCapacity)
+        if spawning_structures:
+            for spawning_structure in spawning_structures:
+                coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
+                                     lambda c: (c.memory.target == spawning_structure.id))
+                if len(coworkers) == 0:
+                    target = spawning_structure
+                    if target:
+                        creep.memory.duty = 'delivering_for_spawn'
+                        creep.memory.target = target.id
     return target
 
 
@@ -159,7 +164,7 @@ def define_fullest(creep):
     if creep.store[RESOURCE_ENERGY] <= 0:
         containers = _.filter(creep.room.find(FIND_STRUCTURES),
                               lambda s: s.structureType == STRUCTURE_CONTAINER and
-                              s.store[RESOURCE_ENERGY] >= creep.carryCapacity)
+                                        s.store[RESOURCE_ENERGY] >= creep.carryCapacity)
         if containers:
             for container in containers:
                 coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
