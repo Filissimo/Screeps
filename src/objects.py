@@ -237,6 +237,13 @@ class CreepRunner:
     def creeping_creep(self):
         jobs.job_runner(self.creep)
 
+    def get_creep_memory(self):
+        creep_memory = self.creep.memory
+        return creep_memory
+
+    def input_creep_memory(self, creep_memory='creep_memory'):
+        self.creep.memory = creep_memory
+
 
 class FlagRunner:
     def __init__(self, flag):

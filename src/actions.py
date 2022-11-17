@@ -264,7 +264,7 @@ def paving_roads(creep):
             Memory.roads = roads_memory
 
 
-def dismantling_from_memory(creep):
+def dismantling_wall_for_stealing(creep):
     if creep.store[RESOURCE_ENERGY] < creep.store.getCapacity():
         target = Game.getObjectById(creep.memory.target)
         if target:
