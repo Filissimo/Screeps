@@ -518,7 +518,7 @@ def move_away_from_creeps(creep):
 def defending(creep):
     if not move_away_from_creeps(creep):
         creep.say('🛡️')
-        jobs.define_target(creep)
+    jobs.define_target(creep)
 
 
 def going_to_flag(creep):

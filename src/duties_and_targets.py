@@ -127,35 +127,37 @@ def define_emptiest(creep):
                               lambda s: s.structureType == STRUCTURE_CONTAINER)
         if containers:
             for container in containers:
-                coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
-                                     lambda c: (c.memory.duty == 'delivering_to_emptiest' or
-                                                c.memory.duty == 'transferring_to_closest') and
-                                               c.memory.target == container.id)
-                anti_coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
-                                          lambda c: (c.memory.duty == 'withdrawing_from_closest') and
-                                                    c.memory.target == container.id)
-                energy_of_container = container.store[RESOURCE_ENERGY]
-                energy_on_the_way = 0
-                if coworkers:
-                    for coworker in coworkers:
-                        if coworker.store.getCapacity() > 0:
-                            energy_on_the_way = energy_on_the_way + coworker.store[RESOURCE_ENERGY]
-                    total_energy_of_container = energy_of_container + energy_on_the_way
-                    container.total_energy_of_container = total_energy_of_container
-                if anti_coworkers:
-                    for anti_coworker in anti_coworkers:
-                        if anti_coworker.store.getCapacity() > 0:
-                            energy_on_the_way = energy_on_the_way + anti_coworker.store[RESOURCE_ENERGY] \
-                                                - anti_coworker.store.getCapacity()
-                    total_energy_of_container = energy_of_container + energy_on_the_way
-                    container.total_energy_of_container = total_energy_of_container
-            emptiest_container = _(containers).sortBy(lambda c: c.total_energy_of_container).first()
-            print(emptiest_container.total_energy_of_container + '  emptiest  ' + emptiest_container.id)
-
-    if emptiest_container.total_energy_of_container < emptiest_container.store.getCapacity() * 0.5:
-        creep.memory.duty = 'delivering_to_emptiest'
-        target = emptiest_container
-        creep.memory.target = target.id
+                if container:
+                    coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
+                                         lambda c: (c.memory.duty == 'delivering_to_emptiest' or
+                                                    c.memory.duty == 'transferring_to_closest') and
+                                                   c.memory.target == container.id)
+                    anti_coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
+                                              lambda c: (c.memory.duty == 'withdrawing_from_closest') and
+                                                        c.memory.target == container.id)
+                    energy_of_container = container.store[RESOURCE_ENERGY]
+                    energy_on_the_way = 0
+                    if coworkers:
+                        for coworker in coworkers:
+                            if coworker.store.getCapacity() > 0:
+                                energy_on_the_way = energy_on_the_way + coworker.store[RESOURCE_ENERGY]
+                        total_energy_of_container = energy_of_container + energy_on_the_way
+                        container.total_energy_of_container = total_energy_of_container
+                    if anti_coworkers:
+                        for anti_coworker in anti_coworkers:
+                            if anti_coworker.store.getCapacity() > 0:
+                                energy_on_the_way = energy_on_the_way + anti_coworker.store[RESOURCE_ENERGY] \
+                                                    - anti_coworker.store.getCapacity()
+                        total_energy_of_container = energy_of_container + energy_on_the_way
+                        container.total_energy_of_container = total_energy_of_container
+            if container:
+                emptiest_container = _(containers).sortBy(lambda c: c.total_energy_of_container).first()
+                print(emptiest_container.total_energy_of_container + '  emptiest  ' + emptiest_container.id)
+    if emptiest_container:
+        if emptiest_container.total_energy_of_container < emptiest_container.store.getCapacity() * 0.5:
+            creep.memory.duty = 'delivering_to_emptiest'
+            target = emptiest_container
+            creep.memory.target = target.id
     return target
 
 
@@ -164,33 +166,35 @@ def define_fullest(creep):
     if creep.store[RESOURCE_ENERGY] <= 0:
         containers = _.filter(creep.room.find(FIND_STRUCTURES),
                               lambda s: s.structureType == STRUCTURE_CONTAINER and
-                                        s.store[RESOURCE_ENERGY] >= creep.carryCapacity)
+                                        s.store[RESOURCE_ENERGY] >= creep.store.getCapacity())
         if containers:
             for container in containers:
-                coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
-                                     lambda c: (c.memory.duty == 'withdrawing_from_fullest' or
-                                                c.memory.duty == 'withdrawing_from_closest') and
-                                               c.memory.target == container.id)
-                anti_coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
-                                          lambda c: (c.memory.duty == 'transferring_to_closest') and
-                                                    c.memory.target == container.id)
-                energy_of_container = container.store[RESOURCE_ENERGY]
-                energy_on_the_way = 0
-                if coworkers:
-                    for coworker in coworkers:
-                        if coworker.store.getCapacity() > 0:
-                            energy_on_the_way = energy_on_the_way + coworker.store[RESOURCE_ENERGY] \
-                                                - coworker.store.getCapacity()
-                    total_energy_of_container = energy_of_container + energy_on_the_way
-                    container.total_energy_of_container = total_energy_of_container
-                if anti_coworkers:
-                    for anti_coworker in anti_coworkers:
-                        if anti_coworker.store.getCapacity() > 0:
-                            energy_on_the_way = energy_on_the_way + anti_coworker.store[RESOURCE_ENERGY]
-                    total_energy_of_container = energy_of_container + energy_on_the_way
-                    container.total_energy_of_container = total_energy_of_container
-            target = _(containers).sortBy(lambda c: c.total_energy_of_container).last()
-            print(target.total_energy_of_container + '  fullest  ' + target.id)
+                if container:
+                    coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
+                                         lambda c: (c.memory.duty == 'withdrawing_from_fullest' or
+                                                    c.memory.duty == 'withdrawing_from_closest') and
+                                                   c.memory.target == container.id)
+                    anti_coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
+                                              lambda c: (c.memory.duty == 'transferring_to_closest') and
+                                                        c.memory.target == container.id)
+                    energy_of_container = container.store[RESOURCE_ENERGY]
+                    energy_on_the_way = 0
+                    if coworkers:
+                        for coworker in coworkers:
+                            if coworker.store.getCapacity() > 0:
+                                energy_on_the_way = energy_on_the_way + coworker.store[RESOURCE_ENERGY] \
+                                                    - coworker.store.getCapacity()
+                        total_energy_of_container = energy_of_container + energy_on_the_way
+                        container.total_energy_of_container = total_energy_of_container
+                    if anti_coworkers:
+                        for anti_coworker in anti_coworkers:
+                            if anti_coworker.store.getCapacity() > 0:
+                                energy_on_the_way = energy_on_the_way + anti_coworker.store[RESOURCE_ENERGY]
+                        total_energy_of_container = energy_of_container + energy_on_the_way
+                        container.total_energy_of_container = total_energy_of_container
+            if container:
+                target = _(containers).sortBy(lambda c: c.total_energy_of_container).last()
+                print(target.total_energy_of_container + '  fullest  ' + target.id)
 
     if target:
         creep.memory.duty = 'withdrawing_from_fullest'

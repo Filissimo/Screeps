@@ -14,9 +14,10 @@ def spawn_runner(spawn):
     job_name = creep_needed_to_spawn(spawn)
     if not spawn.spawning:
         creep_to_renew = spawn.pos.findClosestByRange(FIND_MY_CREEPS)
-        if creep_to_renew.pos.isNearTo(spawn) and creep_to_renew.ticksToLive < 300:
-            spawn.renewCreep(creep_to_renew)
-            print(creep_to_renew.name + ' renewed: ' + creep_to_renew.ticksToLive)
+        if creep_to_renew:
+            if creep_to_renew.pos.isNearTo(spawn) and creep_to_renew.ticksToLive < 300:
+                spawn.renewCreep(creep_to_renew)
+                print(creep_to_renew.name + ' renewed: ' + creep_to_renew.ticksToLive)
         if job_name:
             if Memory.Number_of_creep is undefined:
                 Memory.Number_of_creep = 0
@@ -36,8 +37,8 @@ def creep_needed_to_spawn(spawn):
     spawn_memory = spawn.memory
     desired_job = False
     spawn_memory.need_starters = False
-    spawn_jobs = ['defender', 'miner', 'lorry', 'worker', 'starter',
-                  'reservator1', 'reservator2', 'stealer1', 'stealer2']
+    spawn_jobs = ['defender', 'miner', 'lorry', 'worker',
+                  'reservator1', 'reservator2', 'stealer1', 'stealer2', 'starter']
     for job_name in spawn_jobs:
         my_creeps = _.filter(Game.creeps, lambda c: c.memory != undefined)
         my_creeps_with_memory = _.filter(my_creeps, lambda c: c.memory.job != undefined)
@@ -65,6 +66,10 @@ def creep_needed_to_spawn(spawn):
             if spawn_memory.need_defenders > number_of_creeps_filtered:
                 if spawn_memory.lorries >= spawn_memory.need_lorries:
                     desired_job = job_name
+        elif job_name == 'starter':
+            spawn_memory.starters = number_of_creeps_filtered
+            if spawn_memory.need_starters > number_of_creeps_filtered:
+                desired_job = job_name
         elif job_name == 'miner':
             spawn_memory.miners = number_of_creeps_filtered
             need_miners = containers_near_mine * 2
@@ -108,10 +113,6 @@ def creep_needed_to_spawn(spawn):
             spawn_memory.need_additional_lorries = need_additional_lorries
             spawn_memory.need_additional_workers = need_additional_workers
             if need_miners > number_of_creeps_filtered:
-                desired_job = job_name
-        elif job_name == 'starter':
-            spawn_memory.starters = number_of_creeps_filtered
-            if spawn_memory.need_starters > number_of_creeps_filtered:
                 desired_job = job_name
         elif job_name == 'lorry':
             spawn_memory.lorries = number_of_creeps_filtered
