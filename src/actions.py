@@ -69,23 +69,12 @@ def withdraw_from_closest(creep):
 def delivering_for_spawning(creep):
     if _.sum(creep.carry) > 0:
         creep.say('🚼')
-        target = _(creep.room.find(FIND_STRUCTURES)) \
-            .filter(lambda s: ((s.structureType == STRUCTURE_SPAWN or
-                                s.structureType == STRUCTURE_EXTENSION)
-                               and s.energy < s.energyCapacity)) \
-            .sortBy(lambda s: (s.pos.getRangeTo(creep))).first()
+        target = Game.getObjectById(creep.memory.target)
         if target:
             is_close = creep.pos.isNearTo(target)
             if is_close:
-                result = creep.transfer(target, RESOURCE_ENERGY)
-                if result == OK or result == ERR_FULL:
-                    del creep.memory.target
-                    jobs.define_target(creep)
-                else:
-                    del creep.memory.target
-                    jobs.define_target(creep)
-                    print("[{}] Unknown result from creep.transfer({}, {}): {}".format(
-                        creep.name, 'store', RESOURCE_ENERGY, result))
+                del creep.memory.target
+                jobs.define_target(creep)
             else:
                 creep.moveTo(target, {'visualizePathStyle': {
                     'fill': 'transparent',
@@ -102,11 +91,11 @@ def delivering_for_spawning(creep):
 
 def accidentally_delivering_for_spawning(creep):
     if creep.store[RESOURCE_ENERGY] > 0:
-        targets = _.filter(creep.room.find(FIND_STRUCTURES)), \
-                  lambda s: ((s.structureType == STRUCTURE_SPAWN or
-                              s.structureType == STRUCTURE_EXTENSION) and
-                             s.energy < s.energyCapacity and
-                             s.pos.isNearTo(creep))
+        targets = _.filter((creep.room.find(FIND_STRUCTURES)),
+                           lambda s: ((s.structureType == STRUCTURE_SPAWN or
+                                       s.structureType == STRUCTURE_EXTENSION) and
+                                      s.energy < s.energyCapacity and
+                                      s.pos.isNearTo(creep)))
         if targets:
             for target in targets:
                 result = creep.transfer(target, RESOURCE_ENERGY)

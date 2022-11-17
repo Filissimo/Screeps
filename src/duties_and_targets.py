@@ -52,9 +52,10 @@ def define_deliver_for_spawn_target(creep):
     target = undefined
     if _.sum(creep.carry) > 0:
         target = _(creep.room.find(FIND_STRUCTURES)) \
-            .filter(lambda s: ((s.structureType == STRUCTURE_SPAWN or s.structureType == STRUCTURE_EXTENSION)
+            .filter(lambda s: ((s.structureType == STRUCTURE_SPAWN or
+                                s.structureType == STRUCTURE_EXTENSION)
                                and s.energy < s.energyCapacity)) \
-            .sample()
+            .sortBy(lambda s: (s.pos.getRangeTo(creep))).last()
         if target:
             creep.memory.duty = 'delivering_for_spawn'
             creep.memory.target = target.id
@@ -286,9 +287,9 @@ def define_stealers_needed(creep):
             if target.energy > target.ticksToRegeneration * 12 or target.energy >= 2000:
                 if need_stealer1s <= stealer1s:
                     need_stealer1s = need_stealer1s + 0.01
-                    need_workers = home.memory.need_workers
-                    need_workers = need_workers + 0.01
-                    home.memory.need_workers = need_workers
+                    need_additional_workers = home.memory.need_additional_workers
+                    need_additional_workers = need_additional_workers + 0.01
+                    home.memory.need_additional_workers = need_additional_workers
             if target.energy / target.ticksToRegeneration < 9:
                 if need_stealer1s >= stealer1s - 1.5:
                     need_stealer1s = need_stealer1s - 0.05
