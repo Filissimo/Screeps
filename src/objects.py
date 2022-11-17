@@ -219,7 +219,7 @@ class SpawnRunner:
             if self.spawn.room.energyCapacityAvailable >= 550:
                 desired_body.extend([WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE])
         elif job_name == 'lorry':
-            range_max = self.spawn.memory.need_lorries
+            range_max = self.spawn.memory.need_lorries + 1
             for a in range(0, range_max):
                 if self.spawn.room.energyCapacityAvailable >= a * 150:
                     desired_body.extend([CARRY, CARRY, MOVE])
