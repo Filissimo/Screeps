@@ -16,7 +16,7 @@ class SpawnRunner:
     def __init__(self, spawn):
         self.spawn = spawn
 
-    def spawning_creep(self, spawn):
+    def spawning_creep(self):
         job_name = self.creep_needed_to_spawn()
         if not self.spawn.spawning:
             if job_name:
@@ -236,13 +236,6 @@ class CreepRunner:
 
     def creeping_creep(self):
         jobs.job_runner(self.creep)
-
-    def get_creep_memory(self):
-        creep_memory = self.creep.memory
-        return creep_memory
-
-    def input_creep_memory(self, creep_memory='creep_memory'):
-        self.creep.memory = creep_memory
 
 
 class FlagRunner:
