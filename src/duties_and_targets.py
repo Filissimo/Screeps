@@ -146,7 +146,7 @@ def define_emptiest(creep):
             emptiest_container = _(containers).sortBy(lambda c: c.total_energy_of_container).first()
             print(emptiest_container.total_energy_of_container + '  emptiest  ' + emptiest_container.id)
 
-    if emptiest_container.total_energy_of_container < emptiest_container.store.getCapacity():
+    if emptiest_container.total_energy_of_container < emptiest_container.store.getCapacity() * 0.7:
         creep.memory.duty = 'delivering_to_emptiest'
         target = emptiest_container
         creep.memory.target = target.id
@@ -281,12 +281,13 @@ def define_stealers_needed(creep):
     if target:
         if creep.memory.job[7:8] == '1':
             need_stealer1s = home.memory.need_stealer1s
+            stealer1s = home.memory.stealer1s
             if target.energy > target.ticksToRegeneration * 12 or target.energy >= 2000:
-                if need_stealer1s < 8:
+                if need_stealer1s <= stealer1s:
                     need_stealer1s = need_stealer1s + 0.01
             if target.energy / target.ticksToRegeneration < 9:
-                if need_stealer1s > 1:
-                    need_stealer1s = need_stealer1s - 0.01
+                if need_stealer1s >= stealer1s - 1.5:
+                    need_stealer1s = need_stealer1s - 0.05
             home.memory.need_stealer1s = round(need_stealer1s, 2)
 
 

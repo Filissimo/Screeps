@@ -48,8 +48,10 @@ def main():
             if r_i_m_to_remove:
                 roads_in_memory.remove(r_i_m_to_remove)
             print(message_about_removing)
-        print('Need lorries: ' + spawn.memory.need_lorries + ". Need workers: " + spawn.memory.need_workers +
-              ". Need stealer1s: " + spawn.memory.need_stealer1s)
+        spawn_memory = spawn.memory
+        print('Lorries:  ' + spawn_memory.lorries + ' / ' + spawn_memory.need_lorries +
+              ". Workers:  " + spawn_memory.workers + ' / ' + spawn_memory.need_workers +
+              ". Stealer1s:  " + spawn_memory.stealer1s + ' / ' + spawn_memory.need_stealer1s)
 
     for creep_name in Object.keys(Game.creeps):
         creep = Game.creeps[creep_name]

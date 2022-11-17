@@ -100,6 +100,21 @@ def delivering_for_spawning(creep):
         jobs.define_target(creep)
 
 
+def accidentally_delivering_for_spawning(creep):
+    if creep.store[RESOURCE_ENERGY] > 0:
+        target = _(creep.room.find(FIND_STRUCTURES)) \
+            .filter(lambda s: ((s.structureType == STRUCTURE_SPAWN or
+                                s.structureType == STRUCTURE_EXTENSION)
+                               and s.energy < s.energyCapacity)) \
+            .sortBy(lambda s: (s.pos.getRangeTo(creep))).first()
+        if target:
+            if creep.pos.isNearTo(target):
+                result = creep.transfer(target, RESOURCE_ENERGY)
+                if result != OK:
+                    print("[{}] Unknown result from creep.transfer({}, {}): {}".format(
+                        creep.name, 'spawning', RESOURCE_ENERGY, result))
+
+
 def building(creep):
     move_away_from_source(creep)
     if _.sum(creep.carry) > 0:
@@ -199,9 +214,15 @@ def miner_delivers(creep):
             is_close = creep.pos.isNearTo(target)
             if is_close:
                 result = creep.transfer(target, RESOURCE_ENERGY)
-                if result == OK or result == ERR_FULL:
+                if result == OK:
                     del creep.memory.target
                     jobs.define_target(creep)
+                elif result == ERR_FULL:
+                    print(creep.name + " - container is full!")
+                    home = Game.getObjectById(creep.memory.home)
+                    need_additional_lorries = home.memory.need_additional_lorries
+                    need_additional_lorries = round((need_additional_lorries + 0.01), 2)
+                    home.memory.need_additional_lorries = need_additional_lorries
                 else:
                     del creep.memory.target
                     jobs.define_target(creep)
@@ -486,11 +507,13 @@ def attacking(creep):
 
 def move_away_from_creeps(creep):
     result = False
-    creep_to_flee = creep.pos.findClosestByRange(FIND_MY_CREEPS)
+    creep_to_flee = _(creep.room.find(FIND_MY_CREEPS)) \
+        .filter(lambda c: (c.id != creep.id)) \
+        .sortBy(lambda c: c.pos.getRangeTo(creep_to_flee)).first()
     if creep_to_flee:
         if creep.pos.inRangeTo(creep_to_flee, 3):
             creep.say('🚶')
-            all_creeps_except_me = _.filter(creep.room.find(FIND_MY_CREEPS), lambda c: (c != creep))
+            all_creeps_except_me = _.filter(creep.room.find(FIND_MY_CREEPS), lambda c: (c.id != creep.id))
             flee_condition = _.map(all_creeps_except_me, lambda c: {'pos': c.pos, 'range': 5})
             flee_path = PathFinder.search(
                 creep.pos,
@@ -572,7 +595,13 @@ def transferring_to_closest(creep):
             is_close = creep.pos.isNearTo(target)
             if is_close:
                 result = creep.transfer(target, RESOURCE_ENERGY)
-                if result != OK:
+                if result == ERR_FULL:
+                    print(creep.name + " - container is full!")
+                    home = Game.getObjectById(creep.memory.home)
+                    need_additional_lorries = home.memory.need_additional_lorries
+                    need_additional_lorries = round((need_additional_lorries + 0.01), 2)
+                    home.memory.need_additional_lorries = need_additional_lorries
+                elif result != OK:
                     del creep.memory.target
                     jobs.define_target(creep)
                     print("[{}] Unknown result from creep.transfer({}):"

@@ -53,6 +53,7 @@ def run_starter(creep):
     duty = creep.memory.duty
     if target and actions.not_fleeing(creep):
         actions.paving_roads(creep)
+        actions.accidentally_delivering_for_spawning(creep)
         if duty == 'mining':
             actions.creep_mining(creep)
         elif duty == 'withdrawing_from_closest':
@@ -153,6 +154,7 @@ def run_lorry(creep):
     duty = creep.memory.duty
     if target and actions.not_fleeing(creep):
         actions.paving_roads(creep)
+        actions.accidentally_delivering_for_spawning(creep)
         if duty == 'picking_up_tombstone':
             actions.pick_up_tombstone(creep)
         elif duty == 'withdrawing_from_fullest':
