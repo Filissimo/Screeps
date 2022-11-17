@@ -26,7 +26,7 @@ def main():
     for spawn_name in Object.keys(Game.spawns):
         spawn = Game.spawns[spawn_name]
         s = SpawnRunner(spawn)
-        s.spawning_creep(spawn)
+        s.spawning_spawn()
         if countdown == 1:
             r_i_m_to_remove = None
             message_about_removing = 'No roads to remove from memory'
