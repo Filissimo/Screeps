@@ -63,6 +63,7 @@ def creep_needed_to_spawn(spawn):
         elif job_name == 'miner':
             spawn_memory.miners = number_of_creeps_filtered
             need_miners = containers_near_mine * 2
+            spawn_memory.need_miners = need_miners
             need_starters = len(sources) * 4
             if not spawn_memory.need_additional_workers:
                 spawn_memory.need_additional_workers = 0
@@ -79,22 +80,18 @@ def creep_needed_to_spawn(spawn):
                 need_workers = containers_near_mine
             if container_fullest:
                 if container_fullest.store[RESOURCE_ENERGY] >= container_fullest.store.getCapacity() * 0.7:
-                    if need_additional_lorries < 5:
+                    if spawn_memory.need_lorries <= spawn_memory.lorries:
                         need_additional_lorries = need_additional_lorries + 0.01
-                        spawn_memory.need_additional_lorries = need_additional_lorries
                 if container_fullest.store[RESOURCE_ENERGY] < container_fullest.store.getCapacity() * 0.7:
-                    if need_additional_lorries > -2:
+                    if spawn_memory.need_lorries >= spawn_memory.lorries:
                         need_additional_lorries = need_additional_lorries - 0.05
-                        spawn_memory.need_additional_lorries = need_additional_lorries
             if container_emptiest:
                 if container_emptiest.store[RESOURCE_ENERGY] > container_emptiest.store.getCapacity() * 0.5:
-                    if need_additional_workers < 7:
+                    if spawn_memory.need_workers <= spawn_memory.workers:
                         need_additional_workers = need_additional_workers + 0.01
-                        spawn_memory.need_additional_workers = need_additional_workers
                 if container_emptiest.store[RESOURCE_ENERGY] <= container_emptiest.store.getCapacity() * 0.3:
-                    if need_additional_workers > -1:
+                    if spawn_memory.need_workers >= spawn_memory.workers:
                         need_additional_workers = need_additional_workers - 0.01
-                        spawn_memory.need_additional_workers = need_additional_workers
             need_lorries = 0
             if spawn_memory.miners > 0:
                 need_lorries = 1
@@ -102,9 +99,10 @@ def creep_needed_to_spawn(spawn):
                 need_lorries = containers_near_mine
             spawn_memory.need_lorries = round((need_lorries + need_additional_lorries), 2)
             spawn_memory.need_workers = round((need_workers + need_additional_workers), 2)
-            spawn_memory.need_miners = need_miners
             spawn_memory.need_starters = need_starters
-            if spawn_memory.need_miners > number_of_creeps_filtered:
+            spawn_memory.need_additional_lorries = need_additional_lorries
+            spawn_memory.need_additional_workers = need_additional_workers
+            if need_miners > number_of_creeps_filtered:
                 desired_job = job_name
         elif job_name == 'starter':
             spawn_memory.starters = number_of_creeps_filtered
@@ -113,7 +111,7 @@ def creep_needed_to_spawn(spawn):
         elif job_name == 'lorry':
             spawn_memory.lorries = number_of_creeps_filtered
             if spawn_memory.need_lorries > number_of_creeps_filtered:
-                if spawn_memory.miners >= spawn_memory.need_miners:
+                if spawn_memory.miners >= need_miners:
                     desired_job = job_name
 
         elif job_name == 'worker':

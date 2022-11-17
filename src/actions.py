@@ -486,14 +486,12 @@ def attacking(creep):
 
 def move_away_from_creeps(creep):
     result = False
-    creep_to_flee = _(creep.room.find(FIND_MY_CREEPS)) \
-        .filter(lambda c: (c != creep)) \
-        .sortBy(lambda c: (c.pos.getRangeTo(creep_to_flee))).first()
+    creep_to_flee = creep.pos.findClosestByRange(FIND_MY_CREEPS)
     if creep_to_flee:
         if creep.pos.inRangeTo(creep_to_flee, 3):
             creep.say('🚶')
             all_creeps_except_me = _.filter(creep.room.find(FIND_MY_CREEPS), lambda c: (c != creep))
-            flee_condition = _.map(all_creeps_except_me, lambda c: {'pos': c.pos, 'range': 7})
+            flee_condition = _.map(all_creeps_except_me, lambda c: {'pos': c.pos, 'range': 5})
             flee_path = PathFinder.search(
                 creep.pos,
                 flee_condition,
