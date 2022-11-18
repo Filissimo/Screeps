@@ -57,7 +57,9 @@ def run_starter(creep):
     duty = creep.memory.duty
     if target and actions.not_fleeing(creep) and actions.not_going_to_bs(creep):
         actions.accidentally_delivering_for_spawning(creep)
-        if duty == 'mining':
+        if duty == 'picking_up_tombstone':
+            actions.pick_up_tombstone(creep)
+        elif duty == 'mining':
             actions.creep_mining(creep)
             duties_and_targets.define_spawn_builders_needed(creep)
         elif duty == 'withdrawing_from_closest':
@@ -75,11 +77,12 @@ def run_starter(creep):
 def define_starter_target(creep):
     del creep.memory.duty
     del creep.memory.target
-    if not duties_and_targets.define_closest_to_withdraw(creep):
-        if not duties_and_targets.define_mining_target(creep):
-            if not duties_and_targets.define_deliver_for_spawn_target(creep):
-                if not duties_and_targets.define_building_target(creep):
-                    duties_and_targets.define_upgrading_target(creep)
+    if not duties_and_targets.define_creep_to_pickup_tombstone(creep):
+        if not duties_and_targets.define_closest_to_withdraw(creep):
+            if not duties_and_targets.define_mining_target(creep):
+                if not duties_and_targets.define_deliver_for_spawn_target(creep):
+                    if not duties_and_targets.define_building_target(creep):
+                        duties_and_targets.define_upgrading_target(creep)
 
 
 def run_miner(creep):
@@ -123,23 +126,24 @@ def define_miner_targets(creep):
 
 
 def run_worker(creep):
-    target = creep.memory.target
-    duty = creep.memory.duty
-    if target and actions.not_fleeing(creep):
-        if duty == 'dismantling':
-            actions.dismantling(creep)
-        elif duty == 'withdrawing_from_closest':
-            actions.withdraw_from_closest(creep)
-        elif duty == 'mining':
-            actions.creep_mining(creep)
-        elif duty == 'repairing':
-            actions.creep_repairing(creep)
-        elif duty == 'building':
-            actions.building(creep)
-        elif duty == 'upgrading':
-            actions.upgrading(creep)
-    else:
-        define_worker_target(creep)
+    if not actions.going_home(creep):
+        target = creep.memory.target
+        duty = creep.memory.duty
+        if target or actions.not_fleeing(creep):
+            if duty == 'dismantling':
+                actions.dismantling(creep)
+            elif duty == 'withdrawing_from_closest':
+                actions.withdraw_from_closest(creep)
+            elif duty == 'mining':
+                actions.creep_mining(creep)
+            elif duty == 'repairing':
+                actions.creep_repairing(creep)
+            elif duty == 'building':
+                actions.building(creep)
+            elif duty == 'upgrading':
+                actions.upgrading(creep)
+        else:
+            define_worker_target(creep)
 
 
 def define_worker_target(creep):
@@ -191,7 +195,7 @@ def run_defender(creep):
     if duty:
         if duty == 'attacking':
             actions.attacking(creep)
-        elif duty == 'defending':
+        elif duty == 'defending' and not actions.move_away_from_creeps(creep):
             actions.defending(creep)
         elif duty == 'going_to_help':
             actions.going_to_help(creep)
@@ -293,4 +297,3 @@ def run_spawn_builder(creep):
         else:
             creep.moveTo(flag)
             creep.say('BS')
-

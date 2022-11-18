@@ -501,7 +501,7 @@ def move_away_from_creeps(creep):
     result = False
     creep_to_flee = _(creep.room.find(FIND_MY_CREEPS)) \
         .filter(lambda c: (c.id != creep.id)) \
-        .sortBy(lambda c: c.pos.getRangeTo(creep_to_flee)).first()
+        .sortBy(lambda c: c.pos.getRangeTo(creep)).first()
     if creep_to_flee:
         if creep.pos.inRangeTo(creep_to_flee, 3):
             creep.say('🚶')
@@ -518,8 +518,7 @@ def move_away_from_creeps(creep):
 
 
 def defending(creep):
-    if not move_away_from_creeps(creep):
-        creep.say('🛡️')
+    creep.say('🛡️')
     jobs.define_target(creep)
 
 
@@ -561,9 +560,11 @@ def reserving(creep):
 
 
 def going_home(creep):
+    going_home_bool = False
     home = Game.getObjectById(creep.memory.home)
     if creep.room != home.room:
-        if _.sum(creep.carry) > 0:
+        if (_.sum(creep.carry) > 0 and creep.memory.job[:7] == 'stealer')\
+                or (_.sum(creep.carry) == 0 and creep.memory.job == 'worker'):
             creep.say('🏡')
             creep.moveTo(home, {'visualizePathStyle': {
                 'fill': 'transparent',
@@ -572,8 +573,10 @@ def going_home(creep):
                 'strokeWidth': .15,
                 'opacity': .1
             }, range: 0})
+            going_home_bool = True
     else:
         jobs.define_target(creep)
+    return going_home_bool
 
 
 def transferring_to_closest(creep):
@@ -658,4 +661,5 @@ def not_going_to_bs(creep):
             creep.say('BS')
             print('BS ' + creep.name)
             not_going_to_bs_bool = False
+            creep.memory.job = 'spawn_builder'
     return not_going_to_bs_bool
