@@ -596,6 +596,9 @@ def transferring_to_closest(creep):
                     need_additional_lorries = home.memory.need_additional_lorries
                     need_additional_lorries = round((need_additional_lorries + 0.01), 2)
                     home.memory.need_additional_lorries = need_additional_lorries
+                    creep.memory.job = 'worker'
+                    del creep.memory.target
+                    del creep.memory.duty
                 elif result != OK:
                     del creep.memory.target
                     jobs.define_target(creep)
