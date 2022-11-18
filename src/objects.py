@@ -1,5 +1,5 @@
 from defs import *
-from src import jobs, spawns
+from src import jobs, spawns, flags
 
 __pragma__('noalias', 'name')
 __pragma__('noalias', 'undefined')
@@ -34,11 +34,5 @@ class FlagRunner:
         self.flag = flag
 
     def flagging_flag(self):
-        if self.flag:
-            if self.flag.name[:5] == 'Steal':
-                spawn = Game.spawns[('Spawn' + self.flag.name[5:6])]
-                if spawn:
-                    if self.flag.name[6:7] == 1:
-                        spawn.memory.steal1 = True
-                    elif self.flag.name[6:7] == 2:
-                        spawn.memory.steal2 = True
+        flags.flag_runner(self.flag)
+

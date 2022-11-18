@@ -1,4 +1,5 @@
 from defs import *
+from src import flags
 
 __pragma__('noalias', 'name')
 __pragma__('noalias', 'undefined')
@@ -40,7 +41,7 @@ def define_stealing_target(creep):
         for source in sources:
             coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
                                  lambda c: (c.memory.target == source.id))
-            if len(coworkers) < 2:
+            if len(coworkers) < 3:
                 target = source
                 if target:
                     creep.memory.duty = 'mining'
@@ -53,8 +54,8 @@ def define_deliver_for_spawn_target(creep):
     if _.sum(creep.carry) > 0:
         spawning_structures = _.filter(creep.room.find(FIND_STRUCTURES),
                                        lambda s: (s.structureType == STRUCTURE_SPAWN or
-                                       s.structureType == STRUCTURE_EXTENSION) and
-                                       s.energy < s.energyCapacity)
+                                                  s.structureType == STRUCTURE_EXTENSION) and
+                                                 s.energy < s.energyCapacity)
         if spawning_structures:
             for spawning_structure in spawning_structures:
                 coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
@@ -95,8 +96,31 @@ def define_repairing_target(creep):
         target = _(creep.room.find(FIND_STRUCTURES)) \
             .filter(lambda s: (s.hits < s.hitsMax * 0.05)) \
             .sortBy(lambda s: (s.hitsMax / s.hits)).last()
+        if target != undefined:
+            do_not_repairs = Memory.deconstructions
+            for do_not_repair in do_not_repairs:
+                if target:
+                    if target.id == do_not_repair:
+                        target = undefined
+            if target:
+                creep.memory.duty = 'repairing'
+                creep.memory.target = target.id
+    return target
+
+
+def define_dismantling_target(creep):
+    target = undefined
+    if _.sum(creep.carry) <= 0:
+        deconstructions = Memory.deconstructions
+        for deconstruction in deconstructions:
+            deconstruction_site = Game.getObjectById(deconstruction)
+            if deconstruction_site:
+                if deconstruction_site.room == creep.room:
+                    target = deconstruction_site
+            else:
+                deconstructions.remove(deconstruction)
         if target:
-            creep.memory.duty = 'repairing'
+            creep.memory.duty = 'dismantling'
             creep.memory.target = target.id
     return target
 
@@ -116,6 +140,8 @@ def define_creep_to_pickup_tombstone(creep):
             if creep_to_pickup:
                 creep_to_pickup.memory.duty = 'picking_up_tombstone'
                 creep_to_pickup.memory.target = target.id
+                if creep_to_pickup.id != creep.id:
+                    target = undefined
     return target
 
 
@@ -228,11 +254,14 @@ def define_reservators_flag(creep):
     home = Game.getObjectById(creep.memory.home)
     flag = Game.flags["Steal" + home.name[5:6] + creep.name[10:11]]
     if flag:
-        creep.memory.flag = flag.name
-        creep.memory.duty = 'go_to_flag'
-        if creep.pos.isNearTo(flag):
+        if creep.room == home.room:
+            creep.memory.flag = flag.name
+            creep.memory.duty = 'go_to_flag'
+            if creep.pos.inRangeTo(flag, 40):
+                flag = undefined
+                del creep.memory.duty
+        else:
             flag = undefined
-            del creep.memory.duty
     return flag
 
 
@@ -241,7 +270,10 @@ def define_controller(creep):
         .filter(lambda s: s.structureType == STRUCTURE_CONTROLLER).sample()
     if controller:
         creep.memory.controller = controller.id
-        creep.memory.duty = 'reserving'
+        if creep.memory.job[:10] == 'reservator':
+            creep.memory.duty = 'reserving'
+        if creep.memory.job == 'claimer':
+            creep.memory.duty = 'claiming'
     return controller
 
 
@@ -265,7 +297,7 @@ def define_stealers_flag(creep):
                 creep.memory.flag = flag.name
                 creep.memory.target = flag.name
                 creep.memory.duty = 'go_to_flag'
-                if creep.pos.inRangeTo(flag, 5):
+                if creep.pos.inRangeTo(flag, 40):
                     flag = undefined
                     del creep.memory.duty
             else:
@@ -293,7 +325,7 @@ def define_stealers_needed(creep):
         if creep.memory.job[7:8] == '1':
             need_stealer1s = home.memory.need_stealer1s
             stealer1s = home.memory.stealer1s
-            if target.energy > target.ticksToRegeneration * 12 or target.energy >= 2000:
+            if target.energy > target.ticksToRegeneration * 9 or target.energy >= 2800:
                 if need_stealer1s <= stealer1s:
                     need_stealer1s = need_stealer1s + 0.01
                     need_additional_workers = home.memory.need_additional_workers
@@ -305,13 +337,35 @@ def define_stealers_needed(creep):
             home.memory.need_stealer1s = round(need_stealer1s, 2)
 
 
-def define_wall(creep):
-    target = undefined
-    if creep.store[RESOURCE_ENERGY] <= 0:
-        target = _(creep.room.find(FIND_STRUCTURES)) \
-            .filter(lambda s: s.structureType == STRUCTURE_WALL) \
-            .sortBy(lambda s: s.pos.getRangeTo(creep)).first()
-        if target:
-            creep.memory.duty = 'working_with_wall'
-            creep.memory.target = target.id
-    return target
+def define_claimers_flag(creep):
+    home = Game.getObjectById(creep.memory.home)
+    flag = Game.flags[Memory.claim]
+    if flag:
+        if creep.room == home.room:
+            creep.memory.flag = flag.name
+            creep.memory.duty = 'go_to_flag'
+            if creep.pos.inRangeTo(flag, 40):
+                flag = undefined
+                del creep.memory.duty
+        else:
+            flag = undefined
+    return flag
+
+
+def define_spawn_builders_needed(creep):
+    target = Game.getObjectById(creep.memory.target)
+    home = Game.getObjectById(creep.memory.home)
+    if target:
+        if creep.memory.flag == 'BS':
+            need_spawn_builders = home.memory.need_spawn_builders
+            spawn_builders = home.memory.spawn_builders
+            if target.energy > target.ticksToRegeneration * 12 or target.energy >= 3000:
+                if need_spawn_builders <= spawn_builders:
+                    need_spawn_builders = need_spawn_builders + 0.01
+                    need_additional_workers = home.memory.need_additional_workers
+                    need_additional_workers = need_additional_workers + 0.01
+                    home.memory.need_additional_workers = need_additional_workers
+            if target.energy / target.ticksToRegeneration < 8:
+                if need_spawn_builders >= spawn_builders - 1.5:
+                    need_spawn_builders = need_spawn_builders - 0.02
+            home.memory.need_spawn_builders = round(need_spawn_builders, 2)

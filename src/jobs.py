@@ -15,18 +15,22 @@ def job_runner(creep):
     job = creep.memory.job
     if job == 'starter':
         run_starter(creep)
-    if job == 'miner':
+    elif job == 'miner':
         run_miner(creep)
-    if job == 'worker':
+    elif job == 'worker':
         run_worker(creep)
-    if job == 'lorry':
+    elif job == 'lorry':
         run_lorry(creep)
-    if job == 'defender':
+    elif job == 'defender':
         run_defender(creep)
-    if job[:10] == 'reservator':
+    elif job[:10] == 'reservator':
         run_reservator(creep)
-    if job[:7] == 'stealer':
+    elif job[:7] == 'stealer':
         run_stealer(creep)
+    elif job == 'claimer':
+        run_claimer(creep)
+    elif job == 'spawn_builder':
+        run_spawn_builder(creep)
 
 
 def define_target(creep):
@@ -42,19 +46,20 @@ def define_target(creep):
             define_worker_target(creep)
         elif job == 'defender':
             define_defender_targets(creep)
-        if job[:10] == 'reservator':
+        elif job[:10] == 'reservator':
             define_reservator_targets(creep)
-        if job[:7] == 'stealer':
+        elif job[:7] == 'stealer':
             define_stealer_targets(creep)
 
 
 def run_starter(creep):
     target = creep.memory.target
     duty = creep.memory.duty
-    if target and actions.not_fleeing(creep):
+    if target and actions.not_fleeing(creep) and actions.not_going_to_bs(creep):
         actions.accidentally_delivering_for_spawning(creep)
         if duty == 'mining':
             actions.creep_mining(creep)
+            duties_and_targets.define_spawn_builders_needed(creep)
         elif duty == 'withdrawing_from_closest':
             actions.withdraw_from_closest(creep)
         elif duty == 'delivering_for_spawn':
@@ -121,8 +126,8 @@ def run_worker(creep):
     target = creep.memory.target
     duty = creep.memory.duty
     if target and actions.not_fleeing(creep):
-        if duty == 'dismantling_road':
-            actions.dismantling_wall_for_stealing(creep)
+        if duty == 'dismantling':
+            actions.dismantling(creep)
         elif duty == 'withdrawing_from_closest':
             actions.withdraw_from_closest(creep)
         elif duty == 'mining':
@@ -140,11 +145,12 @@ def run_worker(creep):
 def define_worker_target(creep):
     del creep.memory.duty
     del creep.memory.target
-    if not duties_and_targets.define_closest_to_withdraw(creep):
-        if not duties_and_targets.define_mining_target(creep):
-            if not duties_and_targets.define_repairing_target(creep):
-                if not duties_and_targets.define_building_target(creep):
-                    duties_and_targets.define_upgrading_target(creep)
+    if not duties_and_targets.define_dismantling_target(creep):
+        if not duties_and_targets.define_closest_to_withdraw(creep):
+            if not duties_and_targets.define_mining_target(creep):
+                if not duties_and_targets.define_repairing_target(creep):
+                    if not duties_and_targets.define_building_target(creep):
+                        duties_and_targets.define_upgrading_target(creep)
 
 
 def run_lorry(creep):
@@ -229,8 +235,8 @@ def run_stealer(creep):
             actions.going_to_flag(creep)
         elif duty == 'picking_up_tombstone':
             actions.pick_up_tombstone(creep)
-        elif duty == 'working_with_wall':
-            actions.dismantling_wall_for_stealing(creep)
+        elif duty == 'dismantling':
+            actions.dismantling(creep)
         elif duty == 'mining':
             actions.creep_mining(creep)
             duties_and_targets.define_stealers_needed(creep)
@@ -250,11 +256,41 @@ def define_stealer_targets(creep):
     del creep.memory.duty
     del creep.memory.target
     del creep.memory.flag
-    if not duties_and_targets.define_stealers_flag(creep):
-        if not duties_and_targets.define_creep_to_pickup_tombstone(creep):
-            if not duties_and_targets.define_stealing_target(creep):
-                if not duties_and_targets.define_wall(creep):
-                    if not duties_and_targets.define_closest_to_transfer(creep):
+    if not duties_and_targets.define_closest_to_transfer(creep):
+        if not duties_and_targets.define_stealers_flag(creep):
+            if not duties_and_targets.define_creep_to_pickup_tombstone(creep):
+                if not duties_and_targets.define_stealing_target(creep):
+                    if not duties_and_targets.define_dismantling_target(creep):
                         if not duties_and_targets.define_repairing_target(creep):
                             if not duties_and_targets.define_building_target(creep):
                                 duties_and_targets.define_going_home(creep)
+
+
+def run_claimer(creep):
+    duty = creep.memory.duty
+    if duty:
+        if duty == 'go_to_flag':
+            actions.going_to_flag(creep)
+        elif duty == 'claiming':
+            actions.claiming(creep)
+    else:
+        define_claimer_targets(creep)
+
+
+def define_claimer_targets(creep):
+    del creep.memory.duty
+    del creep.memory.flag
+    if not duties_and_targets.define_claimers_flag(creep):
+        duties_and_targets.define_controller(creep)
+
+
+def run_spawn_builder(creep):
+    flag = Game.flags['BS']
+    if flag:
+        if creep.pos.inRangeTo(flag, 10):
+            creep.memory.job = 'starter'
+            define_target(creep)
+        else:
+            creep.moveTo(flag)
+            creep.say('BS')
+

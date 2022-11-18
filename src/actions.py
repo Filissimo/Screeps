@@ -275,7 +275,7 @@ def paving_roads(creep):
             Memory.roads = roads_memory
 
 
-def dismantling_wall_for_stealing(creep):
+def dismantling(creep):
     if creep.store[RESOURCE_ENERGY] < creep.store.getCapacity():
         target = Game.getObjectById(creep.memory.target)
         if target:
@@ -289,13 +289,15 @@ def dismantling_wall_for_stealing(creep):
                     print("[{}] Unknown result from creep.dismantle({}): {}"
                           .format(creep.name, 'dismantle', result))
             else:
-                creep.moveTo(target, {'visualizePathStyle': {
+                result = creep.moveTo(target, {'visualizePathStyle': {
                     'fill': 'transparent',
                     'stroke': '#fff',
                     'lineStyle': 'dashed',
                     'strokeWidth': .15,
                     'opacity': .1
                 }, range: 0})
+                if result != OK:
+                    jobs.define_target(creep)
         else:
             jobs.define_target(creep)
     else:
@@ -474,9 +476,9 @@ def attacking(creep):
     enemy = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS)
     if enemy:
         creep.say('⚔')
-        if creep.pos.inRangeTo(enemy, 3):
+        if creep.pos.inRangeTo(enemy, 4):
             creep.rangedAttack(enemy)
-            flee_condition = _.map(creep.room.find(FIND_HOSTILE_CREEPS), lambda c: {'pos': c.pos, 'range': 5})
+            flee_condition = _.map(creep.room.find(FIND_HOSTILE_CREEPS), lambda c: {'pos': c.pos, 'range': 7})
             flee_path = PathFinder.search(
                 creep.pos,
                 flee_condition,
@@ -531,7 +533,7 @@ def going_to_flag(creep):
         'strokeWidth': .15,
         'opacity': .1
     }, range: 0})
-    if creep.pos.inRangeTo(flag, 5):
+    if creep.pos.inRangeTo(flag, 40):
         jobs.define_target(creep)
 
 
@@ -625,3 +627,35 @@ def going_to_help(creep):
             jobs.define_target(creep)
     else:
         jobs.define_target(creep)
+
+
+def claiming(creep):
+    controller = Game.getObjectById(creep.memory.controller)
+    if controller:
+        result = creep.claimController(controller)
+        if result == ERR_NOT_IN_RANGE:
+            creep.moveTo(controller, {'visualizePathStyle': {
+                'fill': 'transparent',
+                'stroke': '#fff',
+                'lineStyle': 'dashed',
+                'strokeWidth': .15,
+                'opacity': .1
+            }, range: 0})
+            creep.say('MY')
+        else:
+            flag = Game.flags[Memory.claim]
+            if flag:
+                flag.pos.createConstructionSite(STRUCTURE_SPAWN)
+                Memory.building_spawn = flag.name
+
+
+def not_going_to_bs(creep):
+    not_going_to_bs_bool = True
+    flag = Game.flags[creep.memory.flag]
+    if flag:
+        if creep.room != flag.room:
+            creep.moveTo(flag)
+            creep.say('BS')
+            print('BS ' + creep.name)
+            not_going_to_bs_bool = False
+    return not_going_to_bs_bool
