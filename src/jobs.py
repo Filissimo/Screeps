@@ -92,7 +92,9 @@ def run_miner(creep):
     source = creep.memory.source
     duty = creep.memory.duty
     if source and container and duty and actions.not_fleeing(creep):
-        if duty == 'mining':
+        if duty == 'picking_up_tombstone':
+            actions.pick_up_tombstone(creep)
+        elif duty == 'mining':
             actions.miner_mines(creep)
         elif duty == 'to_closest_container':
             actions.miner_delivers(creep)

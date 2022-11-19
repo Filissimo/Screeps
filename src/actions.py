@@ -147,9 +147,9 @@ def upgrading(creep):
         is_close = creep.pos.inRangeTo(target, 3)
         if is_close:
             result = creep.upgradeController(target)
-            if result != OK:
-                del creep.memory.target
-                jobs.define_target(creep)
+            if result != OK and result != -6 and result != -9:
+                # del creep.memory.target
+                # jobs.define_target(creep)
                 print("[{}] Unknown result from creep.upgradeController({}): {}".format(
                     creep.name, 'upgrade', result))
             if not creep.pos.inRangeTo(target, 1):

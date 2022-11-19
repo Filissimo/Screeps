@@ -83,7 +83,6 @@ def creep_needed_to_spawn(spawn):
                     need_starters = need_starters - 0.03
                     print('- starters')
     if not need_restart:
-        print(spawn.name + ' nullified starters')
         need_starters = 0
     spawn_memory.need_starters = round(need_starters, 2)
 
@@ -278,7 +277,7 @@ def creep_needed_to_spawn(spawn):
 
     spawn.memory = spawn_memory
 
-    print(spawn.name + ': final desired job: ' + desired_job)
+    print(spawn.name + ': desired job: ' + desired_job)
 
     return desired_job
 
