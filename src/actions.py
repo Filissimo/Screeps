@@ -210,9 +210,14 @@ def miner_delivers(creep):
                 elif result == ERR_FULL:
                     print(creep.name + " - container is full!")
                     home = Game.getObjectById(creep.memory.home)
-                    need_additional_lorries = home.memory.need_additional_lorries
-                    need_additional_lorries = round((need_additional_lorries + 0.01), 2)
-                    home.memory.need_additional_lorries = need_additional_lorries
+                    if home.memory.need_lorries < home.memory.lorries - 0.1:
+                        need_additional_lorries = home.memory.need_additional_lorries
+                        need_additional_lorries = round((need_additional_lorries + 0.01), 2)
+                        home.memory.need_additional_lorries = need_additional_lorries
+                    if home.memory.need_workers < home.memory. workers - 0.1:
+                        need_additional_workers = home.memory.need_additional_workers
+                        need_additional_workers = round((need_additional_workers + 0.01), 2)
+                        home.memory.need_additional_workers = need_additional_workers
                 else:
                     del creep.memory.target
                     jobs.define_target(creep)

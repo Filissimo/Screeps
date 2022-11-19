@@ -42,26 +42,27 @@ def creep_needed_to_spawn(spawn):
     desired_job = ' no creeps needed to spawn.'
     sources = spawn.room.find(FIND_SOURCES)
     containers_near_mine = 0
-    container_fullest = _(spawn.room.find(FIND_STRUCTURES)) \
-        .filter(lambda s: s.structureType == STRUCTURE_CONTAINER) \
-        .sortBy(lambda s: s.store[RESOURCE_ENERGY]).last()
-    container_emptiest = _(spawn.room.find(FIND_STRUCTURES)) \
-        .filter(lambda s: s.structureType == STRUCTURE_CONTAINER) \
-        .sortBy(lambda s: s.store[RESOURCE_ENERGY]).first()
-    if container_fullest:
-        if container_fullest.store[RESOURCE_ENERGY] >= container_fullest.store.getCapacity() * 0.9:
-            if spawn_memory.need_lorries <= spawn_memory.lorries:
-                spawn_memory.need_additional_lorries = spawn_memory.need_additional_lorries + 0.01
-        if container_fullest.store[RESOURCE_ENERGY] < container_fullest.store.getCapacity() * 0.9:
-            if spawn_memory.need_lorries >= spawn_memory.lorries - 1:
-                spawn_memory.need_additional_lorries = spawn_memory.need_additional_lorries - 0.05
-    if container_emptiest:
-        if container_emptiest.store[RESOURCE_ENERGY] > container_emptiest.store.getCapacity() * 0.3:
-            if spawn_memory.need_workers <= spawn_memory.workers:
-                spawn_memory.need_additional_workers = spawn_memory.need_additional_workers + 0.01
-        if container_emptiest.store[RESOURCE_ENERGY] <= container_emptiest.store.getCapacity() * 0.3:
-            if spawn_memory.need_workers >= spawn_memory.workers - 1.5:
-                spawn_memory.need_additional_workers = spawn_memory.need_additional_workers - 0.01
+    if not need_restart:
+        container_fullest = _(spawn.room.find(FIND_STRUCTURES)) \
+            .filter(lambda s: s.structureType == STRUCTURE_CONTAINER) \
+            .sortBy(lambda s: s.store[RESOURCE_ENERGY]).last()
+        container_emptiest = _(spawn.room.find(FIND_STRUCTURES)) \
+            .filter(lambda s: s.structureType == STRUCTURE_CONTAINER) \
+            .sortBy(lambda s: s.store[RESOURCE_ENERGY]).first()
+        if container_fullest:
+            if container_fullest.store[RESOURCE_ENERGY] >= container_fullest.store.getCapacity() * 0.9:
+                if spawn_memory.need_lorries <= spawn_memory.lorries:
+                    spawn_memory.need_additional_lorries = spawn_memory.need_additional_lorries + 0.01
+            if container_fullest.store[RESOURCE_ENERGY] < container_fullest.store.getCapacity() * 0.9:
+                if spawn_memory.need_lorries >= spawn_memory.lorries - 1:
+                    spawn_memory.need_additional_lorries = spawn_memory.need_additional_lorries - 0.05
+        if container_emptiest:
+            if container_emptiest.store[RESOURCE_ENERGY] > container_emptiest.store.getCapacity() * 0.3:
+                if spawn_memory.need_workers <= spawn_memory.workers:
+                    spawn_memory.need_additional_workers = spawn_memory.need_additional_workers + 0.02
+            if container_emptiest.store[RESOURCE_ENERGY] <= container_emptiest.store.getCapacity() * 0.3:
+                if spawn_memory.need_workers >= spawn_memory.workers - 1.5:
+                    spawn_memory.need_additional_workers = spawn_memory.need_additional_workers - 0.01
     if not spawn_memory.need_starters:
         spawn_memory.need_starters = len(sources)
     need_starters = spawn_memory.need_starters
@@ -307,7 +308,7 @@ def define_body(spawn, job_name):
         if range_max >= 7:
             range_max = 6
         for a in range(1, range_max):
-            if spawn.room.energyAvailable >= a * 150:
+            if spawn.room.energyCapacityAvailable >= a * 150:
                 desired_body.extend([CARRY, CARRY, MOVE])
     elif job_name[:10] == 'reservator' or job_name == 'claimer':
         if spawn.room.energyCapacityAvailable >= 700:
@@ -376,7 +377,7 @@ def place_extension(position):
             extensions = _.sum(position.findInRange(FIND_STRUCTURES, 1),
                                lambda s: s.structureType == STRUCTURE_EXTENSION or
                                          s.structureType == STRUCTURE_SPAWN)
-            swamps = _.sum(position.findInRange(LOOK_TERRAIN, 2),
+            swamps = _.sum(position.findInRange(LOOK_TERRAIN, 3),
                            lambda t: t.type == 'swamp')
             if extensions > 0 and swamps == 0:
                 position.createConstructionSite(STRUCTURE_EXTENSION)
