@@ -89,9 +89,10 @@ def define_starter_target(creep):
 
 def run_miner(creep):
     container = creep.memory.container
+    target = creep.memory.target
     source = creep.memory.source
     duty = creep.memory.duty
-    if source and container and duty and actions.not_fleeing(creep):
+    if target and source and container and duty and actions.not_fleeing(creep):
         if duty == 'picking_up_tombstone':
             actions.pick_up_tombstone(creep)
         elif duty == 'mining':
@@ -105,12 +106,14 @@ def run_miner(creep):
 def define_miner_targets(creep):
     creep_memory = creep.memory
     if creep_memory.source and creep_memory.container:
-        if creep_memory.duty == 'mining' and _.sum(creep.carry) > 42:
+        if (creep_memory.duty == 'mining' or creep_memory.duty == 'picking_up_tombstone') and _.sum(creep.carry) > 42:
             creep_memory.duty = 'to_closest_container'
             creep_memory.target = 'to_closest_container'
         elif _.sum(creep.carry) <= 0:
             creep_memory.duty = 'mining'
             creep_memory.target = 'mining'
+        else:
+            creep_memory.duty = 'mining'
     else:
         sources = creep.room.find(FIND_SOURCES)
         for source in sources:
