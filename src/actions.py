@@ -12,7 +12,7 @@ __pragma__('noalias', 'update')
 
 
 def creep_mining(creep):
-    if _.sum(creep.carry) < creep.carryCapacity:
+    if creep.store[RESOURCE_ENERGY] < creep.carryCapacity:
         creep.say('⛏')
         source = Game.getObjectById(creep.memory.target)
         if creep.pos.isNearTo(source):
@@ -30,7 +30,7 @@ def creep_mining(creep):
 
 
 def withdraw_from_closest(creep):
-    if _.sum(creep.carry) <= 0:
+    if creep.store[RESOURCE_ENERGY] <= 0:
         creep.say('🛒')
         target = _(creep.room.find(FIND_STRUCTURES)) \
             .filter(lambda s: (s.structureType == STRUCTURE_CONTAINER or
@@ -55,7 +55,7 @@ def withdraw_from_closest(creep):
 
 
 def delivering_for_spawning(creep):
-    if _.sum(creep.carry) > 0:
+    if creep.store[RESOURCE_ENERGY] > 0:
         creep.say('🚼')
         target = Game.getObjectById(creep.memory.target)
         if target:
@@ -89,7 +89,7 @@ def accidentally_delivering_for_spawning(creep):
 
 def building(creep):
     move_away_from_source(creep)
-    if _.sum(creep.carry) > 0:
+    if creep.store[RESOURCE_ENERGY] > 0:
         creep.say('⚒')
         target = creep.pos.findClosestByRange(FIND_CONSTRUCTION_SITES)
         if target:
@@ -111,7 +111,7 @@ def building(creep):
 
 
 def upgrading(creep):
-    if _.sum(creep.carry) > 0:
+    if creep.store[RESOURCE_ENERGY] > 0:
         creep.say('🔬')
         target = Game.getObjectById(creep.memory.target)
         is_close = creep.pos.inRangeTo(target, 3)
@@ -131,7 +131,7 @@ def upgrading(creep):
 
 
 def miner_mines(creep):
-    if _.sum(creep.carry) <= 44 and creep.memory.workplace:
+    if creep.store[RESOURCE_ENERGY] <= 44 and creep.memory.workplace:
         creep.say('⛏')
         source = Game.getObjectById(creep.memory.source)
         result = creep.harvest(source)
@@ -307,7 +307,7 @@ def not_fleeing(creep):
 
 def creep_repairing(creep):
     move_away_from_source(creep)
-    if _.sum(creep.carry) > 0:
+    if creep.store[RESOURCE_ENERGY] > 0:
         creep.say('🔧')
         target = Game.getObjectById(creep.memory.target)
         if target.hits > target.hitsMax * 0.8:
@@ -358,7 +358,7 @@ def pick_up_tombstone(creep):
 
 
 def withdrawing_from_memory(creep):
-    if _.sum(creep.carry) <= 0:
+    if creep.store[RESOURCE_ENERGY] <= 0:
         creep.say('🚚')
         target = Game.getObjectById(creep.memory.target)
         if target:
@@ -379,7 +379,7 @@ def withdrawing_from_memory(creep):
 
 
 def delivering_to_from_memory(creep):
-    if _.sum(creep.carry) > 0:
+    if creep.store[RESOURCE_ENERGY] > 0:
         creep.say('🚛')
         target = Game.getObjectById(creep.memory.target)
         if target:
@@ -475,8 +475,8 @@ def going_home(creep):
     going_home_bool = False
     home = Game.getObjectById(creep.memory.home)
     if creep.room != home.room:
-        if (_.sum(creep.carry) > 0 and creep.memory.job[:7] == 'stealer') \
-                or (_.sum(creep.carry) == 0 and creep.memory.job == 'worker'):
+        if (creep.store[RESOURCE_ENERGY] > 0 and creep.memory.job[:7] == 'stealer') \
+                or (creep.store[RESOURCE_ENERGY] == 0 and creep.memory.job == 'worker'):
             creep.say('🏡')
             moving_by_path(creep, home)
             going_home_bool = True
@@ -559,17 +559,21 @@ def not_going_to_bs(creep):
 
 def moving_by_path(creep, target):
     path = creep.memory.path
+    result = undefined
     if len(path):
-        return creep.moveByPath(path, {'visualizePathStyle': {
+        result = creep.moveByPath(path, {'visualizePathStyle': {
             'fill': 'transparent',
             'stroke': '#fff',
             'lineStyle': 'dashed',
             'strokeWidth': .15,
             'opacity': .1
         }, range: 0})
-    else:
+        if result != OK:
+            print(result + ' not moving: ' + creep.name)
+    if not len(path):
         path = creep.pos.findPathTo(target)
         if len(path):
             creep.memory.path = path
-            return creep.move(path[0].direction)
+            result = creep.move(path[0].direction)
+    return result
 

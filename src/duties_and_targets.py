@@ -12,7 +12,7 @@ __pragma__('noalias', 'update')
 
 def define_closest_to_withdraw(creep):
     target = undefined
-    if _.sum(creep.carry) <= 0:
+    if creep.store[RESOURCE_ENERGY] <= 0:
         target = _(creep.room.find(FIND_STRUCTURES)) \
             .filter(lambda s: (s.structureType == STRUCTURE_CONTAINER or
                                s.structureType == STRUCTURE_STORAGE) and
@@ -25,7 +25,7 @@ def define_closest_to_withdraw(creep):
 
 def define_mining_target(creep):
     target = undefined
-    if _.sum(creep.carry) <= 0:
+    if creep.store[RESOURCE_ENERGY] <= 0:
         target = creep.pos.findClosestByPath(FIND_SOURCES_ACTIVE)
         if target:
             creep.memory.duty = 'mining'
@@ -35,7 +35,7 @@ def define_mining_target(creep):
 
 def define_stealing_target(creep):
     target = undefined
-    if _.sum(creep.carry) <= 0:
+    if creep.store[RESOURCE_ENERGY] <= 0:
         sources = creep.room.find(FIND_SOURCES_ACTIVE)
         for source in sources:
             coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
@@ -50,7 +50,7 @@ def define_stealing_target(creep):
 
 def define_deliver_for_spawn_target(creep):
     target = undefined
-    if _.sum(creep.carry) > 0:
+    if creep.store[RESOURCE_ENERGY] > 0:
         spawning_structures = _.filter(creep.room.find(FIND_STRUCTURES),
                                        lambda s: (s.structureType == STRUCTURE_SPAWN or
                                                   s.structureType == STRUCTURE_EXTENSION) and
@@ -71,7 +71,7 @@ def define_deliver_for_spawn_target(creep):
 
 def define_building_target(creep):
     target = undefined
-    if _.sum(creep.carry) > 0:
+    if creep.store[RESOURCE_ENERGY] > 0:
         target = creep.pos.findClosestByRange(FIND_CONSTRUCTION_SITES)
         if target:
             creep.memory.duty = 'building'
@@ -81,7 +81,7 @@ def define_building_target(creep):
 
 def define_upgrading_target(creep):
     target = undefined
-    if _.sum(creep.carry) > 0:
+    if creep.store[RESOURCE_ENERGY] > 0:
         target = _(creep.room.find(FIND_STRUCTURES)) \
             .filter(lambda s: (s.structureType == STRUCTURE_CONTROLLER)) \
             .sample()
@@ -93,7 +93,7 @@ def define_upgrading_target(creep):
 
 def define_repairing_target(creep):
     target = undefined
-    if _.sum(creep.carry) > 0:
+    if creep.store[RESOURCE_ENERGY] > 0:
         target = _(creep.room.find(FIND_STRUCTURES)) \
             .filter(lambda s: (s.hits < s.hitsMax * 0.05)) \
             .sortBy(lambda s: (s.hitsMax / s.hits)).last()
@@ -112,7 +112,7 @@ def define_repairing_target(creep):
 
 def define_dismantling_target(creep):
     target = undefined
-    if _.sum(creep.carry) <= 0:
+    if creep.store[RESOURCE_ENERGY] <= 0:
         deconstructions = Memory.deconstructions
         if deconstructions:
             for deconstruction in deconstructions:
@@ -130,7 +130,7 @@ def define_dismantling_target(creep):
 
 def define_creep_to_pickup_tombstone(creep):
     target = undefined
-    if _.sum(creep.carry) < creep.carryCapacity:
+    if creep.store[RESOURCE_ENERGY] < creep.carryCapacity:
         target = _(creep.room.find(FIND_TOMBSTONES)) \
             .filter(lambda t: (t.store[RESOURCE_ENERGY] > 0 and
                                t.id != creep.memory.target)).first()
@@ -239,7 +239,7 @@ def define_fullest(creep):
 
 def define_storage_to_deliver(creep):
     target = undefined
-    if _.sum(creep.carry) > 0:
+    if creep.store[RESOURCE_ENERGY] > 0:
         target = _.filter(creep.room.find(FIND_STRUCTURES),
                           lambda s: s.structureType == STRUCTURE_STORAGE)
         if target[0]:
@@ -250,7 +250,7 @@ def define_storage_to_deliver(creep):
 
 def define_storage_to_withdraw(creep):
     target = undefined
-    if _.sum(creep.carry) <= 0:
+    if creep.store[RESOURCE_ENERGY] <= 0:
         target = _.filter(creep.room.find(FIND_STRUCTURES),
                           lambda s: s.structureType == STRUCTURE_STORAGE)
         if target[0]:
@@ -288,7 +288,7 @@ def define_controller(creep):
 
 def define_going_home(creep):
     home = undefined
-    if _.sum(creep.carry) > 0:
+    if creep.store[RESOURCE_ENERGY] > 0:
         home = Game.getObjectById(creep.memory.home)
         if home.room != creep.room:
             creep.memory.duty = 'going_home'

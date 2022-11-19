@@ -48,12 +48,15 @@ def creep_needed_to_spawn(spawn):
             .filter(lambda s: s.structureType == STRUCTURE_CONTAINER) \
             .sortBy(lambda s: s.store[RESOURCE_ENERGY]).first()
         if container_fullest:
+            if container_fullest.store[RESOURCE_ENERGY] >= container_fullest.store.getCapacity():
+                if spawn_memory.need_lorries <= spawn_memory.lorries:
+                    spawn_memory.need_additional_lorries = spawn_memory.need_additional_lorries + 0.05
             if container_fullest.store[RESOURCE_ENERGY] >= container_fullest.store.getCapacity() * 0.9:
                 if spawn_memory.need_lorries <= spawn_memory.lorries:
                     spawn_memory.need_additional_lorries = spawn_memory.need_additional_lorries + 0.01
             if container_fullest.store[RESOURCE_ENERGY] < container_fullest.store.getCapacity() * 0.9:
                 if spawn_memory.need_lorries >= spawn_memory.lorries - 1:
-                    spawn_memory.need_additional_lorries = spawn_memory.need_additional_lorries - 0.05
+                    spawn_memory.need_additional_lorries = spawn_memory.need_additional_lorries - 0.1
         if container_emptiest:
             if container_emptiest.store[RESOURCE_ENERGY] > container_emptiest.store.getCapacity() * 0.3:
                 if spawn_memory.need_workers <= spawn_memory.workers:
@@ -78,7 +81,7 @@ def creep_needed_to_spawn(spawn):
                 if need_starters <= starters + 1:
                     need_starters = need_starters + 0.01
                     print('+ starters')
-            if source.energy < source.ticksToRegeneration * 10:
+            if source.energy < source.ticksToRegeneration * 20:
                 if need_starters >= starters - 1:
                     need_starters = need_starters - 0.03
                     print('- starters')
@@ -100,7 +103,8 @@ def creep_needed_to_spawn(spawn):
         starter_to_worker = _(spawn.room.find(FIND_MY_CREEPS)
                               .filter(lambda c: c.memory != undefined)
                               .filter(lambda c: c.memory.job == 'starter' and
-                                                c.memory.flag != 'BS')).sample()
+                                                c.memory.flag != 'BS' and
+                                      c.store[RESOURCE_ENERGY] <= 0)).sample()
         if starter_to_worker:
             starter_to_worker.memory.job = 'worker'
             del starter_to_worker.memory.duty

@@ -51,7 +51,6 @@ def define_target(creep):
             define_reservator_targets(creep)
         elif job[:7] == 'stealer':
             define_stealer_targets(creep)
-        job_runner(creep)
 
 
 def run_starter(creep):
@@ -104,6 +103,24 @@ def run_miner(creep):
         define_miner_targets(creep)
 
 
+def verify_miners_place(creep):
+    creep_memory = creep.memory
+    sources = creep.room.find(FIND_SOURCES)
+    for source in sources:
+        container = _.filter(source.pos.findInRange(FIND_STRUCTURES, 2),
+                             lambda s: s.structureType == STRUCTURE_CONTAINER)[0]
+
+        miner = _.filter(creep.room.find(FIND_MY_CREEPS),
+                         lambda c: c.memory.job == 'miner' and
+                                   c.memory.source == source.id and
+                                   c.memory.container == container.id and
+                                   c.ticksToLive > 50)
+        if len(miner) < 2:
+            creep_memory.container = container.id
+            creep_memory.source = source.id
+    creep.memory = creep_memory
+
+
 def define_miner_targets(creep):
     creep_memory = creep.memory
     if creep_memory.source and creep_memory.container:
@@ -111,11 +128,12 @@ def define_miner_targets(creep):
             creep_memory.duty = 'go_to_workplace'
             creep_memory.target = 'go_to_workplace'
         elif creep_memory.workplace:
-            del creep_memory.path
             creep_memory.duty = 'mining'
             creep_memory.target = 'mining'
         else:
             creep_memory.duty = 'mining'
+    else:
+        verify_miners_place(creep)
     creep.memory = creep_memory
 
 
