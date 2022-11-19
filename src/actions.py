@@ -135,14 +135,17 @@ def miner_mines(creep):
         creep.say('⛏')
         source = Game.getObjectById(creep.memory.source)
         result = creep.harvest(source)
-        container = Game.getObjectById(creep.memory.container)
-        creep.transfer(container, RESOURCE_ENERGY)
         if result != OK and result != -6:
             del creep.memory.target
             jobs.define_target(creep)
             print("[{}] Unknown result from creep.harvest({}): {}".format(creep.name, 'mine', result))
         else:
             jobs.define_target(creep)
+        container = Game.getObjectById(creep.memory.container)
+        creep.transfer(container, RESOURCE_ENERGY)
+    elif creep.store[RESOURCE_ENERGY] > 44 and creep.memory.workplace:
+        container = Game.getObjectById(creep.memory.container)
+        creep.transfer(container, RESOURCE_ENERGY)
     else:
         jobs.define_target(creep)
 
@@ -185,15 +188,9 @@ def going_to_workplace(creep):
 
             miner = _.sum(place1.lookFor(LOOK_CREEPS), lambda c: c.memory.job == 'miner')
             if miner == 0:
-                path = creep.room.findPath(creep.pos, place1)
-                if len(path):
-                    creep.move(path[0].direction)
-                creep_memory.path = path
+                moving_by_path(creep, place1)
             else:
-                path = creep.room.findPath(creep.pos, place2)
-                if len(path):
-                    creep.move(path[0].direction)
-                creep_memory.path = path
+                moving_by_path(creep, place2)
 
     creep.memory = creep_memory
 
@@ -568,12 +565,15 @@ def moving_by_path(creep, target):
             'strokeWidth': .15,
             'opacity': .1
         }, range: 0})
-        if result != OK:
-            print(result + ' not moving: ' + creep.name)
     if not len(path):
         path = creep.pos.findPathTo(target)
         if len(path):
             creep.memory.path = path
             result = creep.move(path[0].direction)
+    if result == -5:
+        del creep.memory.path
+    if result != OK and result != -11:
+        print(creep.name + ': ' + result + '   not moving!')
+
     return result
 
