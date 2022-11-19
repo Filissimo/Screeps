@@ -22,13 +22,7 @@ def creep_mining(creep):
                 jobs.define_target(creep)
                 print("[{}] Unknown result from creep.harvest({}): {}".format(creep.name, 'mine', result))
         else:
-            result = creep.moveTo(source, {'visualizePathStyle': {
-                'fill': 'transparent',
-                'stroke': '#fff',
-                'lineStyle': 'dashed',
-                'strokeWidth': .15,
-                'opacity': .1
-            }, range: 0})
+            result = moving_by_path(creep, source)
             if result == -2:
                 jobs.define_target(creep)
     else:
@@ -53,13 +47,7 @@ def withdraw_from_closest(creep):
                     print("[{}] Unknown result from creep.withdraw({}):"
                           " {}".format(creep.name, 'withdraw', result))
             else:
-                creep.moveTo(target, {'visualizePathStyle': {
-                    'fill': 'transparent',
-                    'stroke': '#fff',
-                    'lineStyle': 'dashed',
-                    'strokeWidth': .15,
-                    'opacity': .1
-                }, range: 0})
+                moving_by_path(creep, target)
         else:
             jobs.define_target(creep)
     else:
@@ -76,13 +64,7 @@ def delivering_for_spawning(creep):
                 del creep.memory.target
                 jobs.define_target(creep)
             else:
-                creep.moveTo(target, {'visualizePathStyle': {
-                    'fill': 'transparent',
-                    'stroke': '#fff',
-                    'lineStyle': 'dashed',
-                    'strokeWidth': .15,
-                    'opacity': .1
-                }, range: 0})
+                moving_by_path(creep, target)
         else:
             jobs.define_target(creep)
     else:
@@ -119,21 +101,9 @@ def building(creep):
                     jobs.define_target(creep)
                     print("[{}] Unknown result from creep.build({}): {}".format(creep.name, 'build', result))
                 if not creep.pos.isNearTo(target):
-                    creep.moveTo(target, {'visualizePathStyle': {
-                        'fill': 'transparent',
-                        'stroke': '#fff',
-                        'lineStyle': 'dashed',
-                        'strokeWidth': .15,
-                        'opacity': .1
-                    }, range: 0})
+                    moving_by_path(creep, target)
             else:
-                creep.moveTo(target, {'visualizePathStyle': {
-                    'fill': 'transparent',
-                    'stroke': '#fff',
-                    'lineStyle': 'dashed',
-                    'strokeWidth': .15,
-                    'opacity': .1
-                }, range: 0})
+                moving_by_path(creep, target)
         else:
             jobs.define_target(creep)
     else:
@@ -153,88 +123,79 @@ def upgrading(creep):
                 print("[{}] Unknown result from creep.upgradeController({}): {}".format(
                     creep.name, 'upgrade', result))
             if not creep.pos.inRangeTo(target, 1):
-                creep.moveTo(target, {'visualizePathStyle': {
-                    'fill': 'transparent',
-                    'stroke': '#fff',
-                    'lineStyle': 'dashed',
-                    'strokeWidth': .15,
-                    'opacity': .1
-                }, range: 0})
+                moving_by_path(creep, target)
         else:
-            creep.moveTo(target, {'visualizePathStyle': {
-                'fill': 'transparent',
-                'stroke': '#fff',
-                'lineStyle': 'dashed',
-                'strokeWidth': .15,
-                'opacity': .1
-            }, range: 0})
+            moving_by_path(creep, target)
     else:
         jobs.define_target(creep)
 
 
 def miner_mines(creep):
-    if _.sum(creep.carry) <= 42:
+    if _.sum(creep.carry) <= 44 and creep.memory.workplace:
         creep.say('⛏')
         source = Game.getObjectById(creep.memory.source)
-        if creep.pos.isNearTo(source):
-            result = creep.harvest(source)
-            if result != OK and result != -6:
-                del creep.memory.target
-                jobs.define_target(creep)
-                print("[{}] Unknown result from creep.harvest({}): {}".format(creep.name, 'mine', result))
+        result = creep.harvest(source)
+        container = Game.getObjectById(creep.memory.container)
+        creep.transfer(container, RESOURCE_ENERGY)
+        if result != OK and result != -6:
+            del creep.memory.target
+            jobs.define_target(creep)
+            print("[{}] Unknown result from creep.harvest({}): {}".format(creep.name, 'mine', result))
         else:
-            result = creep.moveTo(source, {'visualizePathStyle': {
+            jobs.define_target(creep)
+    else:
+        jobs.define_target(creep)
+
+
+def going_to_workplace(creep):
+    creep_memory = creep.memory
+    source = Game.getObjectById(creep_memory.source)
+    container = Game.getObjectById(creep_memory.container)
+    if creep.pos.isNearTo(source) and creep.pos.isNearTo(container):
+        creep_memory.workplace = True
+        jobs.define_target(creep)
+    else:
+        creep_memory.workplace = False
+        path = creep_memory.path
+        if len(path):
+            creep.say('🔍')
+            creep.moveByPath(path, {'visualizePathStyle': {
                 'fill': 'transparent',
                 'stroke': '#fff',
                 'lineStyle': 'dashed',
                 'strokeWidth': .15,
                 'opacity': .1
             }, range: 0})
-            if result == -2:
-                jobs.define_target(creep)
-    elif _.sum(creep.carry) > 42:
-        jobs.define_target(creep)
-
-
-def miner_delivers(creep):
-    if _.sum(creep.carry) > 0:
-        creep.say('🧱')
-        target = Game.getObjectById(creep.memory.container)
-        if target:
-            is_close = creep.pos.isNearTo(target)
-            if is_close:
-                result = creep.transfer(target, RESOURCE_ENERGY)
-                if result == OK:
-                    del creep.memory.target
-                    jobs.define_target(creep)
-                elif result == ERR_FULL:
-                    print(creep.name + " - container is full!")
-                    home = Game.getObjectById(creep.memory.home)
-                    if home.memory.need_lorries < home.memory.lorries - 0.1:
-                        need_additional_lorries = home.memory.need_additional_lorries
-                        need_additional_lorries = round((need_additional_lorries + 0.01), 2)
-                        home.memory.need_additional_lorries = need_additional_lorries
-                    if home.memory.need_workers < home.memory. workers - 0.1:
-                        need_additional_workers = home.memory.need_additional_workers
-                        need_additional_workers = round((need_additional_workers + 0.01), 2)
-                        home.memory.need_additional_workers = need_additional_workers
-                else:
-                    del creep.memory.target
-                    jobs.define_target(creep)
-                    print("[{}] Unknown result from creep.transfer({}, {}): {}".format(
-                        creep.name, 'store', RESOURCE_ENERGY, result))
-            else:
-                creep.moveTo(target, {'visualizePathStyle': {
-                    'fill': 'transparent',
-                    'stroke': '#fff',
-                    'lineStyle': 'dashed',
-                    'strokeWidth': .15,
-                    'opacity': .1
-                }, range: 0})
         else:
-            jobs.define_target(creep)
-    else:
-        jobs.define_target(creep)
+            creep.say('?')
+            place1 = source.pos
+            place2 = container.pos
+            if source.pos.x - container.pos.x == 2:
+                place1.x = place1.x - 1
+                place2.x = place2.x + 1
+            elif source.pos.x - container.pos.x == - 2:
+                place1.x = place1.x + 1
+                place2.x = place2.x - 1
+            elif source.pos.y - container.pos.y == 2:
+                place1.y = place1.y - 1
+                place2.y = place2.y + 1
+            elif source.pos.y - container.pos.y == - 2:
+                place1.y = place1.y + 1
+                place2.y = place2.y - 1
+
+            miner = _.sum(place1.lookFor(LOOK_CREEPS), lambda c: c.memory.job == 'miner')
+            if miner == 0:
+                path = creep.room.findPath(creep.pos, place1)
+                if len(path):
+                    creep.move(path[0].direction)
+                creep_memory.path = path
+            else:
+                path = creep.room.findPath(creep.pos, place2)
+                if len(path):
+                    creep.move(path[0].direction)
+                creep_memory.path = path
+
+    creep.memory = creep_memory
 
 
 def paving_roads(creep):
@@ -294,13 +255,7 @@ def dismantling(creep):
                     print("[{}] Unknown result from creep.dismantle({}): {}"
                           .format(creep.name, 'dismantle', result))
             else:
-                result = creep.moveTo(target, {'visualizePathStyle': {
-                    'fill': 'transparent',
-                    'stroke': '#fff',
-                    'lineStyle': 'dashed',
-                    'strokeWidth': .15,
-                    'opacity': .1
-                }, range: 0})
+                result = moving_by_path(creep, target)
                 if result != OK:
                     jobs.define_target(creep)
         else:
@@ -372,21 +327,9 @@ def creep_repairing(creep):
                     jobs.define_target(creep)
                     print("[{}] Unknown result from creep.build({}): {}".format(creep.name, 'build', result))
                 if not creep.pos.inRangeTo(target, 1):
-                    creep.moveTo(target, {'visualizePathStyle': {
-                        'fill': 'transparent',
-                        'stroke': '#fff',
-                        'lineStyle': 'dashed',
-                        'strokeWidth': .15,
-                        'opacity': .1
-                    }, range: 0})
+                    moving_by_path(creep, target)
             else:
-                creep.moveTo(target, {'visualizePathStyle': {
-                    'fill': 'transparent',
-                    'stroke': '#fff',
-                    'lineStyle': 'dashed',
-                    'strokeWidth': .15,
-                    'opacity': .1
-                }, range: 0})
+                moving_by_path(creep, target)
         else:
             jobs.define_target(creep)
     else:
@@ -408,13 +351,7 @@ def pick_up_tombstone(creep):
                 del creep.memory.target
                 jobs.define_target(creep)
         else:
-            creep.moveTo(target, {'visualizePathStyle': {
-                'fill': 'transparent',
-                'stroke': '#fff',
-                'lineStyle': 'dashed',
-                'strokeWidth': .15,
-                'opacity': .1
-            }, range: 0})
+            moving_by_path(creep, target)
             print(creep.name + ' moving to pick up')
     else:
         jobs.define_target(creep)
@@ -434,13 +371,7 @@ def withdrawing_from_memory(creep):
                     print("[{}] Unknown result from creep.withdraw({}):"
                           " {}".format(creep.name, 'withdraw', result))
             else:
-                creep.moveTo(target, {'visualizePathStyle': {
-                    'fill': 'transparent',
-                    'stroke': '#fff',
-                    'lineStyle': 'dashed',
-                    'strokeWidth': .15,
-                    'opacity': .1
-                }, range: 0})
+                moving_by_path(creep, target)
         else:
             jobs.define_target(creep)
     else:
@@ -464,13 +395,7 @@ def delivering_to_from_memory(creep):
                     print("[{}] Unknown result from creep.transfer({}, {}): {}".format(
                         creep.name, 'store', RESOURCE_ENERGY, result))
             else:
-                creep.moveTo(target, {'visualizePathStyle': {
-                    'fill': 'transparent',
-                    'stroke': '#fff',
-                    'lineStyle': 'dashed',
-                    'strokeWidth': .15,
-                    'opacity': .1
-                }, range: 0})
+                moving_by_path(creep, target)
         else:
             jobs.define_target(creep)
     else:
@@ -491,13 +416,7 @@ def attacking(creep):
             ).path
             creep.moveByPath(flee_path)
         else:
-            creep.moveTo(enemy, {'visualizePathStyle': {
-                'fill': 'transparent',
-                'stroke': '#fff',
-                'lineStyle': 'dashed',
-                'strokeWidth': .15,
-                'opacity': .1
-            }, range: 0})
+            moving_by_path(creep, enemy)
     else:
         jobs.define_target(creep)
 
@@ -530,13 +449,7 @@ def defending(creep):
 def going_to_flag(creep):
     creep.say('🏁')
     flag = Game.flags[creep.memory.flag]
-    creep.moveTo(flag, {'visualizePathStyle': {
-        'fill': 'transparent',
-        'stroke': '#fff',
-        'lineStyle': 'dashed',
-        'strokeWidth': .15,
-        'opacity': .1
-    }, range: 0})
+    moving_by_path(creep, flag)
     if creep.pos.inRangeTo(flag, 40):
         jobs.define_target(creep)
 
@@ -544,13 +457,7 @@ def going_to_flag(creep):
 def reserving(creep):
     controller = Game.getObjectById(creep.memory.controller)
     if creep.reserveController(controller) != OK:
-        creep.moveTo(controller, {'visualizePathStyle': {
-            'fill': 'transparent',
-            'stroke': '#fff',
-            'lineStyle': 'dashed',
-            'strokeWidth': .15,
-            'opacity': .1
-        }, range: 0})
+        moving_by_path(creep, controller)
     if controller:
         creep.say('📍')
         if controller.reservation:
@@ -568,16 +475,10 @@ def going_home(creep):
     going_home_bool = False
     home = Game.getObjectById(creep.memory.home)
     if creep.room != home.room:
-        if (_.sum(creep.carry) > 0 and creep.memory.job[:7] == 'stealer')\
+        if (_.sum(creep.carry) > 0 and creep.memory.job[:7] == 'stealer') \
                 or (_.sum(creep.carry) == 0 and creep.memory.job == 'worker'):
             creep.say('🏡')
-            creep.moveTo(home, {'visualizePathStyle': {
-                'fill': 'transparent',
-                'stroke': '#fff',
-                'lineStyle': 'dashed',
-                'strokeWidth': .15,
-                'opacity': .1
-            }, range: 0})
+            moving_by_path(creep, home)
             going_home_bool = True
     else:
         jobs.define_target(creep)
@@ -598,7 +499,7 @@ def transferring_to_closest(creep):
                 if result == ERR_FULL:
                     print(creep.name + " - container is full!")
                     home = Game.getObjectById(creep.memory.home)
-                    if home.memory.need_lorries < home.memory. lorries - 0.1:
+                    if home.memory.need_lorries < home.memory.lorries - 0.1:
                         need_additional_lorries = home.memory.need_additional_lorries
                         need_additional_lorries = round((need_additional_lorries + 0.01), 2)
                         home.memory.need_additional_lorries = need_additional_lorries
@@ -611,13 +512,7 @@ def transferring_to_closest(creep):
                     print("[{}] Unknown result from creep.transfer({}):"
                           " {}".format(creep.name, 'transfer', result))
             else:
-                creep.moveTo(target, {'visualizePathStyle': {
-                    'fill': 'transparent',
-                    'stroke': '#fff',
-                    'lineStyle': 'dashed',
-                    'strokeWidth': .15,
-                    'opacity': .1
-                }, range: 0})
+                moving_by_path(creep, target)
         else:
             jobs.define_target(creep)
     else:
@@ -628,13 +523,7 @@ def going_to_help(creep):
     creep.say('🗡️')
     fleeing_creep = Game.getObjectById(creep.memory.fleeing_creep)
     if fleeing_creep:
-        creep.moveTo(fleeing_creep, {'visualizePathStyle': {
-            'fill': 'transparent',
-            'stroke': '#fff',
-            'lineStyle': 'dashed',
-            'strokeWidth': .15,
-            'opacity': .1
-        }, range: 0})
+        moving_by_path(creep, fleeing_creep)
         if creep.pos.inRangeTo(fleeing_creep, 5):
             jobs.define_target(creep)
     else:
@@ -646,13 +535,7 @@ def claiming(creep):
     if controller:
         result = creep.claimController(controller)
         if result == ERR_NOT_IN_RANGE:
-            creep.moveTo(controller, {'visualizePathStyle': {
-                'fill': 'transparent',
-                'stroke': '#fff',
-                'lineStyle': 'dashed',
-                'strokeWidth': .15,
-                'opacity': .1
-            }, range: 0})
+            moving_by_path(creep, controller)
             creep.say('MY')
         else:
             flag = Game.flags[Memory.claim]
@@ -666,9 +549,27 @@ def not_going_to_bs(creep):
     flag = Game.flags[creep.memory.flag]
     if flag:
         if creep.room != flag.room:
-            creep.moveTo(flag)
+            moving_by_path(creep, flag)
             creep.say('BS')
             print('BS ' + creep.name)
             not_going_to_bs_bool = False
             creep.memory.job = 'spawn_builder'
     return not_going_to_bs_bool
+
+
+def moving_by_path(creep, target):
+    path = creep.memory.path
+    if len(path):
+        return creep.moveByPath(path, {'visualizePathStyle': {
+            'fill': 'transparent',
+            'stroke': '#fff',
+            'lineStyle': 'dashed',
+            'strokeWidth': .15,
+            'opacity': .1
+        }, range: 0})
+    else:
+        path = creep.pos.findPathTo(target)
+        if len(path):
+            creep.memory.path = path
+            return creep.move(path[0].direction)
+

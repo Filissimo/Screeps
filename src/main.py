@@ -21,7 +21,7 @@ def main():
     Memory.countdown = countdown
     spaces = '  ' + str(countdown)
     for i in range(countdown):
-        spaces = '}>-' + spaces
+        spaces = '  )}]>-  ' + spaces
     print('-  NEW TICK -' + spaces)
     if countdown >= 10:
         Memory.countdown = 0

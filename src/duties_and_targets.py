@@ -1,5 +1,4 @@
 from defs import *
-from src import flags
 
 __pragma__('noalias', 'name')
 __pragma__('noalias', 'undefined')

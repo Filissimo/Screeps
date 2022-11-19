@@ -35,6 +35,7 @@ def job_runner(creep):
 
 def define_target(creep):
     if creep.memory != undefined:
+        del creep.memory.path
         job = creep.memory.job
         if job == 'starter':
             define_starter_target(creep)
@@ -89,16 +90,15 @@ def define_starter_target(creep):
 
 def run_miner(creep):
     container = creep.memory.container
-    target = creep.memory.target
     source = creep.memory.source
     duty = creep.memory.duty
-    if target and source and container and duty and actions.not_fleeing(creep):
+    if source and container and duty and actions.not_fleeing(creep):
         if duty == 'picking_up_tombstone':
             actions.pick_up_tombstone(creep)
         elif duty == 'mining':
             actions.miner_mines(creep)
-        elif duty == 'to_closest_container':
-            actions.miner_delivers(creep)
+        elif duty == 'go_to_workplace':
+            actions.going_to_workplace(creep)
     else:
         define_miner_targets(creep)
 
@@ -106,29 +106,15 @@ def run_miner(creep):
 def define_miner_targets(creep):
     creep_memory = creep.memory
     if creep_memory.source and creep_memory.container:
-        if (creep_memory.duty == 'mining' or creep_memory.duty == 'picking_up_tombstone') and _.sum(creep.carry) > 42:
-            creep_memory.duty = 'to_closest_container'
-            creep_memory.target = 'to_closest_container'
-        elif _.sum(creep.carry) <= 0:
+        if not creep_memory.workplace and creep_memory.duty != 'picking_up_tombstone':
+            creep_memory.duty = 'go_to_workplace'
+            creep_memory.target = 'go_to_workplace'
+        elif creep_memory.workplace:
+            del creep_memory.path
             creep_memory.duty = 'mining'
             creep_memory.target = 'mining'
         else:
             creep_memory.duty = 'mining'
-    else:
-        sources = creep.room.find(FIND_SOURCES)
-        for source in sources:
-            container_near_mine = _(creep.room.find(FIND_STRUCTURES)) \
-                .filter(lambda s: (s.structureType == STRUCTURE_CONTAINER and
-                                   s.pos.inRangeTo(source, 2))) \
-                .sample()
-            if container_near_mine:
-                miners = _.filter(creep.room.find(FIND_MY_CREEPS),
-                                  lambda c: c.memory.job == 'miner' and
-                                            c.memory.container == container_near_mine.id and
-                                            c.ticksToLive > 70)
-                if len(miners) < 2:
-                    creep_memory.container = container_near_mine.id
-                    creep_memory.source = source.id
     creep.memory = creep_memory
 
 

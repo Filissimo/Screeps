@@ -40,8 +40,6 @@ def creep_needed_to_spawn(spawn):
     if spawn_memory.miners >= spawn_memory.need_miners - 1 and spawn_memory.lorries > 0:
         need_restart = False
     desired_job = ' no creeps needed to spawn.'
-    sources = spawn.room.find(FIND_SOURCES)
-    containers_near_mine = 0
     if not need_restart:
         container_fullest = _(spawn.room.find(FIND_STRUCTURES)) \
             .filter(lambda s: s.structureType == STRUCTURE_CONTAINER) \
@@ -63,14 +61,16 @@ def creep_needed_to_spawn(spawn):
             if container_emptiest.store[RESOURCE_ENERGY] <= container_emptiest.store.getCapacity() * 0.3:
                 if spawn_memory.need_workers >= spawn_memory.workers - 1.5:
                     spawn_memory.need_additional_workers = spawn_memory.need_additional_workers - 0.01
+    sources = spawn.room.find(FIND_SOURCES)
+    containers_near_mine = 0
     if not spawn_memory.need_starters:
         spawn_memory.need_starters = len(sources)
     need_starters = spawn_memory.need_starters
     for source in sources:
-        container_near_mine = _.sum(spawn.room.find(FIND_STRUCTURES),
-                                    lambda s: (s.structureType == STRUCTURE_CONTAINER and
-                                               s.pos.inRangeTo(source, 2)))
-        containers_near_mine = containers_near_mine + container_near_mine
+        container_near_mine = _.filter(source.pos.findInRange(FIND_STRUCTURES, 2),
+                                       lambda s: (s.structureType == STRUCTURE_CONTAINER))
+        if container_near_mine:
+            containers_near_mine = containers_near_mine + 1
 
         starters = spawn_memory.starters
         if need_restart:
@@ -300,8 +300,8 @@ def define_body(spawn, job_name):
             if spawn.room.energyCapacityAvailable >= a * 200:
                 desired_body.extend([WORK, CARRY, MOVE])
     elif job_name == 'miner':
-        if spawn.room.energyCapacityAvailable >= 500:
-            desired_body.extend([WORK, WORK, WORK, WORK, CARRY, MOVE])
+        if spawn.room.energyCapacityAvailable >= 400:
+            desired_body.extend([WORK, WORK, WORK, CARRY, MOVE, MOVE])
     elif job_name == 'lorry':
         range_max = round((spawn.memory.need_lorries + 4) / 2)
         if range_max >= 7:
