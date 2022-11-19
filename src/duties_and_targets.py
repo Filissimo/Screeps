@@ -137,8 +137,10 @@ def define_creep_to_pickup_tombstone(creep):
             creep_to_pickup = _(creep.room.find(FIND_MY_CREEPS)) \
                 .filter(lambda c: (c.carryCapacity > _.sum(c.carry)) and
                                   (c.memory.job == 'lorry' or
+                                   c.memory.job == 'starter' or
                                    c.memory.job[:7] == 'stealer' or
-                                   c.memory.flag == 'BS')) \
+                                   (c.memory.job == 'miner' and
+                                    c.pos.isNearTo(target)))) \
                 .sortBy(lambda c: (c.pos.getRangeTo(target))).first()
             if creep_to_pickup:
                 creep_to_pickup.memory.duty = 'picking_up_tombstone'
@@ -181,7 +183,7 @@ def define_emptiest(creep):
                         container.total_energy_of_container = total_energy_of_container
                 if container:
                     emptiest_container = _(containers).sortBy(lambda c: c.total_energy_of_container).first()
-                    print(emptiest_container.total_energy_of_container + '  emptiest  ' + emptiest_container.id)
+                    # print(emptiest_container.total_energy_of_container + '  emptiest  ' + emptiest_container.id)
     if emptiest_container:
         if emptiest_container.total_energy_of_container < emptiest_container.store.getCapacity() * 0.5:
             creep.memory.duty = 'delivering_to_emptiest'
@@ -224,7 +226,7 @@ def define_fullest(creep):
                         container.total_energy_of_container = total_energy_of_container
                 if container:
                     fullest_container = _(containers).sortBy(lambda c: c.total_energy_of_container).last()
-                    print(fullest_container.total_energy_of_container + '  fullest  ' + fullest_container.id)
+                    # print(fullest_container.total_energy_of_container + '  fullest  ' + fullest_container.id)
 
     if fullest_container:
         if fullest_container.total_energy_of_container > fullest_container.store.getCapacity() * 0.5:

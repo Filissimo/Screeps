@@ -64,8 +64,10 @@ def run_starter(creep):
             duties_and_targets.define_spawn_builders_needed(creep)
         elif duty == 'withdrawing_from_closest':
             actions.withdraw_from_closest(creep)
+            actions.paving_roads(creep)
         elif duty == 'delivering_for_spawn':
             actions.delivering_for_spawning(creep)
+            actions.paving_roads(creep)
         elif duty == 'building':
             actions.building(creep)
         elif duty == 'upgrading':
