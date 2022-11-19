@@ -51,6 +51,7 @@ def define_target(creep):
             define_reservator_targets(creep)
         elif job[:7] == 'stealer':
             define_stealer_targets(creep)
+        job_runner(creep)
 
 
 def run_starter(creep):
