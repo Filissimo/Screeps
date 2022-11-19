@@ -29,7 +29,7 @@ def main():
         spawn = Game.spawns[spawn_name]
         s = SpawnRunner(spawn)
         s.spawning_spawn()
-        if countdown == 1:
+        if countdown == spawn.name[5:6]:
             r_i_m_to_remove = None
             message_about_removing = 'No roads to remove from memory'
             roads_in_memory = Memory.roads
@@ -53,6 +53,7 @@ def main():
                 print(message_about_removing)
         spawn_memory = spawn.memory
         print(spawn.name + ' - ' + '  Starters:  ' + spawn_memory.starters + ' / ' + spawn_memory.need_starters +
+              '. Miners:  ' + spawn_memory.miners + ' / ' + spawn_memory.need_miners +
               '. Lorries:  ' + spawn_memory.lorries + ' / ' + spawn_memory.need_lorries +
               ". Workers:  " + spawn_memory.workers + ' / ' + spawn_memory.need_workers +
               ". Stealer1s:  " + spawn_memory.stealer1s + ' / ' + spawn_memory.need_stealer1s +

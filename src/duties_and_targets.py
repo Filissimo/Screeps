@@ -59,7 +59,9 @@ def define_deliver_for_spawn_target(creep):
         if spawning_structures:
             for spawning_structure in spawning_structures:
                 coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
-                                     lambda c: (c.memory.target == spawning_structure.id))
+                                     lambda c: (c.memory.target == spawning_structure.id and
+                                                c.store[RESOURCE_ENERGY]) >=
+                                               spawning_structure.energyCapacity - spawning_structure.energy)
                 if len(coworkers) == 0:
                     target = spawning_structure
                     if target:

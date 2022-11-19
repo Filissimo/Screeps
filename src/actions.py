@@ -593,9 +593,10 @@ def transferring_to_closest(creep):
                 if result == ERR_FULL:
                     print(creep.name + " - container is full!")
                     home = Game.getObjectById(creep.memory.home)
-                    need_additional_lorries = home.memory.need_additional_lorries
-                    need_additional_lorries = round((need_additional_lorries + 0.01), 2)
-                    home.memory.need_additional_lorries = need_additional_lorries
+                    if home.memory.need_lorries < home.memory. lorries - 0.1:
+                        need_additional_lorries = home.memory.need_additional_lorries
+                        need_additional_lorries = round((need_additional_lorries + 0.01), 2)
+                        home.memory.need_additional_lorries = need_additional_lorries
                     creep.memory.job = 'worker'
                     del creep.memory.target
                     del creep.memory.duty

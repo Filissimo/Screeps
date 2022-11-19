@@ -39,7 +39,7 @@ def creep_needed_to_spawn(spawn):
     need_restart = True
     if spawn_memory.miners == spawn_memory.need_miners and spawn_memory.lorries > 0:
         need_restart = False
-    desired_job = False
+    desired_job = ' no creeps needed to spawn.'
     sources = spawn.room.find(FIND_SOURCES)
     containers_near_mine = 0
     container_fullest = _(spawn.room.find(FIND_STRUCTURES)) \
@@ -333,8 +333,8 @@ def create_extension(spawn):
                 verify_square_and_place_extension(spawn.pos)
                 for extension in extensions:
                     verify_square_and_place_extension(extension.pos)
-            
-                            
+
+
 def verify_square_and_place_extension(position):
     semicircles = 1.3
     for circle in range(1, 3):
@@ -373,10 +373,12 @@ def place_extension(position):
         terrain = position.lookFor(LOOK_TERRAIN)
         structures = position.lookFor(LOOK_STRUCTURES)
         if terrain != 'wall' and len(structures) == 0:
-            extensions = _.sum(position.findInRange(FIND_STRUCTURES, 1), 
-                               lambda s: s.structureType == STRUCTURE_EXTENSION or 
-                               s.structureType == STRUCTURE_SPAWN)
-            if extensions > 0:
+            extensions = _.sum(position.findInRange(FIND_STRUCTURES, 1),
+                               lambda s: s.structureType == STRUCTURE_EXTENSION or
+                                         s.structureType == STRUCTURE_SPAWN)
+            swamps = _.sum(position.findInRange(LOOK_TERRAIN, 2),
+                           lambda t: t.type == 'swamp')
+            if extensions > 0 and swamps == 0:
                 position.createConstructionSite(STRUCTURE_EXTENSION)
                 extension_placed = True
     return extension_placed
