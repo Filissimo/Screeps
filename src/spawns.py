@@ -37,7 +37,7 @@ def spawn_runner(spawn):
 def creep_needed_to_spawn(spawn):
     spawn_memory = spawn.memory
     need_restart = True
-    if spawn_memory.miners == spawn_memory.need_miners and spawn_memory.lorries > 0:
+    if spawn_memory.miners >= spawn_memory.need_miners - 1 and spawn_memory.lorries > 0:
         need_restart = False
     desired_job = ' no creeps needed to spawn.'
     sources = spawn.room.find(FIND_SOURCES)
