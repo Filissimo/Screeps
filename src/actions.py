@@ -144,6 +144,7 @@ def miner_mines(creep):
         container = Game.getObjectById(creep.memory.container)
         creep.transfer(container, RESOURCE_ENERGY)
     elif creep.store[RESOURCE_ENERGY] > 44 and creep.memory.workplace:
+        creep.say('💼')
         container = Game.getObjectById(creep.memory.container)
         creep.transfer(container, RESOURCE_ENERGY)
     else:
@@ -162,13 +163,20 @@ def going_to_workplace(creep):
         path = creep_memory.path
         if len(path):
             creep.say('🔍')
-            creep.moveByPath(path, {'visualizePathStyle': {
+            result = creep.moveByPath(path, {'visualizePathStyle': {
                 'fill': 'transparent',
                 'stroke': '#fff',
                 'lineStyle': 'dashed',
                 'strokeWidth': .15,
                 'opacity': .1
             }, range: 0})
+            print(result + '  ' + creep.name)
+            if result == -5:
+                del creep_memory.path
+            else:
+                miner = miner = _.sum(creep.pos.findInRange(FIND_CREEPS, 1), lambda c: c.memory.job == 'miner')
+                if result == 0 and miner > 0 and creep.fatigue == 0:
+                    del creep_memory.path
         else:
             creep.say('?')
             place1 = source.pos
@@ -425,7 +433,7 @@ def move_away_from_creeps(creep):
         .sortBy(lambda c: c.pos.getRangeTo(creep)).first()
     if creep_to_flee:
         if creep.pos.inRangeTo(creep_to_flee, 3):
-            creep.say('🚶')
+            creep.say('👣')
             all_creeps_except_me = _.filter(creep.room.find(FIND_MY_CREEPS), lambda c: (c.id != creep.id))
             flee_condition = _.map(all_creeps_except_me, lambda c: {'pos': c.pos, 'range': 5})
             flee_path = PathFinder.search(
@@ -555,25 +563,26 @@ def not_going_to_bs(creep):
 
 
 def moving_by_path(creep, target):
-    path = creep.memory.path
     result = undefined
-    if len(path):
-        result = creep.moveByPath(path, {'visualizePathStyle': {
-            'fill': 'transparent',
-            'stroke': '#fff',
-            'lineStyle': 'dashed',
-            'strokeWidth': .15,
-            'opacity': .1
-        }, range: 0})
-    if not len(path):
-        path = creep.pos.findPathTo(target)
+    if not creep.spawning:
+        path = creep.memory.path
         if len(path):
-            creep.memory.path = path
-            result = creep.move(path[0].direction)
-    if result == -5:
-        del creep.memory.path
-    if result != OK and result != -11:
-        print(creep.name + ': ' + result + '   not moving!')
+            result = creep.moveByPath(path, {'visualizePathStyle': {
+                'fill': 'transparent',
+                'stroke': '#fff',
+                'lineStyle': 'dashed',
+                'strokeWidth': .15,
+                'opacity': .1
+            }, range: 0})
+        if not len(path):
+            path = creep.pos.findPathTo(target)
+            if len(path):
+                creep.memory.path = path
+                result = creep.move(path[0].direction)
+        if result == -5:
+            del creep.memory.path
+        if result != OK and result != -11:
+            print(creep.name + ': ' + result + '   not moving!')
 
     return result
 
