@@ -54,7 +54,7 @@ def creep_needed_to_spawn(spawn):
             if container_fullest.store[RESOURCE_ENERGY] >= container_fullest.store.getCapacity() * 0.9:
                 if spawn_memory.need_lorries <= spawn_memory.lorries:
                     spawn_memory.need_additional_lorries = spawn_memory.need_additional_lorries + 0.01
-            if container_fullest.store[RESOURCE_ENERGY] < container_fullest.store.getCapacity() * 0.9:
+            if container_fullest.store[RESOURCE_ENERGY] < container_fullest.store.getCapacity() * 0.5:
                 if spawn_memory.need_lorries >= spawn_memory.lorries - 1:
                     spawn_memory.need_additional_lorries = spawn_memory.need_additional_lorries - 0.1
         if container_emptiest:
@@ -72,8 +72,10 @@ def creep_needed_to_spawn(spawn):
     for source in sources:
         container_near_mine = _.filter(source.pos.findInRange(FIND_STRUCTURES, 2),
                                        lambda s: (s.structureType == STRUCTURE_CONTAINER))
-        if container_near_mine:
-            containers_near_mine = containers_near_mine + 1
+        # if len(container_near_mine) == 0:
+        #     create_container(source)
+        # else:
+        containers_near_mine = containers_near_mine + len(container_near_mine)
 
         starters = spawn_memory.starters
         if need_restart:
@@ -104,20 +106,20 @@ def creep_needed_to_spawn(spawn):
                               .filter(lambda c: c.memory != undefined)
                               .filter(lambda c: c.memory.job == 'starter' and
                                                 c.memory.flag != 'BS' and
-                                      c.store[RESOURCE_ENERGY] <= 0)).sample()
+                                                c.store[RESOURCE_ENERGY] <= 0)).sample()
         if starter_to_worker:
             starter_to_worker.memory.job = 'worker'
             del starter_to_worker.memory.duty
             del starter_to_worker.memory.target
 
     spawn_jobs = ['defender', 'miner', 'lorry', 'worker', 'claimer', 'spawn_builder',
-                  'reservator1', 'reservator2', 'stealer1', 'stealer2', 'starter']
+                  'reservator', 'stealer', 'starter']
     my_creeps = _.filter(Game.creeps, lambda c: c.memory != undefined)
     my_creeps_with_memory = _.filter(my_creeps, lambda c: c.memory.job != undefined)
     actual_spawn_builders = _.filter(my_creeps_with_memory,
                                      lambda c: c.memory.home == spawn.id and
                                                c.memory.flag == 'BS' and
-                                               c.ticksToLive > 50)
+                                               c.ticksToLive > 30)
     spawn_memory.spawn_builders = len(actual_spawn_builders)
     for job_name in spawn_jobs:
         creeps_filtered = _.filter(my_creeps_with_memory,
@@ -152,10 +154,11 @@ def creep_needed_to_spawn(spawn):
                 need_workers = 1
             if spawn_memory.lorries > 0:
                 need_workers = containers_near_mine
-            need_lorries = 0
+            need_lorries = 1
+            if spawn_memory.miners == 0:
+                need_lorries = 0
+                need_additional_lorries = 0
             if spawn_memory.miners > 0:
-                need_lorries = 1
-            if containers_near_mine > 0:
                 need_lorries = containers_near_mine
             spawn_memory.need_lorries = round((need_lorries + need_additional_lorries), 2)
             spawn_memory.need_workers = round((need_workers + need_additional_workers), 2)
@@ -175,39 +178,32 @@ def creep_needed_to_spawn(spawn):
                     if spawn_memory.miners >= spawn_memory.need_miners:
                         desired_job = job_name
 
-        elif job_name == 'reservator1':
-            if spawn_memory.steal1:
-                spawn_memory.reservator1s = number_of_creeps_filtered
-                if 2 > number_of_creeps_filtered:
-                    if creeps_filtered[0]:
-                        controller = Game.getObjectById(creeps_filtered[0].memory.controller)
-                        if controller:
-                            if controller.reservation:
-                                if controller.reservation.ticksToEnd < 1000:
-                                    desired_job = job_name
-                                if controller.reservation.ticksToEnd >= 1000:
-                                    job_name == undefined
-                    if controller is undefined:
-                        desired_job = job_name
+        elif job_name == 'reservator':
+            flags = Object.keys(Game.flags)
+            for flag_name in flags:
+                if flag_name[:6] == 'steal' + spawn.name[5:6]:
+                    flag = Game.flags[flag_name]
+                    flag_memory = flag.memory
+                    spawn_memory.reservators = number_of_creeps_filtered
+                    reservators_on_the_flag = _.sum(creeps_filtered, lambda r: r.memory == flag_name)
+                    if 2 > reservators_on_the_flag:
 
-        elif job_name == 'reservator2':
-            if spawn_memory.steal2:
-                spawn_memory.reservator2s = number_of_creeps_filtered
-                if 2 > number_of_creeps_filtered:
-                    if creeps_filtered[0]:
-                        controller = Game.getObjectById(creeps_filtered[0].memory.controller)
-                        if controller:
-                            if controller.reservation:
-                                if controller.reservation.ticksToEnd < 1000:
-                                    desired_job = job_name
-                                if controller.reservation.ticksToEnd >= 1000:
-                                    job_name == undefined
-                    if controller is undefined:
-                        desired_job = job_name
+                        # STOPPED HERE !!!
 
-        elif job_name == 'stealer1':
-            spawn_memory.stealer1s = number_of_creeps_filtered
-            if spawn_memory.need_stealer1s > number_of_creeps_filtered:
+                        if creeps_filtered[0]:
+                            controller = Game.getObjectById(creeps_filtered[0].memory.controller)
+                            if controller:
+                                if controller.reservation:
+                                    if controller.reservation.ticksToEnd < 2000:
+                                        desired_job = job_name
+                                    if controller.reservation.ticksToEnd >= 2000:
+                                        job_name == undefined
+                                if controller.reservation is undefined:
+                                    desired_job = job_name
+
+        elif job_name == 'stealer':
+            spawn_memory.stealers = number_of_creeps_filtered
+            if spawn_memory.need_stealers > number_of_creeps_filtered:
                 worker_to_stealer = _(spawn.room.find(FIND_MY_CREEPS)) \
                     .filter(lambda c: c.memory.job == 'worker' and
                                       c.store[RESOURCE_ENERGY] == 0 and
@@ -217,8 +213,8 @@ def creep_needed_to_spawn(spawn):
                         if spawn_memory.workers >= spawn_memory.need_workers:
                             del worker_to_stealer.memory.duty
                             del worker_to_stealer.memory.target
-                            worker_to_stealer.memory.job = 'stealer1'
-            if spawn_memory.need_stealer1s < number_of_creeps_filtered - 1:
+                            worker_to_stealer.memory.job = 'stealer'
+            if spawn_memory.need_stealers < number_of_creeps_filtered - 1:
                 stealer_to_worker = _(spawn.room.find(FIND_MY_CREEPS)) \
                     .filter(lambda c: c.memory.job[:7] == 'stealer' and
                                       c.store[RESOURCE_ENERGY] == 0).sample()
@@ -227,17 +223,6 @@ def creep_needed_to_spawn(spawn):
                         del stealer_to_worker.memory.duty
                         del stealer_to_worker.memory.target
                         stealer_to_worker.memory.job = 'worker'
-
-        elif job_name == 'stealer2':
-            spawn_memory.stealer2s = number_of_creeps_filtered
-            if spawn_memory.need_stealer2s > number_of_creeps_filtered:
-                worker_to_stealer = _(spawn.room.find(FIND_MY_CREEPS)) \
-                    .filter(lambda c: c.memory.job == 'worker' and
-                                      c.store[RESOURCE_ENERGY] == 0).sample()
-                if worker_to_stealer:
-                    del worker_to_stealer.memory.duty
-                    del worker_to_stealer.memory.target
-                    worker_to_stealer.memory.job = 'stealer2'
 
         elif job_name == 'claimer':
             flag_name = Memory.claim
@@ -307,7 +292,7 @@ def define_body(spawn, job_name):
         if spawn.room.energyCapacityAvailable >= 400:
             desired_body.extend([WORK, WORK, WORK, CARRY, MOVE, MOVE])
     elif job_name == 'lorry':
-        range_max = round((spawn.memory.need_lorries + 4) / 2)
+        range_max = round((spawn.memory.need_lorries + 4) * 0.8)
         if range_max >= 7:
             range_max = 6
         for a in range(1, range_max):
@@ -386,3 +371,27 @@ def place_extension(position):
                 position.createConstructionSite(STRUCTURE_EXTENSION)
                 extension_placed = True
     return extension_placed
+
+
+def create_container(source):
+    print(source)
+    if source.room.energyCapacityAvailable < 400:
+        walkable_spots = []
+        not_walls = _.filter(source.pos.findInRange(LOOK_TERRAIN, 1),
+                             lambda t: t.type == "plain" or
+                             t.type == 'swamp')
+        if len(not_walls) < 2:
+            road = source.pos.findInRange(LOOK_STRUCTURES, 1)[0]
+            print(str(not_walls))
+            if road:
+                print(road.pos)
+        else:
+            for not_wall in not_walls:
+                print(not_wall.pos)
+        # i = 0
+        # for walkable_spot in walkable_spots:
+        #     i = i + 1
+        #     walkable_spot.createFlag('spot' + str(i))
+
+
+
