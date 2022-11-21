@@ -59,12 +59,15 @@ def delivering_for_spawning(creep):
         creep.say('🚼')
         target = Game.getObjectById(creep.memory.target)
         if target:
-            is_close = creep.pos.isNearTo(target)
-            if is_close:
-                del creep.memory.target
-                jobs.define_target(creep)
+            if target.energy < target.energyCapacity:
+                is_close = creep.pos.isNearTo(target)
+                if is_close:
+                    del creep.memory.target
+                    jobs.define_target(creep)
+                else:
+                    moving_by_path(creep, target)
             else:
-                moving_by_path(creep, target)
+                jobs.define_target(creep)
         else:
             jobs.define_target(creep)
     else:
