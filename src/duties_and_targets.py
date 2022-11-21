@@ -378,3 +378,17 @@ def define_spawn_builders_needed(creep):
                 if need_spawn_builders >= spawn_builders - 1.5:
                     need_spawn_builders = need_spawn_builders - 0.02
             home.memory.need_spawn_builders = round(need_spawn_builders, 2)
+
+
+def define_emergency_upgrading_target(creep):
+    target = undefined
+    if creep.store[RESOURCE_ENERGY] > 0:
+        target = _(creep.room.find(FIND_STRUCTURES)) \
+            .filter(lambda s: (s.structureType == STRUCTURE_CONTROLLER)) \
+            .sample()
+        if target.ticksToDowngrade < 2000:
+            creep.memory.duty = 'upgrading'
+            creep.memory.target = target.id
+        else:
+            target = undefined
+    return target

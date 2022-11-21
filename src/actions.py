@@ -24,7 +24,10 @@ def creep_mining(creep):
         elif creep.pos.inRangeTo(source, 3):
             result = creep.moveTo(source)
             if result == -2:
-                jobs.define_target(creep)
+                home = Game.getObjectById(creep.memory.home)
+                need_starters = home.memory.need_starters
+                if need_starters > 2:
+                    home.memory.need_starters = need_starters - 0.05
         else:
             moving_by_path(creep, source)
     else:
@@ -127,7 +130,7 @@ def upgrading(creep):
                 # jobs.define_target(creep)
                 print("[{}] Unknown result from creep.upgradeController({}): {}".format(
                     creep.name, 'upgrade', result))
-            if not creep.pos.inRangeTo(target, 1):
+            if not creep.pos.inRangeTo(target, 2):
                 moving_by_path(creep, target)
         else:
             moving_by_path(creep, target)
@@ -413,7 +416,7 @@ def delivering_to_from_memory(creep):
 
 
 def attacking(creep):
-    enemy = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS)
+    enemy = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS, {'filter': lambda e: e.owner.username != 'rep71Le'})
     if enemy:
         creep.say('⚔')
         if creep.pos.inRangeTo(enemy, 4):

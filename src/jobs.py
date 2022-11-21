@@ -84,12 +84,14 @@ def define_starter_target(creep):
         if not duties_and_targets.define_closest_to_withdraw(creep):
             if not duties_and_targets.define_mining_target(creep):
                 if not duties_and_targets.define_deliver_for_spawn_target(creep):
-                    if not duties_and_targets.define_building_target(creep):
-                        if not duties_and_targets.define_upgrading_target(creep):
-                            home = Game.getObjectById(creep.memory.home)
-                            home.memory.need_starters = round(home.memory.need_starters - 0.01)
-
-
+                    if not duties_and_targets.define_emergency_upgrading_target(creep):
+                        if not duties_and_targets.define_building_target(creep):
+                            duties_and_targets.define_upgrading_target(creep)
+    if not creep.memory.target:
+        home = Game.getObjectById(creep.memory.home)
+        need_starters = home.memory.need_starters
+        if need_starters > 2:
+            home.memory.need_starters = need_starters - 0.05
 
 
 def run_miner(creep):
@@ -114,14 +116,16 @@ def verify_miners_place(creep):
         container = _.filter(source.pos.findInRange(FIND_STRUCTURES, 2),
                              lambda s: s.structureType == STRUCTURE_CONTAINER)[0]
 
-        miner = _.filter(creep.room.find(FIND_MY_CREEPS),
-                         lambda c: c.memory.job == 'miner' and
-                                   c.memory.source == source.id and
-                                   c.memory.container == container.id and
-                                   c.ticksToLive > 50)
-        if len(miner) < 2:
-            creep_memory.container = container.id
-            creep_memory.source = source.id
+        if container:
+
+            miner = _.filter(creep.room.find(FIND_MY_CREEPS),
+                             lambda c: c.memory.job == 'miner' and
+                                       c.memory.source == source.id and
+                                       c.memory.container == container.id and
+                                       c.ticksToLive > 50)
+            if len(miner) < 2:
+                creep_memory.container = container.id
+                creep_memory.source = source.id
     creep.memory = creep_memory
 
 
@@ -169,8 +173,9 @@ def define_worker_target(creep):
         if not duties_and_targets.define_closest_to_withdraw(creep):
             if not duties_and_targets.define_mining_target(creep):
                 if not duties_and_targets.define_repairing_target(creep):
-                    if not duties_and_targets.define_building_target(creep):
-                        duties_and_targets.define_upgrading_target(creep)
+                    if not duties_and_targets.define_emergency_upgrading_target(creep):
+                        if not duties_and_targets.define_building_target(creep):
+                            duties_and_targets.define_upgrading_target(creep)
 
 
 def run_lorry(creep):
@@ -225,7 +230,7 @@ def run_defender(creep):
 
 def define_defender_targets(creep):
     creep.memory.fleeing_creep = None
-    enemy = creep.room.find(FIND_HOSTILE_CREEPS)
+    enemy = creep.room.find(FIND_HOSTILE_CREEPS, {'filter': lambda e: e.owner.username != 'rep71Le'})
     if len(enemy) == 0:
         creep.memory.duty = 'defending'
     else:

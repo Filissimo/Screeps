@@ -37,7 +37,7 @@ def spawn_runner(spawn):
 def creep_needed_to_spawn(spawn):
     spawn_memory = spawn.memory
     need_restart = True
-    if spawn_memory.miners >= spawn_memory.need_miners - 1 and spawn_memory.lorries > 0:
+    if (spawn_memory.miners >= spawn_memory.need_miners - 1 and spawn_memory.miners >= 2) and spawn_memory.lorries > 0:
         need_restart = False
     desired_job = ' no creeps needed to spawn.'
     if not need_restart:
@@ -79,9 +79,9 @@ def creep_needed_to_spawn(spawn):
 
         starters = spawn_memory.starters
         if need_restart:
-            if source.energy > source.ticksToRegeneration * 10 or source.energy >= 2000:
-                    need_starters = need_starters + 0.01
-                    print('+ starters')
+            if source.energy > source.ticksToRegeneration * 15 or source.energy >= 2800:
+                need_starters = need_starters + 0.01
+                print('+ starters')
             if source.energy < source.ticksToRegeneration * 10:
                 if need_starters >= starters - 2:
                     need_starters = need_starters - 0.03
@@ -378,7 +378,7 @@ def create_container(source):
         walkable_spots = []
         not_walls = _.filter(source.pos.findInRange(LOOK_TERRAIN, 1),
                              lambda t: t.type == "plain" or
-                             t.type == 'swamp')
+                                       t.type == 'swamp')
         if len(not_walls) < 2:
             road = source.pos.findInRange(LOOK_STRUCTURES, 1)[0]
             print(str(not_walls))
@@ -391,6 +391,3 @@ def create_container(source):
         # for walkable_spot in walkable_spots:
         #     i = i + 1
         #     walkable_spot.createFlag('spot' + str(i))
-
-
-
