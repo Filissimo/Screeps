@@ -80,11 +80,10 @@ def creep_needed_to_spawn(spawn):
         starters = spawn_memory.starters
         if need_restart:
             if source.energy > source.ticksToRegeneration * 10 or source.energy >= 2000:
-                if need_starters <= starters + 1 and need_starters < len(sources) * 7:
                     need_starters = need_starters + 0.01
                     print('+ starters')
-            if source.energy < source.ticksToRegeneration * 12:
-                if need_starters >= starters - 1:
+            if source.energy < source.ticksToRegeneration * 10:
+                if need_starters >= starters - 2:
                     need_starters = need_starters - 0.03
                     print('- starters')
     if not need_restart:

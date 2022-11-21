@@ -21,10 +21,12 @@ def creep_mining(creep):
                 del creep.memory.target
                 jobs.define_target(creep)
                 print("[{}] Unknown result from creep.harvest({}): {}".format(creep.name, 'mine', result))
-        else:
-            result = moving_by_path(creep, source)
+        elif creep.pos.inRangeTo(source, 3):
+            result = creep.moveTo(source)
             if result == -2:
                 jobs.define_target(creep)
+        else:
+            moving_by_path(creep, source)
     else:
         jobs.define_target(creep)
 

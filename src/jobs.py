@@ -85,7 +85,11 @@ def define_starter_target(creep):
             if not duties_and_targets.define_mining_target(creep):
                 if not duties_and_targets.define_deliver_for_spawn_target(creep):
                     if not duties_and_targets.define_building_target(creep):
-                        duties_and_targets.define_upgrading_target(creep)
+                        if not duties_and_targets.define_upgrading_target(creep):
+                            home = Game.getObjectById(creep.memory.home)
+                            home.memory.need_starters = round(home.memory.need_starters - 0.01)
+
+
 
 
 def run_miner(creep):
