@@ -195,6 +195,7 @@ def run_lorry(creep):
             actions.delivering_for_spawning(creep)
             actions.paving_roads(creep)
         elif duty == 'delivering_to_emptiest':
+            actions.accidentally_delivering_to_worker(creep)
             actions.delivering_to_from_memory(creep)
             actions.paving_roads(creep)
         elif duty == 'delivering_to_storage':

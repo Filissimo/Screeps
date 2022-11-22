@@ -81,10 +81,10 @@ def delivering_for_spawning(creep):
 
 def accidentally_delivering_for_spawning(creep):
     if creep.store[RESOURCE_ENERGY] > 0:
-        targets = _.filter((creep.room.find(FIND_STRUCTURES)),
-                           lambda s: ((s.structureType == STRUCTURE_SPAWN or
+        targets = _.filter((creep.pos.findInRange(FIND_STRUCTURES, 1)),
+                           lambda s: (s.structureType == STRUCTURE_SPAWN or
                                        s.structureType == STRUCTURE_EXTENSION) and
-                                      s.energy < s.energyCapacity))
+                                      s.energy < s.energyCapacity)
         if targets:
             target_near = _(targets).filter(lambda t: creep.pos.isNearTo(t)).first()
             if target_near:
@@ -226,7 +226,7 @@ def paving_roads(creep):
             str_road_memory = str(road_memory)
             str_road_coors = '{\'' + real_coors_str + '\': ' + str(road_memory[real_coors_str]) + '}'
             if str_road_memory == str_road_coors:
-                new_counter = road_memory[real_coors_str] + 13
+                new_counter = road_memory[real_coors_str] + 20
                 roads_memory.remove(road_memory)
         if str(roads_memory) == '[]':
             roads_memory.append(road_coors_new_object)
@@ -293,7 +293,7 @@ def move_away_from_source(creep):
 
 def not_fleeing(creep):
     not_fleeing_bool = True
-    enemy = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS)
+    enemy = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS, {'filter': lambda e: e.owner.username != 'rep71Le'})
     if enemy:
         if creep.pos.inRangeTo(enemy, 5):
             creep.say('🏳️')
@@ -594,3 +594,15 @@ def moving_by_path(creep, target):
 
     return result
 
+
+def accidentally_delivering_to_worker(creep):
+    if creep.store[RESOURCE_ENERGY] > 0:
+        targets = creep.pos.findInRange(FIND_MY_CREEPS, 1)
+        if targets:
+            target_empty_worker = _(targets).filter(lambda t: t.memory.duty == 'withdrawing_from_closest').first()
+            if target_empty_worker:
+                result = creep.transfer(target_empty_worker, RESOURCE_ENERGY)
+                if result != OK:
+                    print("[{}] Unknown result from creep.transfer({}, {}): {}".format(
+                        creep.name, 'accidentally to worker', RESOURCE_ENERGY, result))
+                jobs.define_target(creep)

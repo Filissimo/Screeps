@@ -127,7 +127,8 @@ def creep_needed_to_spawn(spawn):
         number_of_creeps_filtered = len(creeps_filtered)
 
         if job_name == 'defender':
-            need_defenders = len(spawn.room.find(FIND_HOSTILE_CREEPS))
+            need_defenders = len(spawn.room.find(FIND_HOSTILE_CREEPS,
+                                                 {'filter': lambda e: e.owner.username != 'rep71Le'}))
             spawn_memory.need_defenders = (need_defenders * 2) + 3
             spawn_memory.starters = number_of_creeps_filtered
             if spawn_memory.need_defenders > number_of_creeps_filtered:
