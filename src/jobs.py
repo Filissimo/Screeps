@@ -51,30 +51,33 @@ def define_target(creep):
             define_reservator_targets(creep)
         elif job[:7] == 'stealer':
             define_stealer_targets(creep)
+        elif job[:7] == 'claimer':
+            define_claimer_targets(creep)
 
 
 def run_starter(creep):
-    target = creep.memory.target
-    duty = creep.memory.duty
-    if target and actions.not_fleeing(creep) and actions.not_going_to_bs(creep):
-        actions.accidentally_delivering_for_spawning(creep)
-        if duty == 'picking_up_tombstone':
-            actions.pick_up_tombstone(creep)
-        elif duty == 'mining':
-            actions.creep_mining(creep)
-            duties_and_targets.define_spawn_builders_needed(creep)
-        elif duty == 'withdrawing_from_closest':
-            actions.withdraw_from_closest(creep)
-            actions.paving_roads(creep)
-        elif duty == 'delivering_for_spawn':
-            actions.delivering_for_spawning(creep)
-            actions.paving_roads(creep)
-        elif duty == 'building':
-            actions.building(creep)
-        elif duty == 'upgrading':
-            actions.upgrading(creep)
-    else:
-        define_starter_target(creep)
+    if not actions.going_home(creep):
+        target = creep.memory.target
+        duty = creep.memory.duty
+        if target and actions.not_fleeing(creep) and actions.not_going_to_bs(creep):
+            actions.accidentally_delivering_for_spawning(creep)
+            if duty == 'picking_up_tombstone':
+                actions.pick_up_tombstone(creep)
+            elif duty == 'mining':
+                actions.creep_mining(creep)
+                duties_and_targets.define_spawn_builders_needed(creep)
+            elif duty == 'withdrawing_from_closest':
+                actions.withdraw_from_closest(creep)
+                actions.paving_roads(creep)
+            elif duty == 'delivering_for_spawn':
+                actions.delivering_for_spawning(creep)
+                actions.paving_roads(creep)
+            elif duty == 'building':
+                actions.building(creep)
+            elif duty == 'upgrading':
+                actions.upgrading(creep)
+        else:
+            define_starter_target(creep)
 
 
 def define_starter_target(creep):
@@ -187,10 +190,8 @@ def run_lorry(creep):
             actions.pick_up_tombstone(creep)
         elif duty == 'withdrawing_from_fullest':
             actions.withdrawing_from_memory(creep)
-            actions.paving_roads(creep)
         elif duty == 'withdrawing_from_storage':
             actions.withdrawing_from_memory(creep)
-            actions.paving_roads(creep)
         elif duty == 'delivering_for_spawn':
             actions.delivering_for_spawning(creep)
             actions.paving_roads(creep)
@@ -251,7 +252,6 @@ def run_reservator(creep):
 
 def define_reservator_targets(creep):
     del creep.memory.duty
-    del creep.memory.flag
     if not duties_and_targets.define_reservators_flag(creep):
         duties_and_targets.define_controller(creep)
 
@@ -270,7 +270,6 @@ def run_stealer(creep):
         elif duty == 'mining':
             actions.creep_mining(creep)
             actions.paving_roads(creep)
-            duties_and_targets.define_stealers_needed(creep)
         elif duty == 'repairing':
             actions.creep_repairing(creep)
         elif duty == 'building':
@@ -288,9 +287,8 @@ def run_stealer(creep):
 def define_stealer_targets(creep):
     del creep.memory.duty
     del creep.memory.target
-    del creep.memory.flag
     if not duties_and_targets.define_closest_to_transfer(creep):
-        if not duties_and_targets.define_stealers_flag(creep):
+        if not duties_and_targets.define_going_to_flag(creep):
             if not duties_and_targets.define_creep_to_pickup_tombstone(creep):
                 if not duties_and_targets.define_stealing_target(creep):
                     if not duties_and_targets.define_dismantling_target(creep):
@@ -312,7 +310,6 @@ def run_claimer(creep):
 
 def define_claimer_targets(creep):
     del creep.memory.duty
-    del creep.memory.flag
     if not duties_and_targets.define_claimers_flag(creep):
         duties_and_targets.define_controller(creep)
 

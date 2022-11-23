@@ -25,6 +25,19 @@ def define_deconstructions(flag):
 
 
 def flag_runner(flag):
+    if flag.name[:5] == 'Steal':
+        need_stealers = flag.memory.need_stealers
+        stealers = flag.memory.stealers
+        sources = flag.room.find(FIND_SOURCES)
+        for source in sources:
+            if source.energy > source.ticksToRegeneration * 9 or source.energy >= 1500:
+                if need_stealers <= stealers:
+                    need_stealers = need_stealers + 0.01
+            if source.energy / source.ticksToRegeneration < 8 or source.energy <= 0:
+                if need_stealers >= stealers - 1.5:
+                    need_stealers = need_stealers - 0.02
+            flag.memory.need_stealers = round(need_stealers, 2)
+        print(flag.name + ': Stealers - ' + stealers + ' / ' + need_stealers)
     if flag.name[:2] == 'dc':
         define_deconstructions(flag)
     if flag.name[:5] == 'claim':

@@ -140,7 +140,8 @@ def define_creep_to_pickup_tombstone(creep):
                                   (c.memory.job == 'lorry' or
                                    c.memory.job == 'starter' or
                                    c.memory.job[:7] == 'stealer' or
-                                   (c.memory.job == 'miner' and
+                                   ((c.memory.job == 'miner' or
+                                     c.memory.job == 'worker') and
                                     c.pos.isNearTo(target)))) \
                 .sortBy(lambda c: (c.pos.getRangeTo(target))).first()
             if creep_to_pickup:
@@ -260,17 +261,21 @@ def define_storage_to_withdraw(creep):
 
 
 def define_reservators_flag(creep):
+    flag = undefined
     home = Game.getObjectById(creep.memory.home)
-    flag = Game.flags["Steal" + home.name[5:6] + creep.name[10:11]]
-    if flag:
-        if creep.room == home.room:
-            creep.memory.flag = flag.name
-            creep.memory.duty = 'go_to_flag'
-            if creep.pos.inRangeTo(flag, 40):
-                flag = undefined
-                del creep.memory.duty
-        else:
-            flag = undefined
+    flags = Object.keys(Game.flags)
+    for flag_name in flags:
+        if flag_name[:6] == 'Steal' + home.name[5:6]:
+            flag = Game.flags[flag_name]
+            if flag:
+                if flag.memory.need_reservators > flag.memory.reservators:
+                    if creep.pos.inRangeTo(flag, 40):
+                        flag = undefined
+                        del creep.memory.duty
+                    else:
+                        creep.memory.flag = flag_name
+                        creep.memory.target = flag_name
+                        creep.memory.duty = 'go_to_flag'
     return flag
 
 
@@ -279,7 +284,7 @@ def define_controller(creep):
         .filter(lambda s: s.structureType == STRUCTURE_CONTROLLER).sample()
     if controller:
         creep.memory.controller = controller.id
-        if creep.memory.job[:10] == 'reservator':
+        if creep.memory.job == 'reservator':
             creep.memory.duty = 'reserving'
         if creep.memory.job == 'claimer':
             creep.memory.duty = 'claiming'
@@ -296,21 +301,24 @@ def define_going_home(creep):
     return home
 
 
-def define_stealers_flag(creep):
-    flag = undefined
-    if creep.store[RESOURCE_ENERGY] <= 0:
+def define_going_to_flag(creep):
+    flag = Game.flags[creep.memory.flag]
+    if flag:
         home = Game.getObjectById(creep.memory.home)
-        flag = Game.flags["Steal" + home.name[5:6] + creep.memory.job[7:8]]
-        if flag:
-            if creep.room == home.room:
-                creep.memory.flag = flag.name
-                creep.memory.target = flag.name
-                creep.memory.duty = 'go_to_flag'
-                if creep.pos.inRangeTo(flag, 40):
-                    flag = undefined
-                    del creep.memory.duty
-            else:
-                flag = undefined
+        if creep.pos.inRangeTo(flag, 40):
+            flag = undefined
+            del creep.memory.duty
+        else:
+            creep.memory.target = flag.name
+            creep.memory.duty = 'go_to_flag'
+        # if creep.room == home.room:
+        #     creep.memory.target = flag.name
+        #     creep.memory.duty = 'go_to_flag'
+        #     if creep.pos.inRangeTo(flag, 40):
+        #         flag = undefined
+        #         del creep.memory.duty
+        # else:
+        #     flag = undefined
     return flag
 
 
@@ -331,19 +339,19 @@ def define_stealers_needed(creep):
     target = Game.getObjectById(creep.memory.target)
     home = Game.getObjectById(creep.memory.home)
     if target:
-        if creep.memory.job[7:8] == '1':
-            need_stealer1s = home.memory.need_stealer1s
-            stealer1s = home.memory.stealer1s
-            if target.energy > target.ticksToRegeneration * 9 or target.energy >= 2800:
-                if need_stealer1s <= stealer1s:
-                    need_stealer1s = need_stealer1s + 0.01
-                    need_additional_workers = home.memory.need_additional_workers
-                    need_additional_workers = need_additional_workers + 0.01
-                    home.memory.need_additional_workers = need_additional_workers
-            if target.energy / target.ticksToRegeneration < 8:
-                if need_stealer1s >= stealer1s - 1.5:
-                    need_stealer1s = need_stealer1s - 0.01
-            home.memory.need_stealer1s = round(need_stealer1s, 2)
+        flag = Game.flags[creep.memory.flag]
+        need_stealers = flag.memory.need_stealers
+        stealers = flag.memory.stealers
+        if target.energy > target.ticksToRegeneration * 9 or target.energy >= 1500:
+            if need_stealers <= stealers:
+                need_stealers = need_stealers + 0.01
+                need_additional_workers = home.memory.need_additional_workers
+                need_additional_workers = need_additional_workers + 0.01
+                home.memory.need_additional_workers = need_additional_workers
+        if target.energy / target.ticksToRegeneration < 8 or target.energy <= 0:
+            if need_stealers >= stealers - 1.5:
+                need_stealers = need_stealers - 0.02
+        flag.memory.need_stealers = round(need_stealers, 2)
 
 
 def define_claimers_flag(creep):

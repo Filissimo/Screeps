@@ -21,6 +21,10 @@ def creep_mining(creep):
                 del creep.memory.target
                 jobs.define_target(creep)
                 print("[{}] Unknown result from creep.harvest({}): {}".format(creep.name, 'mine', result))
+            if result == -1:
+                if creep.memory.flag:
+                    flag = Game.flags[creep.memory.flag]
+                    flag.memory.need_stealers = 0
         elif creep.pos.inRangeTo(source, 3):
             result = creep.moveTo(source)
             if result == -2:
@@ -83,8 +87,8 @@ def accidentally_delivering_for_spawning(creep):
     if creep.store[RESOURCE_ENERGY] > 0:
         targets = _.filter((creep.pos.findInRange(FIND_STRUCTURES, 1)),
                            lambda s: (s.structureType == STRUCTURE_SPAWN or
-                                       s.structureType == STRUCTURE_EXTENSION) and
-                                      s.energy < s.energyCapacity)
+                                      s.structureType == STRUCTURE_EXTENSION) and
+                                     s.energy < s.energyCapacity)
         if targets:
             target_near = _(targets).filter(lambda t: creep.pos.isNearTo(t)).first()
             if target_near:
@@ -130,8 +134,8 @@ def upgrading(creep):
                 # jobs.define_target(creep)
                 print("[{}] Unknown result from creep.upgradeController({}): {}".format(
                     creep.name, 'upgrade', result))
-            if not creep.pos.inRangeTo(target, 2):
-                moving_by_path(creep, target)
+            if not creep.pos.inRangeTo(target, 1):
+                creep.moveTo(target)
         else:
             moving_by_path(creep, target)
     else:
@@ -216,7 +220,7 @@ def paving_roads(creep):
         Memory.roads = []
     real_coors_str = str(creep.pos)
     roads_memory = Memory.roads
-    road_coors_new_object = {real_coors_str: 20}
+    road_coors_new_object = {real_coors_str: 30}
     new_counter = undefined
     if_on_road = _(creep.pos.lookFor(LOOK_STRUCTURES)) \
         .filter(lambda s: (s.structureType == STRUCTURE_ROAD or
@@ -226,13 +230,13 @@ def paving_roads(creep):
             str_road_memory = str(road_memory)
             str_road_coors = '{\'' + real_coors_str + '\': ' + str(road_memory[real_coors_str]) + '}'
             if str_road_memory == str_road_coors:
-                new_counter = road_memory[real_coors_str] + 20
+                new_counter = road_memory[real_coors_str] + 30
                 roads_memory.remove(road_memory)
         if str(roads_memory) == '[]':
             roads_memory.append(road_coors_new_object)
         else:
             if new_counter:
-                if new_counter >= 2000:
+                if new_counter >= 3000:
                     construction_sites = _.sum(creep.room.find(FIND_CONSTRUCTION_SITES),
                                                lambda cs: cs.progress < cs.progressTotal)
                     if construction_sites <= 3:
@@ -455,7 +459,8 @@ def move_away_from_creeps(creep):
 
 
 def defending(creep):
-    creep.say('🛡️')
+    creep.say('Боря Идиёт', {'public': True})
+    # creep.say('🛡️')
     jobs.define_target(creep)
 
 
@@ -463,25 +468,27 @@ def going_to_flag(creep):
     creep.say('🏁')
     flag = Game.flags[creep.memory.flag]
     moving_by_path(creep, flag)
-    if creep.pos.inRangeTo(flag, 40):
-        jobs.define_target(creep)
+    if flag:
+        if creep.pos.inRangeTo(flag, 40):
+            jobs.define_target(creep)
 
 
 def reserving(creep):
     controller = Game.getObjectById(creep.memory.controller)
-    if creep.reserveController(controller) != OK:
+    if creep.pos.isNearTo(controller):
+        if creep.reserveController(controller) != OK:
+            if creep.attackController(controller) == -11:
+                creep.say('W')
+            else:
+                creep.say('A')
+        else:
+            creep.say('R')
+            flag = Game.flags[creep.memory.flag]
+            if flag.memory.need_stealers < 1:
+                flag.memory.need_stealers = 1
+    else:
         moving_by_path(creep, controller)
-    if controller:
         creep.say('📍')
-        if controller.reservation:
-            if controller.reservation.ticksToEnd > 10:
-                home = Game.getObjectById(creep.memory.home)
-                if creep.name[10:11] == 1:
-                    if not home.memory.need_stealer1s:
-                        home.memory.need_stealer1s = 1
-                if creep.name[10:11] == 2:
-                    if not home.memory.need_stealer2s:
-                        home.memory.need_stealer2s = 1
 
 
 def going_home(creep):
@@ -489,7 +496,8 @@ def going_home(creep):
     home = Game.getObjectById(creep.memory.home)
     if creep.room != home.room:
         if (creep.store[RESOURCE_ENERGY] > 0 and creep.memory.job[:7] == 'stealer') \
-                or (creep.store[RESOURCE_ENERGY] == 0 and creep.memory.job == 'worker'):
+                or creep.memory.job == 'worker' or \
+                creep.memory.job == 'starter':
             creep.say('🏡')
             moving_by_path(creep, home)
             going_home_bool = True
@@ -575,18 +583,16 @@ def moving_by_path(creep, target):
     if not creep.spawning:
         path = creep.memory.path
         if len(path):
-            result = creep.moveByPath(path, {'visualizePathStyle': {
-                'fill': 'transparent',
-                'stroke': '#fff',
-                'lineStyle': 'dashed',
-                'strokeWidth': .15,
-                'opacity': .1
-            }, range: 0})
+            before = creep.pos
+            result = creep.moveByPath(path)
+            after = creep.pos
+            if before == after and result == OK:
+                del creep.memory.path
         if not len(path):
             path = creep.pos.findPathTo(target)
             if len(path):
                 creep.memory.path = path
-                result = creep.move(path[0].direction)
+                result = creep.moveByPath(path)
         if result == -5:
             del creep.memory.path
         if result != OK and result != -11:
