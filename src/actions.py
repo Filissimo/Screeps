@@ -567,14 +567,12 @@ def claiming(creep):
 
 def not_going_to_bs(creep):
     not_going_to_bs_bool = True
-    flag = Game.flags[creep.memory.flag]
+    flag = Game.flags['BS']
     if flag:
         if creep.room != flag.room:
             moving_by_path(creep, flag)
             creep.say('BS')
-            print('BS ' + creep.name)
             not_going_to_bs_bool = False
-            creep.memory.job = 'spawn_builder'
     return not_going_to_bs_bool
 
 

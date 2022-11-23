@@ -47,25 +47,26 @@ def define_target(creep):
             define_worker_target(creep)
         elif job == 'defender':
             define_defender_targets(creep)
-        elif job[:10] == 'reservator':
+        elif job == 'reservator':
             define_reservator_targets(creep)
-        elif job[:7] == 'stealer':
+        elif job == 'stealer':
             define_stealer_targets(creep)
-        elif job[:7] == 'claimer':
+        elif job == 'claimer':
             define_claimer_targets(creep)
+        elif job == 'spawn_builder':
+            define_spawn_builder_target(creep)
 
 
 def run_starter(creep):
     if not actions.going_home(creep):
         target = creep.memory.target
         duty = creep.memory.duty
-        if target and actions.not_fleeing(creep) and actions.not_going_to_bs(creep):
+        if target and actions.not_fleeing(creep):
             actions.accidentally_delivering_for_spawning(creep)
             if duty == 'picking_up_tombstone':
                 actions.pick_up_tombstone(creep)
             elif duty == 'mining':
                 actions.creep_mining(creep)
-                duties_and_targets.define_spawn_builders_needed(creep)
             elif duty == 'withdrawing_from_closest':
                 actions.withdraw_from_closest(creep)
                 actions.paving_roads(creep)
@@ -315,11 +316,38 @@ def define_claimer_targets(creep):
 
 
 def run_spawn_builder(creep):
-    flag = Game.flags['BS']
-    if flag:
-        if creep.pos.inRangeTo(flag, 10):
-            creep.memory.job = 'starter'
-            define_target(creep)
+    if actions.not_going_to_bs(creep):
+        target = creep.memory.target
+        duty = creep.memory.duty
+        if target and duty and actions.not_fleeing(creep):
+            if duty == 'picking_up_tombstone':
+                actions.pick_up_tombstone(creep)
+            elif duty == 'mining':
+                actions.creep_mining(creep)
+                actions.paving_roads(creep)
+            elif duty == 'building':
+                actions.building(creep)
+            elif duty == 'upgrading':
+                actions.upgrading(creep)
         else:
-            creep.moveTo(flag)
-            creep.say('BS')
+            define_spawn_builder_target(creep)
+
+
+def define_spawn_builder_target(creep):
+    del creep.memory.duty
+    del creep.memory.target
+    if not duties_and_targets.define_creep_to_pickup_tombstone(creep):
+        if not duties_and_targets.define_mining_target(creep):
+            if not duties_and_targets.define_emergency_upgrading_target(creep):
+                duties_and_targets.define_building_target(creep)
+    if not creep.memory.target:
+        flag = Game.flags['BS']
+        need_spawn_builders = flag.memory.need_spawn_builders
+        if need_spawn_builders > 2:
+            flag.memory.need_spawn_builders = need_spawn_builders - 0.05
+    if creep.room.energyCapacityAvailable > 0:
+        creep.memory.job = 'starter'
+        spawn = _(creep.room.find(FIND_STRUCTURES)).filter(lambda s: s.structureType == STRUCTURE_SPAWN).sample()
+        creep.memory.home = spawn.id
+        del creep.memory.target
+        del creep.memory.duty

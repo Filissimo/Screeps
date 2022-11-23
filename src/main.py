@@ -55,8 +55,7 @@ def main():
         print(spawn.name + ' - ' + '  Starters:  ' + spawn_memory.starters + ' / ' + spawn_memory.need_starters +
               '. Miners:  ' + spawn_memory.miners + ' / ' + spawn_memory.need_miners +
               '. Lorries:  ' + spawn_memory.lorries + ' / ' + spawn_memory.need_lorries +
-              ". Workers:  " + spawn_memory.workers + ' / ' + spawn_memory.need_workers +
-              ". Spawn-builders:  " + spawn_memory.spawn_builders + ' / ' + spawn_memory.need_spawn_builders)
+              ". Workers:  " + spawn_memory.workers + ' / ' + spawn_memory.need_workers)
 
     for creep_name in Object.keys(Game.creeps):
         creep = Game.creeps[creep_name]

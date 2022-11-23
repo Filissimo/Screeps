@@ -119,7 +119,9 @@ def creep_needed_to_spawn(spawn):
                                      lambda c: c.memory.home == spawn.id and
                                                c.memory.flag == 'BS' and
                                                c.ticksToLive > 30)
-    spawn_memory.spawn_builders = len(actual_spawn_builders)
+    flag_bs = Game.flags['BS']
+    if flag_bs:
+        flag_bs.memory.spawn_builders = len(actual_spawn_builders)
     for job_name in spawn_jobs:
         creeps_filtered = _.filter(my_creeps_with_memory,
                                    lambda c: c.memory.home == spawn.id and c.memory.job == job_name and
@@ -222,7 +224,10 @@ def creep_needed_to_spawn(spawn):
                                     worker_to_stealer.memory.job = 'stealer'
                                     worker_to_stealer.memory.flag = flag_name
                     if flag_memory.need_stealers < flag_memory.stealers - 1:
-                        stealer_to_worker = _(stealers_on_the_flag).sample()
+                        stealer_to_worker = _(spawn.room.find(FIND_MY_CREEPS))\
+                            .filter(lambda s: s.store[RESOURCE_ENERGY] <= 0 and
+                                    s.memory.job == 'stealer')\
+                            .sample()
                         if stealer_to_worker:
                             del stealer_to_worker.memory.duty
                             del stealer_to_worker.memory.target
@@ -234,43 +239,34 @@ def creep_needed_to_spawn(spawn):
             flag_name = Memory.claim
             spawn_memory.claimers = number_of_creeps_filtered
             if flag_name:
-                if flag_name[5:6] == spawn.name[5:6]:
-                    if Memory.building_spawn:
-                        if spawn_memory.need_spawn_builders:
-                            flag = Game.flags[flag_name]
-                            if flag:
-                                flag.pos.createFlag('BS')
-                                flag.remove()
-                                del Memory.claim
-                        else:
-                            spawn_memory.need_spawn_builders = 1
-                    else:
-                        if number_of_creeps_filtered <= 0:
-                            desired_job = job_name
+                if Memory.building_spawn:
+                    flag = Game.flags[flag_name]
+                    if flag:
+                        flag.pos.createFlag('BS')
+                        flag.remove()
+                        del Memory.claim
+                else:
+                    if number_of_creeps_filtered <= 0:
+                        desired_job = job_name
 
         elif job_name == 'spawn_builder':
-            if spawn_memory.need_spawn_builders > spawn_memory.spawn_builders:
+            flag = Game.flags['BS']
+            flag_memory = flag.memory
+            if not flag_memory.need_spawn_builders:
+                flag_memory.need_spawn_builders = 3
+            if flag_memory.need_spawn_builders > flag_memory.spawn_builders:
                 if spawn_memory.lorries >= spawn_memory.need_lorries:
                     if spawn_memory.miners >= spawn_memory.need_miners:
                         if spawn_memory.workers > 0:
                             worker_to_sb = _(spawn.room.find(FIND_MY_CREEPS)) \
                                 .filter(lambda c: c.memory.job == 'worker' and
-                                                  c.store[RESOURCE_ENERGY] >= c.store.getCapacity() >= 200)\
+                                                  c.store[RESOURCE_ENERGY] >= c.store.getCapacity() >= 200) \
                                 .sample()
                             if worker_to_sb:
                                 del worker_to_sb.memory.duty
                                 del worker_to_sb.memory.target
                                 worker_to_sb.memory.job = 'spawn_builder'
                                 worker_to_sb.memory.flag = 'BS'
-            if spawn_memory.need_spawn_builders <= spawn_memory.spawn_builders:
-                sb_toWorker = _(actual_spawn_builders) \
-                    .filter(lambda c: c.store[RESOURCE_ENERGY] <= 0 and
-                                      c.memory.target == undefined).sample()
-                if sb_toWorker:
-                    del sb_toWorker.memory.duty
-                    del sb_toWorker.memory.target
-                    sb_toWorker.memory.job = 'worker'
-                    del sb_toWorker.memory.flag
 
     spawn.memory = spawn_memory
 

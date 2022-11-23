@@ -43,6 +43,18 @@ def flag_runner(flag):
     if flag.name[:5] == 'claim':
         Memory.claim = flag.name
     if flag.name == 'BS':
+        need_spawn_builders = flag.memory.need_spawn_builders
+        spawn_builders = flag.memory.spawn_builders
+        sources = flag.room.find(FIND_SOURCES)
+        for source in sources:
+            if source.energy > source.ticksToRegeneration * 9 or source.energy >= 2500:
+                if need_spawn_builders <= spawn_builders:
+                    need_spawn_builders = need_spawn_builders + 0.01
+            if source.energy / source.ticksToRegeneration < 8 or source.energy <= 0:
+                if need_spawn_builders >= spawn_builders - 1.5:
+                    need_spawn_builders = need_spawn_builders - 0.02
+            flag.memory.need_spawn_builders = round(need_spawn_builders, 2)
+        print(flag.name + ': spawn_builders - ' + spawn_builders + ' / ' + need_spawn_builders)
         if flag.room.energyCapacityAvailable > 0:
             flag.remove()
     if flag.name == 's' or flag.name[:1] == 'e':
