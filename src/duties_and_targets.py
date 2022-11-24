@@ -37,7 +37,7 @@ def define_stealing_target(creep):
     target = undefined
     if creep.store[RESOURCE_ENERGY] <= 0:
         sources = _.sortBy(creep.room.find(FIND_SOURCES_ACTIVE),
-                           lambda s: s.pos.getRangeTo(creep)).reverse()
+                           lambda s: s.energy)
         for source in sources:
             coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
                                  lambda c: (c.memory.target == source.id))
@@ -232,7 +232,7 @@ def define_fullest(creep):
                     # print(fullest_container.total_energy_of_container + '  fullest  ' + fullest_container.id)
 
     if fullest_container:
-        if fullest_container.total_energy_of_container > fullest_container.store.getCapacity() * 0.5:
+        if fullest_container.total_energy_of_container > fullest_container.store.getCapacity() * 0.2:
             target = fullest_container
             creep.memory.duty = 'withdrawing_from_fullest'
             creep.memory.target = target.id

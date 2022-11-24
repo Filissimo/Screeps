@@ -58,7 +58,7 @@ def creep_needed_to_spawn(spawn):
                 if spawn_memory.need_lorries >= spawn_memory.lorries - 1:
                     spawn_memory.need_additional_lorries = spawn_memory.need_additional_lorries - 0.1
         if container_emptiest:
-            if container_emptiest.store[RESOURCE_ENERGY] > container_emptiest.store.getCapacity() * 0.3:
+            if container_emptiest.store[RESOURCE_ENERGY] > container_emptiest.store.getCapacity() * 0.5:
                 if spawn_memory.need_workers <= spawn_memory.workers:
                     spawn_memory.need_additional_workers = spawn_memory.need_additional_workers + 0.02
             if container_emptiest.store[RESOURCE_ENERGY] <= container_emptiest.store.getCapacity() * 0.1:
@@ -73,10 +73,10 @@ def creep_needed_to_spawn(spawn):
         container_near_mine = _.filter(source.pos.findInRange(FIND_STRUCTURES, 2),
                                        lambda s: (s.structureType == STRUCTURE_CONTAINER))
 
-        # if len(container_near_mine) == 0:
-        #     create_container(source)
-        # else:
-        containers_near_mine = containers_near_mine + len(container_near_mine)
+        if len(container_near_mine) == 0:
+            create_container(source)
+        else:
+            containers_near_mine = containers_near_mine + len(container_near_mine)
 
         starters = spawn_memory.starters
         if need_restart:
@@ -410,7 +410,6 @@ def create_container(source):
                 flag.pos.createConstructionSite(STRUCTURE_CONTAINER)
                 flag.remove()
 
-
         # path = source.pos.findPathTo(spawn, {'ignoreCreeps': True})
         # if len(path):
         #     print(path[1].x + ' ' + path[1].y)
@@ -451,24 +450,24 @@ def create_container(source):
         #                         container.y = source.pos.y
         #                         container.createFlag('Container')
 
-            # elif source.pos.x - path[1].pos.x == - 2:
-            #     place1.x = place1.x + 1
-            #     place2.x = place2.x - 1
-            #     if place1 == place2:
-            #         place2.y = place2.y + 1
-            #         if place2.lookFor(LOOK_TERRAIN).type == 'wall':
-            #             place2.y = place2.y - 2
-            # elif source.pos.y - path[1].pos.y == 2:
-            #     place1.y = place1.y - 1
-            #     place2.y = place2.y + 1
-            #     if place1 == place2:
-            #         place2.x = place2.x + 1
-            #         if place2.lookFor(LOOK_TERRAIN).type == 'wall':
-            #             place2.x = place2.x - 2
-            # elif source.pos.y - path[1].pos.y == - 2:
-            #     place1.y = place1.y + 1
-            #     place2.y = place2.y - 1
-            #     if place1 == place2:
-            #         place2.x = place2.x + 1
-            #         if place2.lookFor(LOOK_TERRAIN).type == 'wall':
-            #             place2.x = place2.x - 2
+        # elif source.pos.x - path[1].pos.x == - 2:
+        #     place1.x = place1.x + 1
+        #     place2.x = place2.x - 1
+        #     if place1 == place2:
+        #         place2.y = place2.y + 1
+        #         if place2.lookFor(LOOK_TERRAIN).type == 'wall':
+        #             place2.y = place2.y - 2
+        # elif source.pos.y - path[1].pos.y == 2:
+        #     place1.y = place1.y - 1
+        #     place2.y = place2.y + 1
+        #     if place1 == place2:
+        #         place2.x = place2.x + 1
+        #         if place2.lookFor(LOOK_TERRAIN).type == 'wall':
+        #             place2.x = place2.x - 2
+        # elif source.pos.y - path[1].pos.y == - 2:
+        #     place1.y = place1.y + 1
+        #     place2.y = place2.y - 1
+        #     if place1 == place2:
+        #         place2.x = place2.x + 1
+        #         if place2.lookFor(LOOK_TERRAIN).type == 'wall':
+        #             place2.x = place2.x - 2

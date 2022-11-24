@@ -167,6 +167,75 @@ def miner_mines(creep):
         jobs.define_target(creep)
 
 
+def recalculate_miners_path(creep):
+    creep_memory = creep.memory
+    source = Game.getObjectById(creep_memory.source)
+    container = Game.getObjectById(creep_memory.container)
+    creep.say('?')
+    place1 = source.pos
+    place2 = container.pos
+    if source.pos.x - container.pos.x == 2:
+        place1.x = place1.x - 1
+        place2.x = place2.x + 1
+        if place1.y == place2.y:
+            place2.y = place2.y + 1
+            if place2.lookFor(LOOK_TERRAIN).type == 'wall':
+                place2.y = place2.y - 2
+    elif source.pos.x - container.pos.x == - 2:
+        place1.x = place1.x + 1
+        place2.x = place2.x - 1
+        if place1.y == place2.y:
+            place2.y = place2.y + 1
+            if place2.lookFor(LOOK_TERRAIN).type == 'wall':
+                place2.y = place2.y - 2
+    elif source.pos.y - container.pos.y == 2:
+        place1.y = place1.y - 1
+        place2.y = place2.y + 1
+        if place1.x == place2.x:
+            place2.x = place2.x + 1
+            if place2.lookFor(LOOK_TERRAIN).type == 'wall':
+                place2.x = place2.x - 2
+    elif source.pos.y - container.pos.y == - 2:
+        place1.y = place1.y + 1
+        place2.y = place2.y - 1
+        if place1.x == place2.x:
+            place2.x = place2.x + 1
+            if place2.lookFor(LOOK_TERRAIN).type == 'wall':
+                place2.x = place2.x - 2
+
+    print(str(place1) + '  ' + str(place2))
+
+    miner = _.sum(place1.lookFor(LOOK_CREEPS), lambda c: c.memory.job == 'miner')
+    if miner == 0:
+        creeps_close = creep.pos.findInRange(FIND_MY_CREEPS, 1)
+        busy_creep = _(creeps_close).filter(lambda c: c.memory.work_place is True).sample()
+        not_my_creep_close = _(creep.pos.findInRange(FIND_HOSTILE_CREEPS, 1)).sample()
+        if busy_creep or not_my_creep_close:
+            if creep.memory.path:
+                del creep.memory.path
+            creep.moveTo(place1)
+        else:
+            path = creep.pos.findPathTo(place1, {'ignoreCreeps': True})
+            if len(path):
+                creep.memory.path = path
+                creep.moveByPath(path)
+    else:
+        creeps_close = creep.pos.findInRange(FIND_MY_CREEPS, 1)
+        busy_creep = _(creeps_close).filter(lambda c: c.memory.work_place is True).sample()
+        not_my_creep_close = _(creep.pos.findInRange(FIND_HOSTILE_CREEPS, 1)).sample()
+        if busy_creep or not_my_creep_close:
+            if creep.memory.path:
+                del creep.memory.path
+            creep.moveTo(place2)
+        else:
+            path = creep.pos.findPathTo(place2, {'ignoreCreeps': True})
+            if len(path):
+                creep.memory.path = path
+                creep.moveByPath(path)
+
+    creep.memory = creep_memory
+
+
 def going_to_workplace(creep):
     creep_memory = creep.memory
     source = Game.getObjectById(creep_memory.source)
@@ -175,59 +244,22 @@ def going_to_workplace(creep):
         creep_memory.work_place = True
         jobs.define_target(creep)
     else:
-        creep_memory.work_place = False
-        path = creep_memory.path
-        if len(path):
-            creep.say('🔍')
-            result = creep.moveByPath(path)
-            print(result + '  ' + creep.name)
-            if result == -5:
-                del creep_memory.path
-            else:
-                miner = _.sum(creep.pos.findInRange(FIND_CREEPS, 1), lambda c: c.memory.job == 'miner')
-                if result == 0 and miner > 0 and creep.fatigue == 0:
-                    del creep_memory.path
+        creeps_close = creep.pos.findInRange(FIND_MY_CREEPS, 1)
+        busy_creep = _(creeps_close).filter(lambda c: c.memory.work_place is True).sample()
+        not_my_creep_close = _(creep.pos.findInRange(FIND_HOSTILE_CREEPS, 1)).sample()
+        if busy_creep or not_my_creep_close:
+            recalculate_miners_path(creep)
         else:
-            creep.say('?')
-            place1 = source.pos
-            place2 = container.pos
-            if source.pos.x - container.pos.x == 2:
-                place1.x = place1.x - 1
-                place2.x = place2.x + 1
-                if place1.y == place2.y:
-                    place2.y = place2.y + 1
-                    if place2.lookFor(LOOK_TERRAIN).type == 'wall':
-                        place2.y = place2.y - 2
-            elif source.pos.x - container.pos.x == - 2:
-                place1.x = place1.x + 1
-                place2.x = place2.x - 1
-                if place1 == place2:
-                    place2.y = place2.y + 1
-                    if place2.lookFor(LOOK_TERRAIN).type == 'wall':
-                        place2.y = place2.y - 2
-            elif source.pos.y - container.pos.y == 2:
-                place1.y = place1.y - 1
-                place2.y = place2.y + 1
-                if place1 == place2:
-                    place2.x = place2.x + 1
-                    if place2.lookFor(LOOK_TERRAIN).type == 'wall':
-                        place2.x = place2.x - 2
-            elif source.pos.y - container.pos.y == - 2:
-                place1.y = place1.y + 1
-                place2.y = place2.y - 1
-                if place1 == place2:
-                    place2.x = place2.x + 1
-                    if place2.lookFor(LOOK_TERRAIN).type == 'wall':
-                        place2.x = place2.x - 2
-
-            print(str(place1) + '  ' + str(place2))
-
-            miner = _.sum(place1.lookFor(LOOK_CREEPS), lambda c: c.memory.job == 'miner')
-            if miner == 0:
-                moving_by_path(creep, place1)
+            creep_memory.work_place = False
+            path = creep_memory.path
+            if len(path):
+                creep.say('🔍')
+                result = creep.moveByPath(path)
+                print(result + '  ' + creep.name)
+                if result == -5:
+                    del creep_memory.path
             else:
-                moving_by_path(creep, place2)
-
+                recalculate_miners_path(creep)
     creep.memory = creep_memory
 
 
@@ -236,12 +268,18 @@ def paving_roads(creep):
         Memory.roads = []
     real_coors_str = str(creep.pos)
     roads_memory = Memory.roads
-    road_coors_new_object = {real_coors_str: 30}
+    road_coors_new_object = {real_coors_str: 100}
     new_counter = undefined
-    if_on_road = _(creep.pos.lookFor(LOOK_STRUCTURES)) \
+    on_road = _(creep.pos.lookFor(LOOK_STRUCTURES)) \
         .filter(lambda s: (s.structureType == STRUCTURE_ROAD or
                            s.structureType == STRUCTURE_SPAWN)).sample()
-    if not if_on_road:
+    if on_road:
+        for road_memory in roads_memory:
+            str_road_memory = str(road_memory)
+            str_road_coors = '{\'' + real_coors_str + '\': ' + str(road_memory[real_coors_str]) + '}'
+            if str_road_memory == str_road_coors:
+                roads_memory.remove(road_memory)
+    else:
         for road_memory in roads_memory:
             str_road_memory = str(road_memory)
             str_road_coors = '{\'' + real_coors_str + '\': ' + str(road_memory[real_coors_str]) + '}'
@@ -252,10 +290,10 @@ def paving_roads(creep):
             roads_memory.append(road_coors_new_object)
         else:
             if new_counter:
-                if new_counter >= 100:
+                if new_counter >= 2000:
                     construction_sites = _.sum(creep.room.find(FIND_CONSTRUCTION_SITES),
                                                lambda cs: cs.progress < cs.progressTotal)
-                    if construction_sites <= 3:
+                    if construction_sites <= 50:
                         result = creep.pos.createConstructionSite(STRUCTURE_ROAD)
                         if result != OK:
                             print(creep + ': no road, on construction site ' + creep.pos +
@@ -271,7 +309,7 @@ def paving_roads(creep):
                     roads_memory.append(road_increased_counter)
             else:
                 roads_memory.append(road_coors_new_object)
-            Memory.roads = roads_memory
+    Memory.roads = roads_memory
 
 
 def dismantling(creep):
@@ -379,19 +417,22 @@ def pick_up_tombstone(creep):
     target = Game.getObjectById(creep.memory.target)
     print(str(target) + ' ' + creep.name)
     if target:
-        creep.say('⚰')
-        if creep.pos.isNearTo(target):
-            result = creep.withdraw(target, RESOURCE_ENERGY)
-            print(creep.name + ' picking up ' + result)
-            if result == OK or result == -6:
-                del creep.memory.target
-                jobs.define_target(creep)
-            if result == -8:
-                del creep.memory.target
-                jobs.define_target(creep)
+        if target.store[RESOURCE_ENERGY] > 0:
+            creep.say('⚰')
+            if creep.pos.isNearTo(target):
+                result = creep.withdraw(target, RESOURCE_ENERGY)
+                print(creep.name + ' picking up ' + result)
+                if result == OK or result == -6:
+                    del creep.memory.target
+                    jobs.define_target(creep)
+                if result == -8:
+                    del creep.memory.target
+                    jobs.define_target(creep)
+            else:
+                moving_by_path(creep, target)
+                print(creep.name + ' moving to pick up')
         else:
-            moving_by_path(creep, target)
-            print(creep.name + ' moving to pick up')
+            jobs.define_target(creep)
     else:
         jobs.define_target(creep)
 
@@ -466,7 +507,7 @@ def move_away_from_creeps(creep):
         .filter(lambda c: (c.id != creep.id)) \
         .sortBy(lambda c: c.pos.getRangeTo(creep)).first()
     if creep_to_flee:
-        if creep.pos.inRangeTo(creep_to_flee, 1):
+        if creep.pos.inRangeTo(creep_to_flee, 2):
             creep.say('👣')
             all_creeps_except_me = _.filter(creep.room.find(FIND_MY_CREEPS), lambda c: (c.id != creep.id))
             flee_condition = _.map(all_creeps_except_me, lambda c: {'pos': c.pos, 'range': 3})
@@ -481,7 +522,18 @@ def move_away_from_creeps(creep):
 
 
 def defending(creep):
-    creep.say('Боря Идиёт', {'public': True})
+    message = 'Боря - пупырчатый дуропьян!'
+    all_line = '          ' + message + '                '
+    start_point = creep.memory.start_point
+    current_message = ''
+    for letter in range(start_point, start_point + 10):
+        current_message = current_message + all_line[letter]
+    step = 4
+    if start_point < len(all_line) - 10 - step:
+        creep.memory.start_point = start_point + step
+    else:
+        creep.memory.start_point = 0
+    creep.say(current_message, {'public': True})
     # creep.say('🛡️')
     jobs.define_target(creep)
 
@@ -607,7 +659,8 @@ def moving_by_path(creep, target):
         else:
             creeps_close = creep.pos.findInRange(FIND_MY_CREEPS, 1)
             busy_creep = _(creeps_close).filter(lambda c: c.memory.work_place is True).sample()
-            if busy_creep:
+            not_my_creep_close = _(creep.pos.findInRange(FIND_HOSTILE_CREEPS, 1)).sample()
+            if busy_creep or not_my_creep_close:
                 creep.moveTo(target)
                 if creep.memory.path:
                     del creep.memory.path
