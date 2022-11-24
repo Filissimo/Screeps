@@ -23,9 +23,9 @@ def job_runner(creep):
         run_lorry(creep)
     elif job == 'defender':
         run_defender(creep)
-    elif job[:10] == 'reservator':
+    elif job == 'reservator':
         run_reservator(creep)
-    elif job[:7] == 'stealer':
+    elif job == 'stealer':
         run_stealer(creep)
     elif job == 'claimer':
         run_claimer(creep)
@@ -91,7 +91,7 @@ def define_starter_target(creep):
                     if not duties_and_targets.define_emergency_upgrading_target(creep):
                         if not duties_and_targets.define_building_target(creep):
                             duties_and_targets.define_upgrading_target(creep)
-    if not creep.memory.target:
+    elif not creep.memory.target:
         home = Game.getObjectById(creep.memory.home)
         need_starters = home.memory.need_starters
         if need_starters > 2:
@@ -121,7 +121,6 @@ def verify_miners_place(creep):
                              lambda s: s.structureType == STRUCTURE_CONTAINER)[0]
 
         if container:
-
             miner = _.filter(creep.room.find(FIND_MY_CREEPS),
                              lambda c: c.memory.job == 'miner' and
                                        c.memory.source == source.id and
@@ -153,7 +152,7 @@ def run_worker(creep):
     if not actions.going_home(creep):
         target = creep.memory.target
         duty = creep.memory.duty
-        if target or actions.not_fleeing(creep):
+        if target and duty and actions.not_fleeing(creep):
             if duty == 'dismantling':
                 actions.dismantling(creep)
             elif duty == 'withdrawing_from_closest':
@@ -245,8 +244,10 @@ def run_reservator(creep):
     if duty:
         if duty == 'go_to_flag':
             actions.going_to_flag(creep)
+            actions.paving_roads(creep)
         elif duty == 'reserving':
             actions.reserving(creep)
+            actions.paving_roads(creep)
     else:
         define_reservator_targets(creep)
 
@@ -273,13 +274,16 @@ def run_stealer(creep):
             actions.paving_roads(creep)
         elif duty == 'repairing':
             actions.creep_repairing(creep)
+            actions.paving_roads(creep)
         elif duty == 'building':
             actions.building(creep)
-        elif duty == 'going_home':
-            actions.going_home(creep)
             actions.paving_roads(creep)
+        elif duty == 'going_home':
+            if not actions.going_home(creep):
+                define_stealer_targets(creep)
         elif duty == 'transferring_to_closest':
-            actions.transferring_to_closest(creep)
+            if not actions.going_home(creep):
+                actions.transferring_to_closest(creep)
             actions.paving_roads(creep)
     else:
         define_stealer_targets(creep)
@@ -327,6 +331,7 @@ def run_spawn_builder(creep):
                 actions.paving_roads(creep)
             elif duty == 'building':
                 actions.building(creep)
+                actions.paving_roads(creep)
             elif duty == 'upgrading':
                 actions.upgrading(creep)
         else:
@@ -342,12 +347,20 @@ def define_spawn_builder_target(creep):
                 duties_and_targets.define_building_target(creep)
     if not creep.memory.target:
         flag = Game.flags['BS']
-        need_spawn_builders = flag.memory.need_spawn_builders
-        if need_spawn_builders > 2:
-            flag.memory.need_spawn_builders = need_spawn_builders - 0.05
-    if creep.room.energyCapacityAvailable > 0:
-        creep.memory.job = 'starter'
-        spawn = _(creep.room.find(FIND_STRUCTURES)).filter(lambda s: s.structureType == STRUCTURE_SPAWN).sample()
-        creep.memory.home = spawn.id
-        del creep.memory.target
-        del creep.memory.duty
+        if flag:
+            need_spawn_builders = flag.memory.need_spawn_builders
+            if need_spawn_builders > 2:
+                flag.memory.need_spawn_builders = need_spawn_builders - 0.05
+        else:
+            creep.memory.job = 'starter'
+            spawn = _(creep.room.find(FIND_STRUCTURES)).filter(lambda s: s.structureType == STRUCTURE_SPAWN).sample()
+            if spawn:
+                creep.memory.home = spawn.id
+            del creep.memory.target
+            del creep.memory.duty
+    # if creep.room.energyCapacityAvailable > 0:
+    #     creep.memory.job = 'starter'
+    #     spawn = _(creep.room.find(FIND_STRUCTURES)).filter(lambda s: s.structureType == STRUCTURE_SPAWN).sample()
+    #     creep.memory.home = spawn.id
+    #     del creep.memory.target
+    #     del creep.memory.duty

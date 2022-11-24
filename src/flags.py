@@ -28,16 +28,17 @@ def flag_runner(flag):
     if flag.name[:5] == 'Steal':
         need_stealers = flag.memory.need_stealers
         stealers = flag.memory.stealers
-        sources = flag.room.find(FIND_SOURCES)
-        for source in sources:
-            if source.energy > source.ticksToRegeneration * 9 or source.energy >= 1500:
-                if need_stealers <= stealers:
-                    need_stealers = need_stealers + 0.01
-            if source.energy / source.ticksToRegeneration < 8 or source.energy <= 0:
-                if need_stealers >= stealers - 1.5:
-                    need_stealers = need_stealers - 0.02
-            flag.memory.need_stealers = round(need_stealers, 2)
-        print(flag.name + ': Stealers - ' + stealers + ' / ' + need_stealers)
+        if flag.room:
+            sources = flag.room.find(FIND_SOURCES)
+            for source in sources:
+                if source.energy / source.ticksToRegeneration > 10 or source.energy >= 2500:
+                    if need_stealers <= stealers:
+                        need_stealers = need_stealers + 0.01
+                if source.energy / source.ticksToRegeneration < 10 or source.energy <= 0:
+                    if need_stealers >= stealers - 1:
+                        need_stealers = need_stealers - 0.01
+                flag.memory.need_stealers = round(need_stealers, 2)
+            print(flag.name + ': Stealers - ' + stealers + ' / ' + need_stealers)
     if flag.name[:2] == 'dc':
         define_deconstructions(flag)
     if flag.name[:5] == 'claim':
@@ -47,11 +48,11 @@ def flag_runner(flag):
         spawn_builders = flag.memory.spawn_builders
         sources = flag.room.find(FIND_SOURCES)
         for source in sources:
-            if source.energy > source.ticksToRegeneration * 9 or source.energy >= 2500:
+            if source.energy > source.ticksToRegeneration * 10 or source.energy >= 2900:
                 if need_spawn_builders <= spawn_builders:
                     need_spawn_builders = need_spawn_builders + 0.01
             if source.energy / source.ticksToRegeneration < 8 or source.energy <= 0:
-                if need_spawn_builders >= spawn_builders - 1.5:
+                if need_spawn_builders >= spawn_builders - 1:
                     need_spawn_builders = need_spawn_builders - 0.02
             flag.memory.need_spawn_builders = round(need_spawn_builders, 2)
         print(flag.name + ': spawn_builders - ' + spawn_builders + ' / ' + need_spawn_builders)

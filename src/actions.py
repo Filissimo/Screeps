@@ -175,18 +175,12 @@ def going_to_workplace(creep):
         path = creep_memory.path
         if len(path):
             creep.say('🔍')
-            result = creep.moveByPath(path, {'visualizePathStyle': {
-                'fill': 'transparent',
-                'stroke': '#fff',
-                'lineStyle': 'dashed',
-                'strokeWidth': .15,
-                'opacity': .1
-            }, range: 0})
+            result = creep.moveByPath(path)
             print(result + '  ' + creep.name)
             if result == -5:
                 del creep_memory.path
             else:
-                miner = miner = _.sum(creep.pos.findInRange(FIND_CREEPS, 1), lambda c: c.memory.job == 'miner')
+                miner = _.sum(creep.pos.findInRange(FIND_CREEPS, 1), lambda c: c.memory.job == 'miner')
                 if result == 0 and miner > 0 and creep.fatigue == 0:
                     del creep_memory.path
         else:
@@ -196,15 +190,31 @@ def going_to_workplace(creep):
             if source.pos.x - container.pos.x == 2:
                 place1.x = place1.x - 1
                 place2.x = place2.x + 1
+                if place1 == place2:
+                    place2.y = place2.y + 1
+                    if place2.lookFor(LOOK_TERRAIN).type == 'wall':
+                        place2.y = place2.y - 2
             elif source.pos.x - container.pos.x == - 2:
                 place1.x = place1.x + 1
                 place2.x = place2.x - 1
+                if place1 == place2:
+                    place2.y = place2.y + 1
+                    if place2.lookFor(LOOK_TERRAIN).type == 'wall':
+                        place2.y = place2.y - 2
             elif source.pos.y - container.pos.y == 2:
                 place1.y = place1.y - 1
                 place2.y = place2.y + 1
+                if place1 == place2:
+                    place2.x = place2.x + 1
+                    if place2.lookFor(LOOK_TERRAIN).type == 'wall':
+                        place2.x = place2.x - 2
             elif source.pos.y - container.pos.y == - 2:
                 place1.y = place1.y + 1
                 place2.y = place2.y - 1
+                if place1 == place2:
+                    place2.x = place2.x + 1
+                    if place2.lookFor(LOOK_TERRAIN).type == 'wall':
+                        place2.x = place2.x - 2
 
             miner = _.sum(place1.lookFor(LOOK_CREEPS), lambda c: c.memory.job == 'miner')
             if miner == 0:
@@ -230,13 +240,13 @@ def paving_roads(creep):
             str_road_memory = str(road_memory)
             str_road_coors = '{\'' + real_coors_str + '\': ' + str(road_memory[real_coors_str]) + '}'
             if str_road_memory == str_road_coors:
-                new_counter = road_memory[real_coors_str] + 30
+                new_counter = road_memory[real_coors_str] + 5
                 roads_memory.remove(road_memory)
         if str(roads_memory) == '[]':
             roads_memory.append(road_coors_new_object)
         else:
             if new_counter:
-                if new_counter >= 3000:
+                if new_counter >= 100:
                     construction_sites = _.sum(creep.room.find(FIND_CONSTRUCTION_SITES),
                                                lambda cs: cs.progress < cs.progressTotal)
                     if construction_sites <= 3:
@@ -495,14 +505,12 @@ def going_home(creep):
     going_home_bool = False
     home = Game.getObjectById(creep.memory.home)
     if creep.room != home.room:
-        if (creep.store[RESOURCE_ENERGY] > 0 and creep.memory.job[:7] == 'stealer') \
+        if (creep.store[RESOURCE_ENERGY] > 0 and creep.memory.job == 'stealer') \
                 or creep.memory.job == 'worker' or \
                 creep.memory.job == 'starter':
             creep.say('🏡')
             moving_by_path(creep, home)
             going_home_bool = True
-    else:
-        jobs.define_target(creep)
     return going_home_bool
 
 
@@ -609,4 +617,17 @@ def accidentally_delivering_to_worker(creep):
                 if result != OK:
                     print("[{}] Unknown result from creep.transfer({}, {}): {}".format(
                         creep.name, 'accidentally to worker', RESOURCE_ENERGY, result))
+                jobs.define_target(creep)
+
+
+def accidentally_delivering_to_lorry(creep):
+    if creep.store[RESOURCE_ENERGY] > 0:
+        targets = creep.pos.findInRange(FIND_MY_CREEPS, 1)
+        if targets:
+            target_empty_lorry = _(targets).filter(lambda t: t.memory.duty == 'withdrawing_from_fullest').first()
+            if target_empty_lorry:
+                result = creep.transfer(target_empty_lorry, RESOURCE_ENERGY)
+                if result != OK:
+                    print("[{}] Unknown result from creep.transfer({}, {}): {}".format(
+                        creep.name, 'accidentally to lorry', RESOURCE_ENERGY, result))
                 jobs.define_target(creep)

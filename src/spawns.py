@@ -16,7 +16,7 @@ def spawn_runner(spawn):
     if not spawn.spawning:
         creep_to_renew = spawn.pos.findClosestByRange(FIND_MY_CREEPS)
         if creep_to_renew:
-            if creep_to_renew.pos.isNearTo(spawn) and creep_to_renew.ticksToLive < 300:
+            if creep_to_renew.pos.isNearTo(spawn) and creep_to_renew.ticksToLive < 1000:
                 spawn.renewCreep(creep_to_renew)
                 print(creep_to_renew.name + ' renewed: ' + creep_to_renew.ticksToLive)
         if job_name:
@@ -72,10 +72,11 @@ def creep_needed_to_spawn(spawn):
     for source in sources:
         container_near_mine = _.filter(source.pos.findInRange(FIND_STRUCTURES, 2),
                                        lambda s: (s.structureType == STRUCTURE_CONTAINER))
-        # if len(container_near_mine) == 0:
-        #     create_container(source)
-        # else:
-        containers_near_mine = containers_near_mine + len(container_near_mine)
+
+        if len(container_near_mine) == 0:
+            create_container(source)
+        else:
+            containers_near_mine = containers_near_mine + len(container_near_mine)
 
         starters = spawn_memory.starters
         if need_restart:
@@ -104,7 +105,6 @@ def creep_needed_to_spawn(spawn):
         starter_to_worker = _(spawn.room.find(FIND_MY_CREEPS)
                               .filter(lambda c: c.memory != undefined)
                               .filter(lambda c: c.memory.job == 'starter' and
-                                                c.memory.flag != 'BS' and
                                                 c.store[RESOURCE_ENERGY] <= 0)).sample()
         if starter_to_worker:
             starter_to_worker.memory.job = 'worker'
@@ -224,9 +224,9 @@ def creep_needed_to_spawn(spawn):
                                     worker_to_stealer.memory.job = 'stealer'
                                     worker_to_stealer.memory.flag = flag_name
                     if flag_memory.need_stealers < flag_memory.stealers - 1:
-                        stealer_to_worker = _(spawn.room.find(FIND_MY_CREEPS))\
+                        stealer_to_worker = _(spawn.room.find(FIND_MY_CREEPS)) \
                             .filter(lambda s: s.store[RESOURCE_ENERGY] <= 0 and
-                                    s.memory.job == 'stealer')\
+                                              s.memory.job == 'stealer') \
                             .sample()
                         if stealer_to_worker:
                             del stealer_to_worker.memory.duty
@@ -251,22 +251,24 @@ def creep_needed_to_spawn(spawn):
 
         elif job_name == 'spawn_builder':
             flag = Game.flags['BS']
-            flag_memory = flag.memory
-            if not flag_memory.need_spawn_builders:
-                flag_memory.need_spawn_builders = 3
-            if flag_memory.need_spawn_builders > flag_memory.spawn_builders:
-                if spawn_memory.lorries >= spawn_memory.need_lorries:
-                    if spawn_memory.miners >= spawn_memory.need_miners:
-                        if spawn_memory.workers > 0:
-                            worker_to_sb = _(spawn.room.find(FIND_MY_CREEPS)) \
-                                .filter(lambda c: c.memory.job == 'worker' and
-                                                  c.store[RESOURCE_ENERGY] >= c.store.getCapacity() >= 200) \
-                                .sample()
-                            if worker_to_sb:
-                                del worker_to_sb.memory.duty
-                                del worker_to_sb.memory.target
-                                worker_to_sb.memory.job = 'spawn_builder'
-                                worker_to_sb.memory.flag = 'BS'
+            if flag:
+                flag_memory = flag.memory
+                if not flag_memory.need_spawn_builders:
+                    flag_memory.need_spawn_builders = 3
+                if flag_memory.need_spawn_builders > flag_memory.spawn_builders:
+                    if spawn_memory.lorries >= spawn_memory.need_lorries:
+                        if spawn_memory.miners >= spawn_memory.need_miners:
+                            if spawn_memory.workers > 0:
+                                worker_to_sb = _(spawn.room.find(FIND_MY_CREEPS)) \
+                                    .filter(lambda c: c.memory.job == 'worker' and
+                                                      c.store[RESOURCE_ENERGY] <= 0 and
+                                                      c.store.getCapacity() >= 200) \
+                                    .sample()
+                                if worker_to_sb:
+                                    del worker_to_sb.memory.duty
+                                    del worker_to_sb.memory.target
+                                    worker_to_sb.memory.job = 'spawn_builder'
+                                    worker_to_sb.memory.flag = 'BS'
 
     spawn.memory = spawn_memory
 
@@ -365,7 +367,11 @@ def place_extension(position):
     if 4 < position.x < 45 and 4 < position.y < 45:
         terrain = position.lookFor(LOOK_TERRAIN)
         structures = position.lookFor(LOOK_STRUCTURES)
-        if terrain != 'wall' and len(structures) == 0:
+        roads = _.filter(position.lookFor(LOOK_STRUCTURES), lambda s: s.structureType == STRUCTURE_ROAD)
+        if terrain != 'wall' and len(roads) > 0:
+            position.createFlag('dc' + roads[0].id)
+            extension_placed = True
+        elif terrain != 'wall' and len(structures) == 0:
             extensions = _.sum(position.findInRange(FIND_STRUCTURES, 1),
                                lambda s: s.structureType == STRUCTURE_EXTENSION or
                                          s.structureType == STRUCTURE_SPAWN)
@@ -377,22 +383,92 @@ def place_extension(position):
     return extension_placed
 
 
+def look_for_spots_near_position(position):
+    list_of_spots = []
+    circle = '12334411'
+    for spot in circle:
+        if spot == 1:
+            position.x = position.x + 1
+            list_of_spots.append({position: position.lookFor(LOOK_TERRAIN)})
+        elif spot == 2:
+            position.y = position.y + 1
+            list_of_spots.append({position: position.lookFor(LOOK_TERRAIN)})
+        elif spot == 3:
+            position.x = position.x - 1
+            list_of_spots.append({position: position.lookFor(LOOK_TERRAIN)})
+        elif spot == 4:
+            position.y = position.y - 1
+            list_of_spots.append({position: position.lookFor(LOOK_TERRAIN)})
+    return list_of_spots
+
+
 def create_container(source):
-    print(source)
-    if source.room.energyCapacityAvailable < 400:
-        walkable_spots = []
-        not_walls = _.filter(source.pos.findInRange(LOOK_TERRAIN, 1),
-                             lambda t: t.type == "plain" or
-                                       t.type == 'swamp')
-        if len(not_walls) < 2:
-            road = source.pos.findInRange(LOOK_STRUCTURES, 1)[0]
-            print(str(not_walls))
-            if road:
-                print(road.pos)
-        else:
-            for not_wall in not_walls:
-                print(not_wall.pos)
-        # i = 0
-        # for walkable_spot in walkable_spots:
-        #     i = i + 1
-        #     walkable_spot.createFlag('spot' + str(i))
+    if source.room.energyCapacityAvailable >= 400:
+        if len(source.room.find(FIND_CONSTRUCTION_SITES)) == 0:
+            flag = _(source.pos.findInRange(FIND_FLAGS, 2)).filter(lambda f: f.name[:3] == 'con').sample()
+            if flag:
+                flag.pos.createConstructionSite(STRUCTURE_CONTAINER)
+                flag.remove()
+
+
+        # path = source.pos.findPathTo(spawn, {'ignoreCreeps': True})
+        # if len(path):
+        #     print(path[1].x + ' ' + path[1].y)
+        #     container = spawn.pos
+        #     container.x = path[1].x
+        #     container.y = path[1].y
+        #     place_near_source = container
+        #     print(str(source.pos.x) + ' ' + str(container.x))
+        #     if source.pos.x - container.x == 2:
+        #         place_near_source.x = container.x + 1
+        #         if place_near_source.lookFor(LOOK_TERRAIN) != 'wall':
+        #             if container.y != source.pos.y:
+        #                 place_near_source.y = source.pos.y
+        #                 if place_near_source.lookFor(LOOK_TERRAIN) != 'wall':
+        #                     container.createFlag('Container')
+        #                 else:
+        #                     if container.y < source.pos.y:
+        #                         place_near_source.y = source.pos.y + 1
+        #                         if place_near_source.lookFor(LOOK_TERRAIN) != 'wall':
+        #                             container.y = source.pos.y
+        #                             container.createFlag('Container')
+        #                     if container.y > source.pos.y:
+        #                         place_near_source.y = source.pos.y - 1
+        #                         if place_near_source.lookFor(LOOK_TERRAIN) != 'wall':
+        #                             container.y = source.pos.y
+        #                             container.createFlag('Container')
+        #         else:
+        #             place_near_source.y = source.pos.y
+        #             if place_near_source.lookFor(LOOK_TERRAIN) != 'wall':
+        #                 if container.y < source.pos.y:
+        #                     place_near_source.y = source.pos.y + 1
+        #                     if place_near_source.lookFor(LOOK_TERRAIN) != 'wall':
+        #                         container.y = source.pos.y
+        #                         container.createFlag('Container')
+        #                 if container.y > source.pos.y:
+        #                     place_near_source.y = source.pos.y - 1
+        #                     if place_near_source.lookFor(LOOK_TERRAIN) != 'wall':
+        #                         container.y = source.pos.y
+        #                         container.createFlag('Container')
+
+            # elif source.pos.x - path[1].pos.x == - 2:
+            #     place1.x = place1.x + 1
+            #     place2.x = place2.x - 1
+            #     if place1 == place2:
+            #         place2.y = place2.y + 1
+            #         if place2.lookFor(LOOK_TERRAIN).type == 'wall':
+            #             place2.y = place2.y - 2
+            # elif source.pos.y - path[1].pos.y == 2:
+            #     place1.y = place1.y - 1
+            #     place2.y = place2.y + 1
+            #     if place1 == place2:
+            #         place2.x = place2.x + 1
+            #         if place2.lookFor(LOOK_TERRAIN).type == 'wall':
+            #             place2.x = place2.x - 2
+            # elif source.pos.y - path[1].pos.y == - 2:
+            #     place1.y = place1.y + 1
+            #     place2.y = place2.y - 1
+            #     if place1 == place2:
+            #         place2.x = place2.x + 1
+            #         if place2.lookFor(LOOK_TERRAIN).type == 'wall':
+            #             place2.x = place2.x - 2

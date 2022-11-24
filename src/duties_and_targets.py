@@ -36,7 +36,8 @@ def define_mining_target(creep):
 def define_stealing_target(creep):
     target = undefined
     if creep.store[RESOURCE_ENERGY] <= 0:
-        sources = creep.room.find(FIND_SOURCES_ACTIVE)
+        sources = _.sortBy(creep.room.find(FIND_SOURCES_ACTIVE),
+                           lambda s: s.pos.getRangeTo(creep)).reverse()
         for source in sources:
             coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
                                  lambda c: (c.memory.target == source.id))
@@ -268,10 +269,11 @@ def define_reservators_flag(creep):
         if flag_name[:6] == 'Steal' + home.name[5:6]:
             flag = Game.flags[flag_name]
             if flag:
-                if flag.memory.need_reservators > flag.memory.reservators:
+                if flag.memory.need_reservators >= flag.memory.reservators:
                     if creep.pos.inRangeTo(flag, 40):
                         flag = undefined
                         del creep.memory.duty
+                        del creep.memory.target
                     else:
                         creep.memory.flag = flag_name
                         creep.memory.target = flag_name
