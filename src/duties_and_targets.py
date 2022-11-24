@@ -33,19 +33,32 @@ def define_mining_target(creep):
     return target
 
 
+def verify_target(sources, creep, amount):
+    target = undefined
+    for source in sources:
+        coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
+                             lambda c: (c.memory.target == source.id))
+        if len(coworkers) < 300 / creep.store.getCapacity() * amount:
+            target = source
+            if target:
+                creep.memory.duty = 'mining'
+                creep.memory.target = target.id
+    return target
+
+
 def define_stealing_target(creep):
     target = undefined
     if creep.store[RESOURCE_ENERGY] <= 0:
         sources = _.sortBy(creep.room.find(FIND_SOURCES_ACTIVE),
                            lambda s: s.energy)
-        for source in sources:
-            coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
-                                 lambda c: (c.memory.target == source.id))
-            if len(coworkers) < 4:
-                target = source
-                if target:
-                    creep.memory.duty = 'mining'
-                    creep.memory.target = target.id
+        amount = 1
+        target = verify_target(sources, creep, amount)
+        if not target:
+            amount = 2
+            target = verify_target(sources, creep, amount)
+            if not target:
+                amount = 3
+                target = verify_target(sources, creep, amount)
     return target
 
 
@@ -97,7 +110,7 @@ def define_repairing_target(creep):
     if creep.store[RESOURCE_ENERGY] > 0:
         target = _(creep.room.find(FIND_STRUCTURES)) \
             .filter(lambda s: (s.hits < s.hitsMax * 0.05) and
-                    s.structureType != STRUCTURE_WALL) \
+                              s.structureType != STRUCTURE_WALL) \
             .sortBy(lambda s: (s.hitsMax / s.hits)).last()
         if target != undefined:
             do_not_repairs = Memory.deconstructions
@@ -188,7 +201,7 @@ def define_emptiest(creep):
                     emptiest_container = _(containers).sortBy(lambda c: c.total_energy_of_container).first()
                     # print(emptiest_container.total_energy_of_container + '  emptiest  ' + emptiest_container.id)
     if emptiest_container:
-        if emptiest_container.total_energy_of_container < emptiest_container.store.getCapacity() * 0.5:
+        if emptiest_container.total_energy_of_container < emptiest_container.store.getCapacity() * 0.7:
             creep.memory.duty = 'delivering_to_emptiest'
             target = emptiest_container
             creep.memory.target = target.id
@@ -232,7 +245,7 @@ def define_fullest(creep):
                     # print(fullest_container.total_energy_of_container + '  fullest  ' + fullest_container.id)
 
     if fullest_container:
-        if fullest_container.total_energy_of_container > fullest_container.store.getCapacity() * 0.2:
+        if fullest_container.total_energy_of_container > fullest_container.store.getCapacity() * 0.5:
             target = fullest_container
             creep.memory.duty = 'withdrawing_from_fullest'
             creep.memory.target = target.id
@@ -337,23 +350,13 @@ def define_closest_to_transfer(creep):
     return target
 
 
-def define_stealers_needed(creep):
-    target = Game.getObjectById(creep.memory.target)
-    home = Game.getObjectById(creep.memory.home)
-    if target:
-        flag = Game.flags[creep.memory.flag]
-        need_stealers = flag.memory.need_stealers
-        stealers = flag.memory.stealers
-        if target.energy > target.ticksToRegeneration * 9 or target.energy >= 1500:
-            if need_stealers <= stealers:
-                need_stealers = need_stealers + 0.01
-                need_additional_workers = home.memory.need_additional_workers
-                need_additional_workers = need_additional_workers + 0.01
-                home.memory.need_additional_workers = need_additional_workers
-        if target.energy / target.ticksToRegeneration < 8 or target.energy <= 0:
-            if need_stealers >= stealers - 1.5:
-                need_stealers = need_stealers - 0.02
-        flag.memory.need_stealers = round(need_stealers, 2)
+def decrease_stealers_needed(creep):
+    flag = Game.flags[creep.memory.flag]
+    need_stealers = flag.memory.need_stealers
+    stealers = flag.memory.stealers
+    if need_stealers >= stealers:
+        need_stealers = need_stealers - 0.01
+    flag.memory.need_stealers = round(need_stealers, 2)
 
 
 def define_claimers_flag(creep):
@@ -402,3 +405,41 @@ def define_emergency_upgrading_target(creep):
         else:
             target = undefined
     return target
+
+
+def define_room_to_help(creep):
+    target = undefined
+    if creep.store[RESOURCE_ENERGY] <= 0:
+        for flag_name in Object.keys(Game.flags):
+            if Game.flags[flag_name].memory.give_lorries is True:
+                home = Game.getObjectById(creep.memory.home)
+                if flag_name[:6] == 'Steal' + home.name[5:6]:
+                    target = flag_name
+                    creep.memory.duty = 'go_to_flag'
+                    creep.memory.flag = flag_name
+                    creep.memory.target = flag_name
+    return target
+
+
+def define_stealer_to_help(creep):
+    target = undefined
+    if creep.store[RESOURCE_ENERGY] < creep.store.getCapacity():
+        stealer = _(creep.room.find(FIND_MY_CREEPS)) \
+            .filter(lambda c: c.memory.duty == 'mining' and
+                              c.memory.work_place is True) \
+            .sortBy(lambda c: c.store[RESOURCE_ENERGY]).last()
+        if stealer:
+            target = stealer
+            creep.memory.duty = 'helping_stealers'
+            creep.memory.target = stealer.id
+    return target
+
+
+def decrease_lorries_needed(creep):
+    home = Game.getObjectById(creep.memory.home)
+    need_additional_lorries = home.memory.need_additional_lorries
+    need_lorries = home.memory.need_lorries
+    lorries = home.memory.lorries
+    if need_lorries >= lorries + 1:
+        need_additional_lorries = need_additional_lorries - 0.01
+    home.memory.need_additional_lorries = round(need_additional_lorries, 2)

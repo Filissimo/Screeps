@@ -26,7 +26,7 @@ def main():
     if countdown >= 10:
         Memory.countdown = 0
     r_i_m_to_remove = None
-    message_about_removing = 'No roads to remove from memory'
+    message_about_removing = undefined
     roads_in_memory = Memory.roads
     if roads_in_memory:
         print('Roads in memory: ' + str(len(roads_in_memory)))
@@ -44,16 +44,17 @@ def main():
                         roads_in_memory.append({str(r_i_m)[2:i]: new_counter})
         if r_i_m_to_remove:
             roads_in_memory.remove(r_i_m_to_remove)
-        print(message_about_removing)
+        if message_about_removing:
+            print(message_about_removing)
     for spawn_name in Object.keys(Game.spawns):
         spawn = Game.spawns[spawn_name]
         s = SpawnRunner(spawn)
         s.spawning_spawn()
         spawn_memory = spawn.memory
-        print(spawn.name + ' - ' + '  Starters:  ' + spawn_memory.starters + ' / ' + spawn_memory.need_starters +
-              '. Miners:  ' + spawn_memory.miners + ' / ' + spawn_memory.need_miners +
-              '. Lorries:  ' + spawn_memory.lorries + ' / ' + spawn_memory.need_lorries +
-              ". Workers:  " + spawn_memory.workers + ' / ' + spawn_memory.need_workers)
+        print('    ' + spawn.name + ' - ' + 'Starters:  ' + spawn_memory.starters + '/' + spawn_memory.need_starters +
+              '. Miners:  ' + spawn_memory.miners + '/' + spawn_memory.need_miners +
+              '. Lorries:  ' + spawn_memory.lorries + '/' + spawn_memory.need_lorries +
+              ". Workers:  " + spawn_memory.workers + '/' + spawn_memory.need_workers)
 
     for creep_name in Object.keys(Game.creeps):
         creep = Game.creeps[creep_name]

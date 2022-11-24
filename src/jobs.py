@@ -186,20 +186,28 @@ def define_worker_target(creep):
 
 
 def run_lorry(creep):
-    target = creep.memory.target
     duty = creep.memory.duty
-    # if not target:
-    #     actions.move_away_from_creeps(creep)
+    target = creep.memory.target
     if target and actions.not_fleeing(creep):
-        actions.accidentally_delivering_for_spawning(creep)
         if duty == 'picking_up_tombstone':
             actions.pick_up_tombstone(creep)
+        if duty == 'go_to_flag':
+            actions.going_to_flag(creep)
+            actions.paving_roads(creep)
+        elif duty == 'helping_stealers':
+            actions.helping_stealers(creep)
+            actions.paving_roads(creep)
+        elif duty == 'going_home':
+            actions.paving_roads(creep)
+            if not actions.going_home(creep):
+                define_target(creep)
         elif duty == 'withdrawing_from_fullest':
             actions.withdrawing_from_memory(creep)
         elif duty == 'withdrawing_from_storage':
             actions.withdrawing_from_memory(creep)
         elif duty == 'delivering_for_spawn':
             actions.delivering_for_spawning(creep)
+            actions.accidentally_delivering_for_spawning(creep)
             actions.paving_roads(creep)
         elif duty == 'delivering_to_emptiest':
             actions.accidentally_delivering_to_worker(creep)
@@ -214,16 +222,23 @@ def run_lorry(creep):
 
 def define_lorry_target(creep):
     del creep.memory.duty
+    del creep.memory.flag
     del creep.memory.target
     if not duties_and_targets.define_creep_to_pickup_tombstone(creep):
         if not duties_and_targets.define_fullest(creep):
-            if not duties_and_targets.define_storage_to_withdraw(creep):
-                if not duties_and_targets.define_deliver_for_spawn_target(creep):
-                    if not duties_and_targets.define_emptiest(creep):
-                        duties_and_targets.define_storage_to_deliver(creep)
+            if not duties_and_targets.define_room_to_help(creep):
+                if not duties_and_targets.define_stealer_to_help(creep):
+                    if not duties_and_targets.define_storage_to_withdraw(creep):
+                        if not duties_and_targets.define_deliver_for_spawn_target(creep):
+                            if not duties_and_targets.define_emptiest(creep):
+                                duties_and_targets.define_storage_to_deliver(creep)
     if not creep.memory.target:
-        actions.accidentally_delivering_to_worker(creep)
+        if creep.room != Game.getObjectById(creep.memory.home).room:
+            creep.memory.target = 'home'
+            creep.memory.duty = 'going_home'
         actions.move_away_from_creeps(creep)
+        actions.accidentally_delivering_to_worker(creep)
+        duties_and_targets.decrease_lorries_needed(creep)
 
 
 def run_defender(creep):
@@ -280,9 +295,11 @@ def run_stealer(creep):
             actions.pick_up_tombstone(creep)
         elif duty == 'dismantling':
             actions.dismantling(creep)
+            duties_and_targets.decrease_stealers_needed(creep)
         elif duty == 'mining':
-            actions.creep_mining(creep)
+            actions.stealer_mining(creep)
             actions.paving_roads(creep)
+            actions.accidentally_delivering_to_lorry(creep)
         elif duty == 'repairing':
             actions.creep_repairing(creep)
             actions.paving_roads(creep)
@@ -290,12 +307,14 @@ def run_stealer(creep):
             actions.building(creep)
             actions.paving_roads(creep)
         elif duty == 'going_home':
+            actions.accidentally_delivering_to_lorry(creep)
             if not actions.going_home(creep):
-                define_stealer_targets(creep)
+                define_target(creep)
         elif duty == 'transferring_to_closest':
             if not actions.going_home(creep):
                 actions.transferring_to_closest(creep)
             actions.paving_roads(creep)
+            actions.accidentally_delivering_to_lorry(creep)
     else:
         define_stealer_targets(creep)
 

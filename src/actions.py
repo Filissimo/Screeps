@@ -22,17 +22,28 @@ def creep_mining(creep):
                 del creep.memory.target
                 jobs.define_target(creep)
                 print("[{}] Unknown result from creep.harvest({}): {}".format(creep.name, 'mine', result))
-            if result == -1:
-                if creep.memory.flag:
-                    flag = Game.flags[creep.memory.flag]
-                    flag.memory.need_stealers = 0
-        # elif creep.pos.inRangeTo(source, 3):
-        #     result = creep.moveTo(source)
-        #     if result == -2:
-        #         home = Game.getObjectById(creep.memory.home)
-        #         need_starters = home.memory.need_starters
-        #         if need_starters > 2:
-        #             home.memory.need_starters = need_starters - 0.05
+        else:
+            moving_by_path(creep, source)
+    else:
+        jobs.define_target(creep)
+
+
+def stealer_mining(creep):
+    creep.say('⛏')
+    source = Game.getObjectById(creep.memory.target)
+    if source.ticksToRegeneration * 10 < source.energy or source.energy > 2900:
+        if creep.pos.isNearTo(source):
+            creep.memory.work_place = True
+            if creep.store[RESOURCE_ENERGY] < creep.carryCapacity:
+                result = creep.harvest(source)
+                if result != OK:
+                    del creep.memory.target
+                    jobs.define_target(creep)
+                    print("[{}] Unknown result from creep.harvest({}): {}".format(creep.name, 'mine', result))
+                if result == -1:
+                    if creep.memory.flag:
+                        flag = Game.flags[creep.memory.flag]
+                        flag.memory.need_stealers = 0
         else:
             moving_by_path(creep, source)
     else:
@@ -337,17 +348,21 @@ def dismantling(creep):
 
 
 def move_away_from_source(creep):
+    move_away_bool = False
     source = creep.pos.findClosestByRange(FIND_SOURCES)
     if source:
-        if creep.pos.inRangeTo(source, 1):
-            creep.say('🔜')
-            flee_condition = _.map(creep.room.find(FIND_SOURCES), lambda c: {'pos': c.pos, 'range': 3})
-            flee_path = PathFinder.search(
-                creep.pos,
-                flee_condition,
-                {'flee': True}
-            ).path
-            creep.moveByPath(flee_path)
+        if source.id != creep.memory.target:
+            if creep.pos.inRangeTo(source, 1):
+                creep.say('🔜')
+                flee_condition = _.map(creep.room.find(FIND_SOURCES), lambda c: {'pos': c.pos, 'range': 3})
+                flee_path = PathFinder.search(
+                    creep.pos,
+                    flee_condition,
+                    {'flee': True}
+                ).path
+                creep.moveByPath(flee_path)
+                move_away_bool = True
+    return move_away_bool
 
 
 def not_fleeing(creep):
@@ -525,9 +540,7 @@ def defending(creep):
     message = 'Боря - пупырчатый дуропьян!'
     all_line = '          ' + message + '                '
     start_point = creep.memory.start_point
-    current_message = ''
-    for letter in range(start_point, start_point + 10):
-        current_message = current_message + all_line[letter]
+    current_message = all_line[start_point:(start_point + 10)]
     step = 4
     if start_point < len(all_line) - 10 - step:
         creep.memory.start_point = start_point + step
@@ -572,10 +585,12 @@ def going_home(creep):
     if creep.room != home.room:
         if (creep.store[RESOURCE_ENERGY] > 0 and creep.memory.job == 'stealer') \
                 or creep.memory.job == 'worker' or \
-                creep.memory.job == 'starter':
+                creep.memory.job == 'starter' or \
+                creep.memory.job == 'lorry':
             creep.say('🏡')
             moving_by_path(creep, home)
             going_home_bool = True
+            creep.memory.work_place = False
     return going_home_bool
 
 
@@ -699,10 +714,33 @@ def accidentally_delivering_to_lorry(creep):
     if creep.store[RESOURCE_ENERGY] > 0:
         targets = creep.pos.findInRange(FIND_MY_CREEPS, 1)
         if targets:
-            target_empty_lorry = _(targets).filter(lambda t: t.memory.duty == 'withdrawing_from_fullest').first()
+            target_empty_lorry = _(targets) \
+                .filter(lambda t: t.memory.job == 'lorry' and
+                                  t.store[RESOURCE_ENERGY] < t.store.getCapacity()).first()
             if target_empty_lorry:
                 result = creep.transfer(target_empty_lorry, RESOURCE_ENERGY)
                 if result != OK:
                     print("[{}] Unknown result from creep.transfer({}, {}): {}".format(
                         creep.name, 'accidentally to lorry', RESOURCE_ENERGY, result))
+                    if creep.memory.path:
+                        del creep.memory.path
+
+
+def helping_stealers(creep):
+    if creep.store[RESOURCE_ENERGY] < creep.store.getCapacity():
+        target = Game.getObjectById(creep.memory.target)
+        if target:
+            if target.store[RESOURCE_ENERGY] > 0:
+                if creep.pos.isNearTo(target):
+                    creep.say('😄')
+                    jobs.define_target(creep)
+                    creep.memory.work_place = True
+                else:
+                    creep.say('💰')
+                    moving_by_path(creep, target)
+            else:
                 jobs.define_target(creep)
+        else:
+            jobs.define_target(creep)
+    else:
+        jobs.define_target(creep)
