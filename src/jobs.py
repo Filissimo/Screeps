@@ -82,6 +82,7 @@ def run_starter(creep):
 
 
 def define_starter_target(creep):
+    creep.memory.work_place = False
     del creep.memory.duty
     del creep.memory.target
     if not duties_and_targets.define_creep_to_pickup_tombstone(creep):
@@ -135,10 +136,10 @@ def verify_miners_place(creep):
 def define_miner_targets(creep):
     creep_memory = creep.memory
     if creep_memory.source and creep_memory.container:
-        if not creep_memory.workplace and creep_memory.duty != 'picking_up_tombstone':
+        if not creep_memory.work_place and creep_memory.duty != 'picking_up_tombstone':
             creep_memory.duty = 'go_to_workplace'
             creep_memory.target = 'go_to_workplace'
-        elif creep_memory.workplace:
+        elif creep_memory.work_place:
             creep_memory.duty = 'mining'
             creep_memory.target = 'mining'
         else:
@@ -170,6 +171,7 @@ def run_worker(creep):
 
 
 def define_worker_target(creep):
+    creep.memory.work_place = False
     del creep.memory.duty
     del creep.memory.target
     if not duties_and_targets.define_dismantling_target(creep):
@@ -184,6 +186,8 @@ def define_worker_target(creep):
 def run_lorry(creep):
     target = creep.memory.target
     duty = creep.memory.duty
+    # if not target:
+    #     actions.move_away_from_creeps(creep)
     if target and actions.not_fleeing(creep):
         actions.accidentally_delivering_for_spawning(creep)
         if duty == 'picking_up_tombstone':
@@ -207,6 +211,7 @@ def run_lorry(creep):
 
 
 def define_lorry_target(creep):
+    creep.memory.work_place = False
     del creep.memory.duty
     del creep.memory.target
     if not duties_and_targets.define_creep_to_pickup_tombstone(creep):
@@ -215,6 +220,9 @@ def define_lorry_target(creep):
                 if not duties_and_targets.define_deliver_for_spawn_target(creep):
                     if not duties_and_targets.define_emptiest(creep):
                         duties_and_targets.define_storage_to_deliver(creep)
+    if not creep.memory.target:
+        actions.accidentally_delivering_to_worker(creep)
+        actions.move_away_from_creeps(creep)
 
 
 def run_defender(creep):
@@ -253,6 +261,7 @@ def run_reservator(creep):
 
 
 def define_reservator_targets(creep):
+    creep.memory.work_place = False
     del creep.memory.duty
     if not duties_and_targets.define_reservators_flag(creep):
         duties_and_targets.define_controller(creep)
@@ -290,6 +299,7 @@ def run_stealer(creep):
 
 
 def define_stealer_targets(creep):
+    creep.memory.work_place = False
     del creep.memory.duty
     del creep.memory.target
     if not duties_and_targets.define_closest_to_transfer(creep):
@@ -339,6 +349,7 @@ def run_spawn_builder(creep):
 
 
 def define_spawn_builder_target(creep):
+    creep.memory.work_place = False
     del creep.memory.duty
     del creep.memory.target
     if not duties_and_targets.define_creep_to_pickup_tombstone(creep):

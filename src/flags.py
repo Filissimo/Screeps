@@ -25,18 +25,28 @@ def define_deconstructions(flag):
 
 
 def flag_runner(flag):
+    if flag.name[:3] == 'sto':
+        if flag.room:
+            if len(flag.room.find(FIND_CONSTRUCTION_SITES)) == 0:
+                flag.pos.createConstructionSite(STRUCTURE_STORAGE)
+                flag.remove()
+    if flag.name[:3] == 'con':
+        if flag.room:
+            if len(flag.room.find(FIND_CONSTRUCTION_SITES)) == 0:
+                flag.pos.createConstructionSite(STRUCTURE_CONTAINER)
+                flag.remove()
     if flag.name[:5] == 'Steal':
         need_stealers = flag.memory.need_stealers
         stealers = flag.memory.stealers
         if flag.room:
             sources = flag.room.find(FIND_SOURCES)
             for source in sources:
-                if source.energy / source.ticksToRegeneration > 10 or source.energy >= 2500:
+                if source.energy / source.ticksToRegeneration > 11:
                     if need_stealers <= stealers:
                         need_stealers = need_stealers + 0.01
-                if source.energy / source.ticksToRegeneration < 10 or source.energy <= 0:
+                if source.energy / source.ticksToRegeneration < 9 or source.energy <= 0:
                     if need_stealers >= stealers - 1:
-                        need_stealers = need_stealers - 0.01
+                        need_stealers = need_stealers - 0.02
                 flag.memory.need_stealers = round(need_stealers, 2)
             print(flag.name + ': Stealers - ' + stealers + ' / ' + need_stealers)
     if flag.name[:2] == 'dc':
@@ -106,7 +116,7 @@ def flag_runner(flag):
         flag.remove()
 
 
-def place_e_flag(position,  starting_flag_number, flag_number):
+def place_e_flag(position, starting_flag_number, flag_number):
     if 4 < position.x < 45 and 4 < position.y < 45:
         terrain = position.lookFor(LOOK_TERRAIN)
         print(str(terrain) + flag_number)
@@ -120,6 +130,3 @@ def place_e_flag(position,  starting_flag_number, flag_number):
                 position.createFlag(str('e' + flag_number))
                 flag_number = flag_number + 1
     return flag_number
-
-
-

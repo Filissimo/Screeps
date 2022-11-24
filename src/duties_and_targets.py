@@ -41,7 +41,7 @@ def define_stealing_target(creep):
         for source in sources:
             coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
                                  lambda c: (c.memory.target == source.id))
-            if len(coworkers) < 3:
+            if len(coworkers) < 4:
                 target = source
                 if target:
                     creep.memory.duty = 'mining'
@@ -96,7 +96,8 @@ def define_repairing_target(creep):
     target = undefined
     if creep.store[RESOURCE_ENERGY] > 0:
         target = _(creep.room.find(FIND_STRUCTURES)) \
-            .filter(lambda s: (s.hits < s.hitsMax * 0.05)) \
+            .filter(lambda s: (s.hits < s.hitsMax * 0.05) and
+                    s.structureType != STRUCTURE_WALL) \
             .sortBy(lambda s: (s.hitsMax / s.hits)).last()
         if target != undefined:
             do_not_repairs = Memory.deconstructions
@@ -141,8 +142,7 @@ def define_creep_to_pickup_tombstone(creep):
                                   (c.memory.job == 'lorry' or
                                    c.memory.job == 'starter' or
                                    c.memory.job[:7] == 'stealer' or
-                                   ((c.memory.job == 'miner' or
-                                     c.memory.job == 'worker') and
+                                   ((c.memory.job == 'miner') and
                                     c.pos.isNearTo(target)))) \
                 .sortBy(lambda c: (c.pos.getRangeTo(target))).first()
             if creep_to_pickup:

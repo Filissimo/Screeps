@@ -73,10 +73,10 @@ def creep_needed_to_spawn(spawn):
         container_near_mine = _.filter(source.pos.findInRange(FIND_STRUCTURES, 2),
                                        lambda s: (s.structureType == STRUCTURE_CONTAINER))
 
-        if len(container_near_mine) == 0:
-            create_container(source)
-        else:
-            containers_near_mine = containers_near_mine + len(container_near_mine)
+        # if len(container_near_mine) == 0:
+        #     create_container(source)
+        # else:
+        containers_near_mine = containers_near_mine + len(container_near_mine)
 
         starters = spawn_memory.starters
         if need_restart:
