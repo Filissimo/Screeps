@@ -69,9 +69,7 @@ def define_deliver_for_spawn_target(creep):
         if spawning_structures:
             for spawning_structure in spawning_structures:
                 coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
-                                     lambda c: (c.memory.target == spawning_structure.id and
-                                                c.store[RESOURCE_ENERGY]) >=
-                                               spawning_structure.energyCapacity - spawning_structure.energy)
+                                     lambda c: c.memory.target == spawning_structure.id)
                 if len(coworkers) == 0:
                     target = spawning_structure
                     if target:
@@ -469,11 +467,12 @@ def decrease_lorries_needed(creep):
     need_lorries = home.memory.need_lorries
     lorries = home.memory.lorries
     if need_lorries >= lorries + 1:
-        need_additional_lorries = need_additional_lorries - 0.01
+        need_additional_lorries = need_additional_lorries - 0.03
     home.memory.need_additional_lorries = round(need_additional_lorries, 2)
 
 
 def check_if_repairing_needed(creep):
+    creep.memory.repairing = False
     target = _(creep.room.find(FIND_STRUCTURES)) \
         .filter(lambda s: (s.hits < s.hitsMax * 0.05) and
                           s.structureType != STRUCTURE_WALL) \
@@ -491,7 +490,41 @@ def check_if_repairing_needed(creep):
 
 
 def check_if_building_needed(creep):
-    target = creep.pos.findClosestByRange(FIND_CONSTRUCTION_SITES)
-    if target:
+    target = undefined
+    construction_sites = creep.room.find(FIND_CONSTRUCTION_SITES)
+    if len(construction_sites) > 0:
         creep.memory.building = True
+        target = construction_sites
+    else:
+        creep.memory.building = False
+    return target
+
+
+def define_worker_to_help(creep):
+    target = undefined
+    emptiest_worker = undefined
+    workers = _.filter(creep.room.find(FIND_MY_CREEPS),
+                       lambda w: w.memory.job == 'worker' and
+                                 w.store[RESOURCE_ENERGY] < w.store.getCapacity())
+    if workers:
+        for worker in workers:
+            if worker:
+                coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
+                                     lambda c: (c.memory.duty == 'helping_workers') and
+                                               c.memory.target == worker.id)
+                energy_of_worker = worker.store[RESOURCE_ENERGY]
+                energy_on_the_way = 0
+                if coworkers:
+                    for coworker in coworkers:
+                        if coworker.store.getCapacity() > 0:
+                            energy_on_the_way = energy_on_the_way + coworker.store[RESOURCE_ENERGY]
+                    total_energy_of_worker = energy_of_worker + energy_on_the_way
+                    worker.total_energy_of_worker = total_energy_of_worker
+                emptiest_worker = _(workers).sortBy(lambda c: c.total_energy_of_worker).first()
+
+    if emptiest_worker:
+        if emptiest_worker.total_energy_of_worker < emptiest_worker.store.getCapacity():
+            target = emptiest_worker
+            creep.memory.duty = 'helping_workers'
+            creep.memory.target = target.id
     return target
