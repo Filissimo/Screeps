@@ -112,7 +112,7 @@ def creep_needed_to_spawn(spawn):
             del starter_to_worker.memory.target
 
     spawn_jobs = ['defender', 'miner', 'lorry', 'worker', 'claimer', 'spawn_builder',
-                  'reservator', 'stealer', 'starter']
+                  'reservator', 'stealer', 'stealorry', 'starter']
     my_creeps = _.filter(Game.creeps, lambda c: c.memory != undefined)
     my_creeps_with_memory = _.filter(my_creeps, lambda c: c.memory.job != undefined)
     actual_spawn_builders = _.filter(my_creeps_with_memory,
@@ -233,6 +233,28 @@ def creep_needed_to_spawn(spawn):
                             del stealer_to_worker.memory.target
                             del stealer_to_worker.memory.flag
                             stealer_to_worker.memory.job = 'worker'
+                    flag.memory = flag_memory
+
+        elif job_name == 'stealorry':
+            flags = Object.keys(Game.flags)
+            for flag_name in flags:
+                if flag_name[:6] == 'Steal' + spawn.name[5:6]:
+                    flag = Game.flags[flag_name]
+                    flag_memory = flag.memory
+                    lorries_on_the_flag = _.filter(creeps_filtered, lambda c: c.memory.flag == flag_name)
+                    flag_memory.lorries = len(lorries_on_the_flag)
+                    if not flag_memory.need_lorries:
+                        flag_memory.need_lorries = 1
+                    if flag_memory.need_lorries < flag_memory.lorries - 1:
+                        stealorry_to_lorry = _(spawn.room.find(FIND_MY_CREEPS)) \
+                            .filter(lambda s: s.store[RESOURCE_ENERGY] <= 0 and
+                                              s.memory.job == 'stealorry') \
+                            .sample()
+                        if stealorry_to_lorry:
+                            del stealorry_to_lorry.memory.duty
+                            del stealorry_to_lorry.memory.target
+                            del stealorry_to_lorry.memory.flag
+                            stealorry_to_lorry.memory.job = 'lorry'
                     flag.memory = flag_memory
 
         elif job_name == 'claimer':

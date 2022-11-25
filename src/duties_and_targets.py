@@ -53,12 +53,9 @@ def define_stealing_target(creep):
                            lambda s: s.energy)
         amount = 1
         target = verify_target(sources, creep, amount)
-        if not target:
-            amount = 2
-            target = verify_target(sources, creep, amount)
-            if not target:
-                amount = 3
-                target = verify_target(sources, creep, amount)
+        # if not target:
+        #     amount = 2
+        #     target = verify_target(sources, creep, amount)
     return target
 
 
@@ -153,9 +150,10 @@ def define_creep_to_pickup_tombstone(creep):
             creep_to_pickup = _(creep.room.find(FIND_MY_CREEPS)) \
                 .filter(lambda c: (c.store[RESOURCE_ENERGY] < c.store.getCapacity()) and
                                   (c.memory.job == 'lorry' or
+                                   c.memory.job == 'stealorry' or
                                    c.memory.job == 'starter' or
-                                   c.memory.job[:7] == 'stealer' or
-                                   ((c.memory.job == 'miner') and
+                                   ((c.memory.job == 'stealer' or
+                                     c.memory.job == 'miner') and
                                     c.pos.isNearTo(target)))) \
                 .sortBy(lambda c: (c.pos.getRangeTo(target))).first()
             if creep_to_pickup:
@@ -418,9 +416,10 @@ def define_room_to_help(creep):
                 if creep.room == home.room:
                     if flag_name[:6] == 'Steal' + home.name[5:6]:
                         target = flag_name
-                        creep.memory.duty = 'go_to_flag'
+                        creep.memory.job = 'stealorry'
                         creep.memory.flag = flag_name
-                        creep.memory.target = flag_name
+                        del creep.memory.duty
+                        del creep.memory.target
     return target
 
 
@@ -467,3 +466,27 @@ def decrease_lorries_needed(creep):
     if need_lorries >= lorries + 1:
         need_additional_lorries = need_additional_lorries - 0.01
     home.memory.need_additional_lorries = round(need_additional_lorries, 2)
+
+
+def check_if_repairing_needed(creep):
+    target = _(creep.room.find(FIND_STRUCTURES)) \
+        .filter(lambda s: (s.hits < s.hitsMax * 0.05) and
+                          s.structureType != STRUCTURE_WALL) \
+        .sortBy(lambda s: (s.hitsMax / s.hits)).last()
+    if target != undefined:
+        do_not_repairs = Memory.deconstructions
+        if do_not_repairs:
+            for do_not_repair in do_not_repairs:
+                if target:
+                    if target.id == do_not_repair:
+                        target = undefined
+        if target:
+            creep.memory.repairing = True
+    return target
+
+
+def check_if_building_needed(creep):
+    target = creep.pos.findClosestByRange(FIND_CONSTRUCTION_SITES)
+    if target:
+        creep.memory.building = True
+    return target

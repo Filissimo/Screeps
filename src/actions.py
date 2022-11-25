@@ -51,6 +51,8 @@ def stealer_mining(creep):
     else:
         if 100 < source.energy < 2900 and 10 < source.ticksToRegeneration < 290:
             jobs.define_target(creep)
+        else:
+            creep.say('⌛')
 
 
 def withdraw_from_closest(creep):
@@ -601,7 +603,8 @@ def going_home(creep):
         if (creep.store[RESOURCE_ENERGY] > 0 and creep.memory.job == 'stealer') \
                 or creep.memory.job == 'worker' or \
                 creep.memory.job == 'starter' or \
-                creep.memory.job == 'lorry':
+                creep.memory.job == 'lorry' or \
+                creep.memory.job == 'stealorry':
             creep.say('🏡')
             moving_by_path(creep, home)
             going_home_bool = True
@@ -731,6 +734,22 @@ def accidentally_delivering_to_lorry(creep):
         if targets:
             target_empty_lorry = _(targets) \
                 .filter(lambda t: t.memory.job == 'lorry' and
+                                  t.store[RESOURCE_ENERGY] < t.store.getCapacity()).first()
+            if target_empty_lorry:
+                result = creep.transfer(target_empty_lorry, RESOURCE_ENERGY)
+                if result != OK:
+                    print("[{}] Unknown result from creep.transfer({}, {}): {}".format(
+                        creep.name, 'accidentally to lorry', RESOURCE_ENERGY, result))
+                    if creep.memory.path:
+                        del creep.memory.path
+
+
+def accidentally_delivering_to_stealorry(creep):
+    if creep.store[RESOURCE_ENERGY] > 0:
+        targets = creep.pos.findInRange(FIND_MY_CREEPS, 1)
+        if targets:
+            target_empty_lorry = _(targets) \
+                .filter(lambda t: t.memory.job == 'stealorry' and
                                   t.store[RESOURCE_ENERGY] < t.store.getCapacity()).first()
             if target_empty_lorry:
                 result = creep.transfer(target_empty_lorry, RESOURCE_ENERGY)
