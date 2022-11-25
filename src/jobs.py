@@ -222,7 +222,6 @@ def run_lorry(creep):
 
 def define_lorry_target(creep):
     del creep.memory.duty
-    del creep.memory.flag
     del creep.memory.target
     if not duties_and_targets.define_creep_to_pickup_tombstone(creep):
         if not duties_and_targets.define_fullest(creep):

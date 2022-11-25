@@ -151,7 +151,7 @@ def define_creep_to_pickup_tombstone(creep):
                                t.id != creep.memory.target)).first()
         if target != undefined:
             creep_to_pickup = _(creep.room.find(FIND_MY_CREEPS)) \
-                .filter(lambda c: (c.carryCapacity > _.sum(c.carry)) and
+                .filter(lambda c: (c.store[RESOURCE_ENERGY] < c.store.getCapacity()) and
                                   (c.memory.job == 'lorry' or
                                    c.memory.job == 'starter' or
                                    c.memory.job[:7] == 'stealer' or
@@ -161,6 +161,7 @@ def define_creep_to_pickup_tombstone(creep):
             if creep_to_pickup:
                 creep_to_pickup.memory.duty = 'picking_up_tombstone'
                 creep_to_pickup.memory.target = target.id
+                del creep.memory.path
                 if creep_to_pickup.id != creep.id:
                     target = undefined
     return target
@@ -411,27 +412,31 @@ def define_room_to_help(creep):
     target = undefined
     if creep.store[RESOURCE_ENERGY] <= 0:
         for flag_name in Object.keys(Game.flags):
-            if Game.flags[flag_name].memory.give_lorries is True:
+            flag = Game.flags[flag_name]
+            if flag.memory.give_lorries is True:
                 home = Game.getObjectById(creep.memory.home)
-                if flag_name[:6] == 'Steal' + home.name[5:6]:
-                    target = flag_name
-                    creep.memory.duty = 'go_to_flag'
-                    creep.memory.flag = flag_name
-                    creep.memory.target = flag_name
+                if creep.room == home.room:
+                    if flag_name[:6] == 'Steal' + home.name[5:6]:
+                        target = flag_name
+                        creep.memory.duty = 'go_to_flag'
+                        creep.memory.flag = flag_name
+                        creep.memory.target = flag_name
     return target
 
 
 def define_stealer_to_help(creep):
-    target = undefined
     if creep.store[RESOURCE_ENERGY] < creep.store.getCapacity():
-        stealer = _(creep.room.find(FIND_MY_CREEPS)) \
-            .filter(lambda c: c.memory.duty == 'mining' and
-                              c.memory.work_place is True) \
-            .sortBy(lambda c: c.store[RESOURCE_ENERGY]).last()
-        if stealer:
-            target = stealer
-            creep.memory.duty = 'helping_stealers'
-            creep.memory.target = stealer.id
+        target = undefined
+        flag = Game.flags[creep.memory.flag]
+        if flag:
+            if creep.room == flag.room:
+                stealer = _(creep.room.find(FIND_MY_CREEPS)) \
+                    .filter(lambda c: c.memory.job == 'stealer' and
+                                      c.store[RESOURCE_ENERGY] > 0) \
+                    .sortBy(lambda c: creep.pos.getRangeTo(c)).first()
+                if stealer:
+                    creep.memory.duty = 'helping_stealers'
+                    creep.memory.target = stealer.id
     return target
 
 
