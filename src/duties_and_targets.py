@@ -427,16 +427,50 @@ def define_room_to_help(creep):
 def define_stealer_to_help(creep):
     if creep.store[RESOURCE_ENERGY] < creep.store.getCapacity():
         target = undefined
+        fullest_stealer = undefined
         flag = Game.flags[creep.memory.flag]
         if flag:
             if creep.room == flag.room:
-                stealer = _(creep.room.find(FIND_MY_CREEPS)) \
-                    .filter(lambda c: c.memory.job == 'stealer' and
-                                      c.store[RESOURCE_ENERGY] > 0) \
-                    .sortBy(lambda c: creep.pos.getRangeTo(c)).first()
-                if stealer:
-                    creep.memory.duty = 'helping_stealers'
-                    creep.memory.target = stealer.id
+                stealers = _.filter(creep.room.find(FIND_MY_CREEPS),
+                                    lambda s: s.memory.job == 'stealer' and
+                                              s.store[RESOURCE_ENERGY] > 0)
+                if stealers:
+                    for stealer in stealers:
+                        if stealer:
+                            coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
+                                                 lambda c: (c.memory.duty == 'helping_stealers') and
+                                                           c.memory.target == stealer.id)
+                            energy_of_stealer = stealer.store[RESOURCE_ENERGY]
+                            energy_on_the_way = 0
+                            if coworkers:
+                                for coworker in coworkers:
+                                    if coworker.store.getCapacity() > 0:
+                                        energy_on_the_way = energy_on_the_way + coworker.store[RESOURCE_ENERGY] \
+                                                            - coworker.store.getCapacity()
+                                total_energy_of_stealer = energy_of_stealer + energy_on_the_way
+                                stealer.total_energy_of_stealer = total_energy_of_stealer
+                            if anti_coworkers:
+                                for anti_coworker in anti_coworkers:
+                                    if anti_coworker.store.getCapacity() > 0:
+                                        energy_on_the_way = energy_on_the_way + anti_coworker.store[RESOURCE_ENERGY]
+                                total_energy_of_stealer = energy_of_stealer + energy_on_the_way
+                                stealer.total_energy_of_stealer = total_energy_of_stealer
+                        if stealer:
+                            fullest_stealer = _(stealers).sortBy(lambda c: c.total_energy_of_stealer).last()
+
+                if fullest_stealer:
+                    if fullest_stealer.total_energy_of_stealer > fullest_stealer.store.getCapacity() * 0.5:
+                        target = fullest_stealer
+                        creep.memory.duty = 'helping_stealers'
+                        creep.memory.target = target.id
+
+    stealer = _(creep.room.find(FIND_MY_CREEPS)) \
+        .filter(lambda c: c.memory.job == 'stealer' and
+                          c.store[RESOURCE_ENERGY] > 0) \
+        .sortBy(lambda c: creep.pos.getRangeTo(c)).first()
+    if stealer:
+        creep.memory.duty = 'helping_stealers'
+        creep.memory.target = stealer.id
     return target
 
 
