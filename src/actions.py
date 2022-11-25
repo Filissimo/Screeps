@@ -746,23 +746,13 @@ def helping_stealers(creep):
         if creep.store[RESOURCE_ENERGY] < creep.store.getCapacity():
             target = Game.getObjectById(creep.memory.target)
             if target:
-                if target.store[RESOURCE_ENERGY] > 0:
-                    if creep.pos.isNearTo(target):
-                        creep.say('😄')
-                        creep.memory.work_place = True
-                    else:
-                        creep.say('💰')
-                        moving_by_path(creep, target)
+                if creep.pos.isNearTo(target):
+                    creep.say('😄')
+                    creep.memory.work_place = True
                 else:
-                    target = _(creep.room.find(FIND_MY_CREEPS)) \
-                        .filter(lambda c: c.memory.job == 'stealer' and
-                                          c.store[RESOURCE_ENERGY] > 0) \
-                        .sortBy(lambda c: creep.pos.getRangeTo(c)).first()
-                    if target:
-                        del creep.memory.path
-                        creep.memory.target = target.id
-                        creep.say('💱')
-                        creep.memory.work_place = True
+                    creep.say('💰')
+                    creep.memory.work_place = False
+                    moving_by_path(creep, target)
             else:
                 jobs.define_target(creep)
         else:
