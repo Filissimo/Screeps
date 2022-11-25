@@ -49,10 +49,14 @@ def stealer_mining(creep):
             moving_by_path(creep, source)
 
     else:
-        if 100 < source.energy < 2900 and 10 < source.ticksToRegeneration < 290:
-            jobs.define_target(creep)
-        else:
-            creep.say('⌛')
+        if creep.memory.has_lorry:
+            creep.memory.work_place = False
+            lorry = Game.getObjectById(creep.memory.has_lorry)
+            if creep.pos.isNearTo:
+                creep.say('😴')
+            else:
+                creep.say('⌛')
+                moving_by_path(creep, lorry)
 
 
 def withdraw_from_closest(creep):
@@ -300,7 +304,7 @@ def paving_roads(creep):
             str_road_memory = str(road_memory)
             str_road_coors = '{\'' + real_coors_str + '\': ' + str(road_memory[real_coors_str]) + '}'
             if str_road_memory == str_road_coors:
-                new_counter = road_memory[real_coors_str] + 5
+                new_counter = road_memory[real_coors_str] + 50
                 roads_memory.remove(road_memory)
         if str(roads_memory) == '[]':
             roads_memory.append(road_coors_new_object)
@@ -309,7 +313,7 @@ def paving_roads(creep):
                 if new_counter >= 2000:
                     construction_sites = _.sum(creep.room.find(FIND_CONSTRUCTION_SITES),
                                                lambda cs: cs.progress < cs.progressTotal)
-                    if construction_sites <= 50:
+                    if construction_sites <= 4:
                         result = creep.pos.createConstructionSite(STRUCTURE_ROAD)
                         if result != OK:
                             print(creep + ': no road, on construction site ' + creep.pos +
@@ -762,9 +766,10 @@ def accidentally_delivering_to_stealorry(creep):
 
 def helping_stealers(creep):
     if Game.getObjectById(creep.memory.home).room != creep.room:
+        target = Game.getObjectById(creep.memory.target)
         if creep.store[RESOURCE_ENERGY] < creep.store.getCapacity():
-            target = Game.getObjectById(creep.memory.target)
             if target:
+                target.memory.has_lorry = creep.id
                 if creep.pos.isNearTo(target):
                     creep.say('😄')
                     creep.memory.work_place = True
@@ -775,6 +780,8 @@ def helping_stealers(creep):
             else:
                 jobs.define_target(creep)
         else:
+            if target:
+                del target.memory.has_lorry
             jobs.define_target(creep)
     else:
         jobs.define_target(creep)

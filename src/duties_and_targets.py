@@ -33,7 +33,7 @@ def define_mining_target(creep):
     return target
 
 
-def verify_target(sources, creep, amount):
+def verify_amount_of_stealers_on_target(sources, creep, amount):
     target = undefined
     for source in sources:
         coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
@@ -49,13 +49,13 @@ def verify_target(sources, creep, amount):
 def define_stealing_target(creep):
     target = undefined
     if creep.store[RESOURCE_ENERGY] <= 0:
-        sources = _.sortBy(creep.room.find(FIND_SOURCES_ACTIVE),
+        sources = _.sortBy(creep.room.find(FIND_SOURCES),
                            lambda s: s.energy)
         amount = 1
-        target = verify_target(sources, creep, amount)
-        # if not target:
-        #     amount = 2
-        #     target = verify_target(sources, creep, amount)
+        target = verify_amount_of_stealers_on_target(sources, creep, amount)
+        if not target:
+            amount = 2
+            target = verify_amount_of_stealers_on_target(sources, creep, amount)
     return target
 
 
@@ -157,11 +157,11 @@ def define_creep_to_pickup_tombstone(creep):
                                     c.pos.isNearTo(target)))) \
                 .sortBy(lambda c: (c.pos.getRangeTo(target))).first()
             if creep_to_pickup:
-                creep_to_pickup.memory.duty = 'picking_up_tombstone'
-                creep_to_pickup.memory.target = target.id
-                del creep.memory.path
-                if creep_to_pickup.id != creep.id:
-                    target = undefined
+                coworkers = _.sum(creep_to_pickup.room.find(FIND_MY_CREEPS), lambda c: c.memory.target == target.id)
+                if coworkers == 0:
+                    creep_to_pickup.memory.duty = 'picking_up_tombstone'
+                    creep_to_pickup.memory.target = target.id
+                    del creep.memory.path
     return target
 
 
@@ -200,7 +200,7 @@ def define_emptiest(creep):
                     emptiest_container = _(containers).sortBy(lambda c: c.total_energy_of_container).first()
                     # print(emptiest_container.total_energy_of_container + '  emptiest  ' + emptiest_container.id)
     if emptiest_container:
-        if emptiest_container.total_energy_of_container < emptiest_container.store.getCapacity() * 0.7:
+        if emptiest_container.total_energy_of_container < emptiest_container.store.getCapacity() * 0.3:
             creep.memory.duty = 'delivering_to_emptiest'
             target = emptiest_container
             creep.memory.target = target.id
@@ -424,9 +424,9 @@ def define_room_to_help(creep):
 
 
 def define_stealer_to_help(creep):
+    target = undefined
+    fullest_stealer = undefined
     if creep.store[RESOURCE_ENERGY] < creep.store.getCapacity():
-        target = undefined
-        fullest_stealer = undefined
         flag = Game.flags[creep.memory.flag]
         if flag:
             if creep.room == flag.room:
@@ -450,11 +450,16 @@ def define_stealer_to_help(creep):
                                 stealer.total_energy_of_stealer = total_energy_of_stealer
                             fullest_stealer = _(stealers).sortBy(lambda c: c.total_energy_of_stealer).last()
 
-                if fullest_stealer:
-                    if fullest_stealer.total_energy_of_stealer > 0:
-                        target = fullest_stealer
-                        creep.memory.duty = 'helping_stealers'
-                        creep.memory.target = target.id
+    if fullest_stealer:
+        if fullest_stealer.total_energy_of_stealer > 0:
+            target = fullest_stealer
+            creep.memory.duty = 'helping_stealers'
+            creep.memory.target = target.id
+        if not target:
+            if len(coworkers) == 1:
+                target = fullest_stealer
+                creep.memory.duty = 'helping_stealers'
+                creep.memory.target = target.id
     return target
 
 

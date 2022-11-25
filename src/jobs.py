@@ -223,11 +223,10 @@ def define_lorry_target(creep):
     del creep.memory.target
     if not duties_and_targets.define_creep_to_pickup_tombstone(creep):
         if not duties_and_targets.define_fullest(creep):
-            if not duties_and_targets.define_room_to_help(creep):
-                if not duties_and_targets.define_storage_to_withdraw(creep):
-                    if not duties_and_targets.define_deliver_for_spawn_target(creep):
-                        if not duties_and_targets.define_emptiest(creep):
-                            duties_and_targets.define_storage_to_deliver(creep)
+            if not duties_and_targets.define_storage_to_withdraw(creep):
+                if not duties_and_targets.define_deliver_for_spawn_target(creep):
+                    if not duties_and_targets.define_emptiest(creep):
+                        duties_and_targets.define_storage_to_deliver(creep)
     if not creep.memory.target:
         if creep.room != Game.getObjectById(creep.memory.home).room:
             creep.memory.target = 'home'
@@ -375,10 +374,7 @@ def define_stealer_targets(creep):
                             if not duties_and_targets.define_building_target(creep):
                                 duties_and_targets.define_going_home(creep)
     if not creep.memory.target:
-        del creep.memory.duty
-        del creep.memory.target
-        del creep.memory.flag
-        creep.memory.job = 'worker'
+        creep.say('?')
 
 
 def run_claimer(creep):

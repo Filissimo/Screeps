@@ -211,7 +211,7 @@ def creep_needed_to_spawn(spawn):
                     flag_memory.stealers = len(stealers_on_the_flag)
                     if not flag_memory.need_stealers:
                         flag_memory.need_stealers = 1
-                    if flag_memory.need_stealers > flag_memory.stealers:
+                    if flag_memory.give_stealers:
                         worker_to_stealer = _(spawn.room.find(FIND_MY_CREEPS)) \
                             .filter(lambda c: c.memory.job == 'worker' and
                                               c.store[RESOURCE_ENERGY] == 0 and
@@ -220,6 +220,7 @@ def creep_needed_to_spawn(spawn):
                             if spawn_memory.lorries >= spawn_memory.need_lorries:
                                 if spawn_memory.workers > 0:
                                     del worker_to_stealer.memory.duty
+                                    del worker_to_stealer.memory.path
                                     del worker_to_stealer.memory.target
                                     worker_to_stealer.memory.job = 'stealer'
                                     worker_to_stealer.memory.flag = flag_name
@@ -232,6 +233,7 @@ def creep_needed_to_spawn(spawn):
                             del stealer_to_worker.memory.duty
                             del stealer_to_worker.memory.target
                             del stealer_to_worker.memory.flag
+                            del stealer_to_worker.memory.path
                             stealer_to_worker.memory.job = 'worker'
                     flag.memory = flag_memory
 
@@ -251,10 +253,24 @@ def creep_needed_to_spawn(spawn):
                                               s.memory.job == 'stealorry') \
                             .sample()
                         if stealorry_to_lorry:
+                            del stealorry_to_lorry.memory.path
                             del stealorry_to_lorry.memory.duty
                             del stealorry_to_lorry.memory.target
                             del stealorry_to_lorry.memory.flag
                             stealorry_to_lorry.memory.job = 'lorry'
+
+                    if flag_memory.need_lorries > flag_memory.lorries:
+                        lorry_to_stealorry = _(spawn.room.find(FIND_MY_CREEPS)) \
+                            .filter(lambda s: s.store[RESOURCE_ENERGY] <= 0 and
+                                              s.memory.job == 'lorry') \
+                            .sample()
+                        if lorry_to_stealorry:
+                            lorry_to_stealorry.memory.target = flag_name
+                            lorry_to_stealorry.memory.job = 'stealorry'
+                            lorry_to_stealorry.memory.flag = flag_name
+                            del lorry_to_stealorry.memory.duty
+                            del lorry_to_stealorry.memory.target
+                            del lorry_to_stealorry.memory.path
                     flag.memory = flag_memory
 
         elif job_name == 'claimer':
