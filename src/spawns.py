@@ -336,15 +336,7 @@ def define_body(spawn, job_name):
         if spawn.room.energyCapacityAvailable >= 400:
             desired_body.extend([WORK, WORK, WORK, CARRY, MOVE, MOVE])
     elif job_name == 'lorry':
-        need_stealorries = 0
-        flags = Object.keys(Game.flags)
-        for flag_name in flags:
-            if flag_name[:6] == 'Steal' + spawn.name[5:6]:
-                flag = Game.flags[flag_name]
-                if flag.memory.need_lorries:
-                    need_stealorries = need_stealorries + flag.memory.need_lorries
-        range_max = round((spawn.memory.need_lorries + need_stealorries + 5) * 0.4)
-        for a in range(1, range_max):
+        for a in range(1, 4):
             if spawn.room.energyAvailable >= a * 150:
                 desired_body.extend([CARRY, CARRY, MOVE])
     elif job_name[:10] == 'reservator' or job_name == 'claimer':

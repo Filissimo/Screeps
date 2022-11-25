@@ -250,7 +250,6 @@ def run_stealorry(creep):
             actions.paving_roads(creep)
         elif duty == 'helping_stealers':
             actions.helping_stealers(creep)
-            actions.paving_roads(creep)
         elif duty == 'going_home':
             actions.paving_roads(creep)
             if not actions.going_home(creep):
@@ -278,7 +277,6 @@ def define_stealorry_target(creep):
             creep.memory.duty = 'going_home'
         actions.move_away_from_creeps(creep)
         actions.accidentally_delivering_to_worker(creep)
-        duties_and_targets.decrease_lorries_needed(creep)
 
 
 def run_defender(creep):

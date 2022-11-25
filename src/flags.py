@@ -66,7 +66,7 @@ def flag_runner(flag):
                     flag.memory.take_stealers = False
             if not flag.memory.need_lorries:
                 flag.memory.need_lorries = 0
-            factor = total_carryCapacity / 20
+            factor = total_carryCapacity / 50
             need_lorries = flag.memory.need_lorries
             if len(stealers_in_the_room) > 0:
                 if total_carry > 0:

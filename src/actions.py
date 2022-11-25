@@ -783,29 +783,31 @@ def helping_stealers(creep):
                     creep.say('💰')
                     creep.memory.work_place = False
                     moving_by_path(creep, target)
+                    paving_roads(creep)
                 if target.memory.duty == 'repairing' or target.memory.duty == 'building':
                     creep.transfer(target, RESOURCE_ENERGY)
             else:
                 jobs.define_target(creep)
         else:
-            if target.memory.repairing or target.memory.building:
-                if target:
-                    target.memory.has_lorry = creep.id
-                    if creep.pos.isNearTo(target):
-                        creep.say('😆')
-                        creep.memory.work_place = True
+            if target:
+                if target.memory.repairing or target.memory.building:
+                    if target:
+                        target.memory.has_lorry = creep.id
+                        if creep.pos.isNearTo(target):
+                            creep.say('😆')
+                            creep.memory.work_place = True
+                        else:
+                            creep.say('🎒')
+                            creep.memory.work_place = False
+                            moving_by_path(creep, target)
+                        if target.memory.duty == 'repairing' or target.memory.duty == 'building':
+                            creep.transfer(target, RESOURCE_ENERGY)
                     else:
-                        creep.say('🎒')
-                        creep.memory.work_place = False
-                        moving_by_path(creep, target)
-                    if target.memory.duty == 'repairing' or target.memory.duty == 'building':
-                        creep.transfer(target, RESOURCE_ENERGY)
+                        jobs.define_target(creep)
                 else:
+                    if target:
+                        del target.memory.has_lorry
                     jobs.define_target(creep)
-            else:
-                if target:
-                    del target.memory.has_lorry
-                jobs.define_target(creep)
     else:
         jobs.define_target(creep)
 

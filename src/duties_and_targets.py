@@ -458,6 +458,16 @@ def define_stealer_to_help(creep):
                 target = fullest_stealer
                 creep.memory.duty = 'helping_stealers'
                 creep.memory.target = target.id
+            if not target:
+                if len(coworkers) == 2:
+                    target = fullest_stealer
+                    creep.memory.duty = 'helping_stealers'
+                    creep.memory.target = target.id
+                if not target:
+                    if len(coworkers) == 3:
+                        target = fullest_stealer
+                        creep.memory.duty = 'helping_stealers'
+                        creep.memory.target = target.id
     return target
 
 
