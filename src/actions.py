@@ -35,7 +35,7 @@ def stealer_mining(creep):
         if creep.pos.isNearTo(source):
             creep.memory.work_place = True
             result = creep.harvest(source)
-            if result != OK:
+            if result != OK and result != -6:
                 print("[{}] Unknown result from creep.harvest({}): {}".format(creep.name, 'mine', result))
             if result == -1:
                 if creep.memory.flag:

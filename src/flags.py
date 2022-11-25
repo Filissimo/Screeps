@@ -64,15 +64,17 @@ def flag_runner(flag):
                 flag.memory.need_lorries = 0
             home = Game.spawns['Spawn' + flag.name[5:6]]
             need_lorries = flag.memory.need_lorries
-            if total_carryCapacity / total_carry < 10:
+            factor = total_carryCapacity / 25 + 2
+            if total_carryCapacity / (total_carry + 1) < factor:
                 if need_lorries < stealers * 1.5:
-                    need_lorries = need_lorries + 0.01
+                    need_lorries = need_lorries + 0.02
                     home.memory.need_additional_lorries = home.memory.need_additional_lorries + 0.01
             else:
                 if need_lorries > 0:
                     need_lorries = need_lorries - 0.05
                     home.memory.need_additional_lorries = home.memory.need_additional_lorries - 0.05
-            lorries = _.sum(flag.room.find(FIND_MY_CREEPS), lambda c: c.memory.job == 'lorry')
+            lorries = _.sum(flag.room.find(FIND_MY_CREEPS), lambda c: c.memory.job == 'lorry' and
+                            c.store[RESOURCE_ENERGY] < c.store.getCapacity())
             flag.memory.lorries = lorries
             if lorries < need_lorries and stealers > lorries:
                 flag.memory.give_lorries = True
@@ -80,8 +82,8 @@ def flag_runner(flag):
                 flag.memory.give_lorries = False
             flag.memory.need_lorries = round(need_lorries, 2)
             print(flag.name + ': Stealers - ' + stealers + '/' + str(round(need_stealers, 2)) +
-                  ' - ' + str(total_carryCapacity) + '/' + str(total_carry) + '=' +
-                  round((total_carryCapacity / total_carry), 2) +
+                  ' - ' + str(total_carryCapacity) + '/' + str(total_carry + 1) + '=' +
+                  round((total_carryCapacity / (total_carry + 1)), 2) + '(factor=' + round(factor, 2) + ')' +
                   '.  Lorries - ' + str(lorries) + '/' + round(need_lorries, 2))
     if flag.name[:2] == 'dc':
         define_deconstructions(flag)
