@@ -16,7 +16,7 @@ def define_closest_to_withdraw(creep):
         target = _(creep.room.find(FIND_STRUCTURES)) \
             .filter(lambda s: (s.structureType == STRUCTURE_CONTAINER or
                                s.structureType == STRUCTURE_STORAGE) and
-                              s.store[RESOURCE_ENERGY] >= creep.carryCapacity).sample()
+                              s.store[RESOURCE_ENERGY] > 0).sample()
         if target:
             creep.memory.duty = 'withdrawing_from_closest'
             creep.memory.target = target.id
@@ -33,12 +33,12 @@ def define_mining_target(creep):
     return target
 
 
-def verify_amount_of_stealers_on_target(sources, creep, amount):
+def verify_amount_of_stealers_on_target(sources, creep):
     target = undefined
     for source in sources:
         coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
                              lambda c: (c.memory.target == source.id))
-        if len(coworkers) < 300 / creep.store.getCapacity() * amount:
+        if len(coworkers) < 300 / creep.store.getCapacity():
             target = source
             if target:
                 creep.memory.duty = 'mining'
@@ -51,11 +51,15 @@ def define_stealing_target(creep):
     if creep.store[RESOURCE_ENERGY] <= 0:
         sources = _.sortBy(creep.room.find(FIND_SOURCES),
                            lambda s: s.energy)
-        amount = 1
-        target = verify_amount_of_stealers_on_target(sources, creep, amount)
-        if not target:
-            amount = 2
-            target = verify_amount_of_stealers_on_target(sources, creep, amount)
+        for source in sources:
+            coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
+                                 lambda c: (c.memory.target == source.id
+                                            and c.ticksToLive > 50))
+            if len(coworkers) < 300 / creep.store.getCapacity():
+                target = source
+                if target:
+                    creep.memory.duty = 'mining'
+                    creep.memory.target = target.id
     return target
 
 
@@ -277,25 +281,27 @@ def define_reservators_flag(creep):
     flags = Object.keys(Game.flags)
     for flag_name in flags:
         if flag_name[:6] == 'Steal' + home.name[5:6]:
-            flag = Game.flags[flag_name]
-            if flag:
-                if flag.memory.need_reservators >= flag.memory.reservators:
-                    if creep.pos.inRangeTo(flag, 40):
-                        flag = undefined
-                        del creep.memory.duty
-                        del creep.memory.target
-                    else:
-                        creep.memory.flag = flag_name
-                        creep.memory.target = flag_name
-                        creep.memory.duty = 'go_to_flag'
+            if not creep.memory.flag:
+                flag = Game.flags[flag_name]
+                if flag:
+                    if flag.memory.need_reservators >= flag.memory.reservators:
+                        if creep.pos.inRangeTo(flag, 40):
+                            flag = undefined
+                            del creep.memory.duty
+                            del creep.memory.target
+                        else:
+                            creep.memory.flag = flag_name
+                            creep.memory.target = flag_name
+                            creep.memory.duty = 'go_to_flag'
     return flag
 
 
 def define_controller(creep):
-    controller = _(creep.room.find(FIND_STRUCTURES)) \
-        .filter(lambda s: s.structureType == STRUCTURE_CONTROLLER).sample()
+    flag = Game.flags[creep.memory.flag]
+    controller = creep.room.controller
     if controller:
         creep.memory.controller = controller.id
+        print(controller.id)
         if creep.memory.job == 'reservator':
             creep.memory.duty = 'reserving'
         if creep.memory.job == 'claimer':

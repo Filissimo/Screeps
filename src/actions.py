@@ -71,7 +71,7 @@ def withdraw_from_closest(creep):
         target = _(creep.room.find(FIND_STRUCTURES)) \
             .filter(lambda s: (s.structureType == STRUCTURE_CONTAINER or
                                s.structureType == STRUCTURE_STORAGE) and
-                              s.store[RESOURCE_ENERGY] >= creep.carryCapacity) \
+                              s.store[RESOURCE_ENERGY] > 0) \
             .sortBy(lambda s: (s.pos.getRangeTo(creep))).first()
         if target:
             is_close = creep.pos.isNearTo(target)
@@ -633,17 +633,7 @@ def transferring_to_closest(creep):
             is_close = creep.pos.isNearTo(target)
             if is_close:
                 result = creep.transfer(target, RESOURCE_ENERGY)
-                if result == ERR_FULL:
-                    print(creep.name + " - container is full!")
-                    home = Game.getObjectById(creep.memory.home)
-                    if home.memory.need_lorries < home.memory.lorries - 0.1:
-                        need_additional_lorries = home.memory.need_additional_lorries
-                        need_additional_lorries = round((need_additional_lorries + 0.01), 2)
-                        home.memory.need_additional_lorries = need_additional_lorries
-                    creep.memory.job = 'worker'
-                    del creep.memory.target
-                    del creep.memory.duty
-                elif result != OK:
+                if result != OK:
                     del creep.memory.target
                     jobs.define_target(creep)
                     print("[{}] Unknown result from creep.transfer({}):"
@@ -808,6 +798,8 @@ def helping_stealers(creep):
                     if target:
                         del target.memory.has_lorry
                     jobs.define_target(creep)
+            else:
+                jobs.define_target(creep)
     else:
         jobs.define_target(creep)
 

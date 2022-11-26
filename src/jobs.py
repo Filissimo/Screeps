@@ -96,7 +96,8 @@ def define_starter_target(creep):
                     if not duties_and_targets.define_emergency_upgrading_target(creep):
                         if not duties_and_targets.define_building_target(creep):
                             duties_and_targets.define_upgrading_target(creep)
-    elif not creep.memory.target:
+    if not creep.memory.target:
+        actions.move_away_from_creeps(creep)
         home = Game.getObjectById(creep.memory.home)
         need_starters = home.memory.need_starters
         if need_starters > 2:
@@ -187,6 +188,8 @@ def define_worker_target(creep):
                     if not duties_and_targets.define_emergency_upgrading_target(creep):
                         if not duties_and_targets.define_building_target(creep):
                             duties_and_targets.define_upgrading_target(creep)
+    if not creep.memory.target:
+        actions.move_away_from_creeps(creep)
 
 
 def run_lorry(creep):
@@ -259,6 +262,7 @@ def run_stealorry(creep):
                 actions.transferring_to_closest(creep)
             actions.paving_roads(creep)
             actions.accidentally_delivering_to_lorry(creep)
+            actions.accidentally_delivering_to_worker(creep)
     else:
         define_stealorry_target(creep)
 
@@ -272,11 +276,18 @@ def define_stealorry_target(creep):
                 if not duties_and_targets.define_stealer_to_help(creep):
                     duties_and_targets.define_going_home(creep)
     if not creep.memory.target:
-        if creep.room != Game.getObjectById(creep.memory.home).room:
-            creep.memory.target = 'home'
-            creep.memory.duty = 'going_home'
-        actions.move_away_from_creeps(creep)
-        actions.accidentally_delivering_to_worker(creep)
+        if not creep.memory.timer_to_go_home:
+            creep.memory.timer_to_go_home = 0
+        timer_to_go_home = creep.memory.timer_to_go_home
+        creep.say('?' + str(timer_to_go_home))
+        if timer_to_go_home < 10:
+            creep.memory.timer_to_go_home = timer_to_go_home + 1
+        else:
+            if creep.room != Game.getObjectById(creep.memory.home).room:
+                creep.memory.target = 'home'
+                creep.memory.duty = 'going_home'
+    else:
+        del creep.memory.timer_to_go_home
 
 
 def run_defender(creep):
@@ -320,6 +331,9 @@ def define_reservator_targets(creep):
     del creep.memory.duty
     if not duties_and_targets.define_reservators_flag(creep):
         duties_and_targets.define_controller(creep)
+    if not creep.memory.duty:
+        creep.say('?')
+        actions.move_away_from_creeps(creep)
 
 
 def run_stealer(creep):
@@ -360,8 +374,21 @@ def define_stealer_targets(creep):
                     if not duties_and_targets.define_repairing_target(creep):
                         duties_and_targets.define_building_target(creep)
     if not creep.memory.target:
-        creep.say('?')
-        actions.accidentally_delivering_to_stealorry(creep)
+        if not creep.memory.timer_to_go_home:
+            creep.memory.timer_to_go_home = 0
+        timer_to_go_home = creep.memory.timer_to_go_home
+        creep.say('?' + str(timer_to_go_home))
+        if timer_to_go_home < 10:
+            creep.memory.timer_to_go_home = timer_to_go_home + 1
+        else:
+            del creep.memory.timer_to_go_home
+            del creep.memory.duty
+            del creep.memory.target
+            del creep.memory.flag
+            del creep.memory.path
+            creep.memory.job = 'worker'
+    else:
+        del creep.memory.timer_to_go_home
 
 
 def run_claimer(creep):

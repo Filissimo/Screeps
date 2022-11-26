@@ -68,20 +68,21 @@ def flag_runner(flag):
                 flag.memory.need_lorries = 0
             factor = total_carryCapacity / 50
             need_lorries = flag.memory.need_lorries
+            home = Game.spawns['Spawn' + flag.name[5:6]]
             if len(stealers_in_the_room) > 0:
                 if total_carry > 0:
                     if total_carryCapacity / total_carry < factor:
                         if need_lorries < len(stealers_in_the_room) * 3:
                             need_lorries = need_lorries + 0.01
-                            # home.memory.need_additional_lorries = home.memory.need_additional_lorries + 0.01
+                            home.memory.need_additional_lorries = home.memory.need_additional_lorries + 0.01
                     else:
                         if need_lorries > 0:
                             need_lorries = need_lorries - 0.01
                             # home.memory.need_additional_lorries = home.memory.need_additional_lorries - 0.05
                 lorries = flag.memory.lorries
-                if lorries < need_lorries and len(stealers_in_the_room) > lorries:
+                if lorries < need_lorries:
                     flag.memory.give_lorries = True
-                if lorries > need_lorries + 1:
+                if lorries > need_lorries:
                     flag.memory.give_lorries = False
                 flag.memory.need_lorries = round(need_lorries, 2)
             else:
