@@ -29,8 +29,9 @@ class SpawnRunner:
                         .sortBy(lambda e: e.pos.getRangeTo(tower)).first()
                     if enemy:
                         tower.attack(enemy)
-                    damaged_creep = _(tower.pos.findInRange(FIND_MY_CREEPS, 10)) \
-                        .sortBy(lambda e: e.pos.getRangeTo(tower)).first()
+                    damaged_creep = _(tower.pos.findInRange(FIND_MY_CREEPS, 10))\
+                        .filter(lambda c: c.hits < c.hitsMax - 100) \
+                        .sortBy(lambda c: c.pos.getRangeTo(tower)).first()
                     if damaged_creep:
                         tower.heal(damaged_creep)
 

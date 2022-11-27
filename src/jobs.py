@@ -211,6 +211,10 @@ def run_lorry(creep):
             actions.delivering_for_spawning(creep)
             actions.accidentally_delivering_for_spawning(creep)
             actions.paving_roads(creep)
+        elif duty == 'delivering_to_tower':
+            actions.accidentally_delivering_to_worker(creep)
+            actions.delivering_to_from_memory(creep)
+            actions.paving_roads(creep)
         elif duty == 'delivering_to_emptiest':
             actions.accidentally_delivering_to_worker(creep)
             actions.delivering_to_from_memory(creep)
@@ -231,9 +235,9 @@ def define_lorry_target(creep):
         if not duties_and_targets.define_fullest(creep):
             if not duties_and_targets.define_storage_to_withdraw(creep):
                 if not duties_and_targets.define_deliver_for_spawn_target(creep):
-                    if not duties_and_targets.define_emptiest(creep):
-                        # if not duties_and_targets.define_worker_to_help(creep):
-                        duties_and_targets.define_storage_to_deliver(creep)
+                    if not duties_and_targets.define_tower(creep):
+                        if not duties_and_targets.define_emptiest(creep):
+                            duties_and_targets.define_storage_to_deliver(creep)
     if not creep.memory.target:
         if creep.room != Game.getObjectById(creep.memory.home).room:
             creep.memory.target = 'home'

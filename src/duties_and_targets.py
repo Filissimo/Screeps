@@ -151,7 +151,7 @@ def define_creep_to_pickup_tombstone(creep):
                                t.id != creep.memory.target)).first()
         if tombstone != undefined:
             creep_to_pickup = _(creep.room.find(FIND_MY_CREEPS)) \
-                .filter(lambda c: (c.store[RESOURCE_ENERGY] < c.store.getCapacity()) and
+                .filter(lambda c: (c.store[RESOURCE_ENERGY] < c.store.getCapacity() / 2) and
                                   (c.memory.job == 'lorry' or
                                    c.memory.job == 'stealorry' or
                                    c.memory.job == 'starter' or
@@ -212,7 +212,7 @@ def define_emptiest(creep):
                 creep.memory.duty = 'delivering_to_emptiest'
                 target = emptiest_container
                 creep.memory.target = target.id
-        else:
+        elif emptiest_container.structureType == STRUCTURE_TOWER:
             if emptiest_container.total_energy_of_container < emptiest_container.store.getCapacity():
                 creep.memory.duty = 'delivering_to_emptiest'
                 target = emptiest_container
@@ -555,5 +555,19 @@ def define_worker_to_help(creep):
         if emptiest_worker.total_energy_of_worker < emptiest_worker.store.getCapacity():
             target = emptiest_worker
             creep.memory.duty = 'helping_workers'
+            creep.memory.target = target.id
+    return target
+
+
+def define_tower(creep):
+    target = undefined
+    if creep.store[RESOURCE_ENERGY] > 0:
+        tower = _(creep.room.find(FIND_STRUCTURES)) \
+            .filter(lambda s: (s.structureType == STRUCTURE_TOWER and
+                               s.store.getFreeCapacity(RESOURCE_ENERGY) > 0)) \
+            .sample()
+        if tower:
+            target = tower
+            creep.memory.duty = 'delivering_to_tower'
             creep.memory.target = target.id
     return target
