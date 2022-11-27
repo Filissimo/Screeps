@@ -34,33 +34,14 @@ def define_mining_target(creep):
     return target
 
 
-def verify_amount_of_stealers_on_target(sources, creep):
-    target = undefined
-    for source in sources:
-        coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
-                             lambda c: (c.memory.target == source.id))
-        if len(coworkers) < 300 / creep.store.getCapacity():
-            target = source
-            if target:
-                creep.memory.duty = 'mining'
-                creep.memory.target = target.id
-    return target
-
-
 def define_stealing_target(creep):
     target = undefined
     if creep.store[RESOURCE_ENERGY] <= 0:
-        sources = _.sortBy(creep.room.find(FIND_SOURCES),
-                           lambda s: s.energy)
-        for source in sources:
-            coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
-                                 lambda c: (c.memory.target == source.id
-                                            and c.ticksToLive > 50))
-            if len(coworkers) < 300 / creep.store.getCapacity():
-                target = source
-                if target:
-                    creep.memory.duty = 'mining'
-                    creep.memory.target = target.id
+        source = creep.pos.findClosestByPath(FIND_SOURCES_ACTIVE)
+        target = source
+        if target:
+            creep.memory.duty = 'mining'
+            creep.memory.target = target.id
     return target
 
 
@@ -208,7 +189,7 @@ def define_emptiest(creep):
                     # print(emptiest_container.total_energy_of_container + '  emptiest  ' + emptiest_container.id)
     if emptiest_container:
         if emptiest_container.structureType == STRUCTURE_CONTAINER:
-            if emptiest_container.total_energy_of_container < emptiest_container.store.getCapacity() * 0.35:
+            if emptiest_container.total_energy_of_container < emptiest_container.store.getCapacity() * 0.5:
                 creep.memory.duty = 'delivering_to_emptiest'
                 target = emptiest_container
                 creep.memory.target = target.id
@@ -257,7 +238,7 @@ def define_fullest(creep):
                     # print(fullest_container.total_energy_of_container + '  fullest  ' + fullest_container.id)
 
     if fullest_container:
-        if fullest_container.total_energy_of_container > fullest_container.store.getCapacity() * 0.5:
+        if fullest_container.total_energy_of_container > fullest_container.store.getCapacity() * 0.4:
             target = fullest_container
             creep.memory.duty = 'withdrawing_from_fullest'
             creep.memory.target = target.id
@@ -295,7 +276,7 @@ def define_reservators_flag(creep):
             if not creep.memory.flag:
                 flag = Game.flags[flag_name]
                 if flag:
-                    if flag.memory.need_reservators >= flag.memory.reservators:
+                    if flag.memory.need_reservators > flag.memory.reservators:
                         if creep.pos.inRangeTo(flag, 40):
                             flag = undefined
                             del creep.memory.duty
