@@ -198,6 +198,7 @@ def run_lorry(creep):
     if target and actions.not_fleeing(creep):
         if duty == 'picking_up_tombstone':
             actions.pick_up_tombstone(creep)
+            actions.accidentally_delivering_for_spawning(creep)
         elif duty == 'going_home':
             actions.paving_roads(creep)
             if not actions.going_home(creep):
@@ -281,6 +282,7 @@ def define_stealorry_target(creep):
         timer_to_go_home = creep.memory.timer_to_go_home
         creep.say('?' + str(timer_to_go_home))
         if timer_to_go_home < 10:
+            creep.memory.work_place = True
             creep.memory.timer_to_go_home = timer_to_go_home + 1
         else:
             if creep.room != Game.getObjectById(creep.memory.home).room:
@@ -378,7 +380,8 @@ def define_stealer_targets(creep):
             creep.memory.timer_to_go_home = 0
         timer_to_go_home = creep.memory.timer_to_go_home
         creep.say('?' + str(timer_to_go_home))
-        if timer_to_go_home < 10:
+        if timer_to_go_home < 30:
+            creep.memory.work_place = True
             creep.memory.timer_to_go_home = timer_to_go_home + 1
         else:
             del creep.memory.timer_to_go_home

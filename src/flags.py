@@ -78,7 +78,9 @@ def flag_runner(flag):
                     else:
                         if need_lorries > 0:
                             need_lorries = need_lorries - 0.01
-                            # home.memory.need_additional_lorries = home.memory.need_additional_lorries - 0.05
+                else:
+                    if need_lorries > 0:
+                        need_lorries = need_lorries - 0.01
                 lorries = flag.memory.lorries
                 if lorries < need_lorries:
                     flag.memory.give_lorries = True

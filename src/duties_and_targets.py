@@ -15,7 +15,8 @@ def define_closest_to_withdraw(creep):
     if creep.store[RESOURCE_ENERGY] <= 0:
         target = _(creep.room.find(FIND_STRUCTURES)) \
             .filter(lambda s: (s.structureType == STRUCTURE_CONTAINER or
-                               s.structureType == STRUCTURE_STORAGE) and
+                               s.structureType == STRUCTURE_STORAGE or
+                               s.structureType == STRUCTURE_TOWER) and
                               s.store[RESOURCE_ENERGY] > 0).sample()
         if target:
             creep.memory.duty = 'withdrawing_from_closest'
@@ -145,10 +146,10 @@ def define_dismantling_target(creep):
 def define_creep_to_pickup_tombstone(creep):
     target = undefined
     if creep.store[RESOURCE_ENERGY] < creep.carryCapacity:
-        target = _(creep.room.find(FIND_TOMBSTONES)) \
+        tombstone = _(creep.room.find(FIND_TOMBSTONES)) \
             .filter(lambda t: (t.store[RESOURCE_ENERGY] > 0 and
                                t.id != creep.memory.target)).first()
-        if target != undefined:
+        if tombstone != undefined:
             creep_to_pickup = _(creep.room.find(FIND_MY_CREEPS)) \
                 .filter(lambda c: (c.store[RESOURCE_ENERGY] < c.store.getCapacity()) and
                                   (c.memory.job == 'lorry' or
@@ -156,14 +157,17 @@ def define_creep_to_pickup_tombstone(creep):
                                    c.memory.job == 'starter' or
                                    ((c.memory.job == 'stealer' or
                                      c.memory.job == 'miner') and
-                                    c.pos.isNearTo(target)))) \
-                .sortBy(lambda c: (c.pos.getRangeTo(target))).first()
+                                    c.pos.isNearTo(tombstone)))) \
+                .sortBy(lambda c: (c.pos.getRangeTo(tombstone))).first()
             if creep_to_pickup:
-                coworkers = _.sum(creep_to_pickup.room.find(FIND_MY_CREEPS), lambda c: c.memory.target == target.id)
-                if coworkers == 0:
-                    creep_to_pickup.memory.duty = 'picking_up_tombstone'
-                    creep_to_pickup.memory.target = target.id
-                    del creep.memory.path
+                if tombstone.store[RESOURCE_ENERGY] > creep_to_pickup.pos.getRangeTo(tombstone) * 5:
+                    coworkers = _.sum(creep_to_pickup.room.find(FIND_MY_CREEPS),
+                                      lambda c: c.memory.target == tombstone.id)
+                    if coworkers < 1:
+                        target = tombstone
+                        creep_to_pickup.memory.duty = 'picking_up_tombstone'
+                        creep_to_pickup.memory.target = target.id
+                        del creep.memory.path
     return target
 
 
@@ -172,7 +176,8 @@ def define_emptiest(creep):
     emptiest_container = undefined
     if creep.store[RESOURCE_ENERGY] > 0:
         containers = _.filter(creep.room.find(FIND_STRUCTURES),
-                              lambda s: s.structureType == STRUCTURE_CONTAINER)
+                              lambda s: s.structureType == STRUCTURE_CONTAINER or
+                              s.structureType == STRUCTURE_TOWER)
         if containers:
             for container in containers:
                 if container:
@@ -202,10 +207,16 @@ def define_emptiest(creep):
                     emptiest_container = _(containers).sortBy(lambda c: c.total_energy_of_container).first()
                     # print(emptiest_container.total_energy_of_container + '  emptiest  ' + emptiest_container.id)
     if emptiest_container:
-        if emptiest_container.total_energy_of_container < emptiest_container.store.getCapacity() * 0.3:
-            creep.memory.duty = 'delivering_to_emptiest'
-            target = emptiest_container
-            creep.memory.target = target.id
+        if emptiest_container.structureType == STRUCTURE_CONTAINER:
+            if emptiest_container.total_energy_of_container < emptiest_container.store.getCapacity() * 0.35:
+                creep.memory.duty = 'delivering_to_emptiest'
+                target = emptiest_container
+                creep.memory.target = target.id
+        else:
+            if emptiest_container.total_energy_of_container < emptiest_container.store.getCapacity():
+                creep.memory.duty = 'delivering_to_emptiest'
+                target = emptiest_container
+                creep.memory.target = target.id
     return target
 
 
@@ -345,7 +356,8 @@ def define_closest_to_transfer(creep):
     if creep.store[RESOURCE_ENERGY] > 0:
         target = _(creep.room.find(FIND_STRUCTURES)) \
             .filter(lambda s: s.structureType == STRUCTURE_CONTAINER or
-                              s.structureType == STRUCTURE_STORAGE) \
+                              s.structureType == STRUCTURE_STORAGE or
+                              s.structureType == STRUCTURE_TOWER) \
             .sortBy(lambda s: s.pos.getRangeTo(creep)).first()
         if target:
             creep.memory.duty = 'transferring_to_closest'
@@ -460,17 +472,17 @@ def define_stealer_to_help(creep):
             creep.memory.duty = 'helping_stealers'
             creep.memory.target = target.id
         if not target:
-            if len(coworkers) == 1:
+            if len(coworkers) <= 1:
                 target = fullest_stealer
                 creep.memory.duty = 'helping_stealers'
                 creep.memory.target = target.id
             if not target:
-                if len(coworkers) == 2:
+                if len(coworkers) <= 2:
                     target = fullest_stealer
                     creep.memory.duty = 'helping_stealers'
                     creep.memory.target = target.id
                 if not target:
-                    if len(coworkers) == 3:
+                    if len(coworkers) <= 3:
                         target = fullest_stealer
                         creep.memory.duty = 'helping_stealers'
                         creep.memory.target = target.id
@@ -488,12 +500,11 @@ def decrease_lorries_needed(creep):
 
 
 def check_if_repairing_needed(creep):
-    creep.memory.repairing = False
     target = _(creep.room.find(FIND_STRUCTURES)) \
         .filter(lambda s: (s.hits < s.hitsMax * 0.05) and
                           s.structureType != STRUCTURE_WALL) \
         .sortBy(lambda s: (s.hitsMax / s.hits)).last()
-    if target != undefined:
+    if target:
         do_not_repairs = Memory.deconstructions
         if do_not_repairs:
             for do_not_repair in do_not_repairs:
@@ -502,6 +513,8 @@ def check_if_repairing_needed(creep):
                         target = undefined
         if target:
             creep.memory.repairing = True
+        else:
+            creep.memory.repairing = False
     return target
 
 

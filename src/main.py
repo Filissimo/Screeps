@@ -55,6 +55,7 @@ def main():
               '. Miners:  ' + spawn_memory.miners + '/' + spawn_memory.need_miners +
               '. Lorries:  ' + spawn_memory.lorries + '/' + spawn_memory.need_lorries +
               ". Workers:  " + spawn_memory.workers + '/' + spawn_memory.need_workers)
+        s.towering_towers(spawn)
 
     for creep_name in Object.keys(Game.creeps):
         creep = Game.creeps[creep_name]
