@@ -174,7 +174,7 @@ def define_emptiest(creep):
                     if coworkers:
                         for coworker in coworkers:
                             if coworker.store.getCapacity() > 0:
-                                energy_on_the_way = energy_on_the_way + coworker.store[RESOURCE_ENERGY]
+                                energy_on_the_way = energy_on_the_way + (coworker.store[RESOURCE_ENERGY] * 0.7)
                         total_energy_of_container = energy_of_container + energy_on_the_way
                         container.total_energy_of_container = total_energy_of_container
                     if anti_coworkers:
