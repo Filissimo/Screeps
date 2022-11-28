@@ -628,8 +628,7 @@ def transferring_to_closest(creep):
             if is_close:
                 result = creep.transfer(target, RESOURCE_ENERGY)
                 if result == -8:
-                    accidentally_delivering_to_worker(creep)
-                    accidentally_delivering_to_lorry(creep)
+                    return result
                 elif result != OK:
                     del creep.memory.target
                     jobs.define_target(creep)
@@ -827,3 +826,9 @@ def helping_workers(creep):
             jobs.define_target(creep)
     else:
         jobs.define_target(creep)
+
+
+def pick_up_energy(creep):
+    energy_near = creep.pos.findInRange(FIND_DROPPED_RESOURCES, 1)[0]
+    if energy_near:
+        creep.pickup(energy_near)

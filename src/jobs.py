@@ -198,6 +198,7 @@ def run_lorry(creep):
     if target and actions.not_fleeing(creep):
         if duty == 'picking_up_tombstone':
             actions.pick_up_tombstone(creep)
+            actions.pick_up_energy(creep)
             actions.accidentally_delivering_for_spawning(creep)
         elif duty == 'going_home':
             actions.paving_roads(creep)
@@ -205,10 +206,13 @@ def run_lorry(creep):
                 define_target(creep)
         elif duty == 'withdrawing_from_fullest':
             actions.withdrawing_from_memory(creep)
+            actions.pick_up_energy(creep)
         elif duty == 'withdrawing_from_storage':
             actions.withdrawing_from_memory(creep)
+            actions.pick_up_energy(creep)
         elif duty == 'delivering_for_spawn':
             actions.delivering_for_spawning(creep)
+            actions.pick_up_energy(creep)
             actions.accidentally_delivering_for_spawning(creep)
             actions.paving_roads(creep)
         elif duty == 'delivering_to_tower':
@@ -365,14 +369,13 @@ def run_stealer(creep):
         elif duty == 'transferring_to_closest':
             if not actions.going_home(creep):
                 if actions.transferring_to_closest(creep) == -8:
+                    duties_and_targets.decrease_stealers_needed(creep)
                     del creep.memory.duty
                     del creep.memory.target
                     del creep.memory.flag
                     del creep.memory.path
                     creep.memory.job = 'worker'
             actions.paving_roads(creep)
-            actions.accidentally_delivering_to_lorry(creep)
-            actions.accidentally_delivering_to_worker(creep)
     else:
         define_stealer_targets(creep)
 
