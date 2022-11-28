@@ -230,7 +230,7 @@ def define_fullest(creep):
                     if anti_coworkers:
                         for anti_coworker in anti_coworkers:
                             if anti_coworker.store.getCapacity() > 0:
-                                energy_on_the_way = energy_on_the_way + anti_coworker.store[RESOURCE_ENERGY]
+                                energy_on_the_way = energy_on_the_way + (anti_coworker.store[RESOURCE_ENERGY] * 1.2)
                         total_energy_of_container = energy_of_container + energy_on_the_way
                         container.total_energy_of_container = total_energy_of_container
                 if container:

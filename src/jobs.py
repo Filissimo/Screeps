@@ -266,8 +266,6 @@ def run_stealorry(creep):
             if not actions.going_home(creep):
                 actions.transferring_to_closest(creep)
             actions.paving_roads(creep)
-            actions.accidentally_delivering_to_lorry(creep)
-            actions.accidentally_delivering_to_worker(creep)
     else:
         define_stealorry_target(creep)
 
