@@ -301,6 +301,10 @@ def define_stealorry_target(creep):
 def run_defender(creep):
     duty = creep.memory.duty
     if duty:
+        healer = Game.getObjectById(creep.memory.healer)
+        if healer:
+            if healer.hits < healer.hitsMax / 4:
+                del creep.memory.healer
         if duty != 'defending' or actions.move_away_from_creeps(creep):
             creep.memory.start_point = 0
         if duty == 'attacking':
@@ -317,9 +321,29 @@ def define_defender_targets(creep):
     creep.memory.fleeing_creep = None
     enemy = creep.room.find(FIND_HOSTILE_CREEPS, {'filter': lambda e: e.owner.username != 'rep71Le'})
     if len(enemy) == 0:
-        creep.memory.duty = 'defending'
+        if not duties_and_targets.define_flag_to_help(creep):
+            creep.memory.duty = 'defending'
     else:
         creep.memory.duty = 'attacking'
+
+
+def run_healer(creep):
+    duty = creep.memory.duty
+    if duty:
+        if duty == 'nursing':
+            actions.nursing(creep)
+    else:
+        define_healer_targets(creep)
+
+
+def define_healer_targets(creep):
+    del creep.memory.duty
+    for creep_name in Object.keys(Game.creeps):
+        any_creep = Game.creeps[creep_name]
+        if any_creep.memory.job == 'defender' and not any_creep.memory.healer:
+            any_creep.memory.healer = creep.id
+            creep.memory.target = any_creep.id
+            creep.memory.duty = 'nursing'
 
 
 def run_reservator(creep):

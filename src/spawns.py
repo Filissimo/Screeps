@@ -135,9 +135,13 @@ def creep_needed_to_spawn(spawn):
         if job_name == 'defender':
             need_defenders = len(spawn.room.find(FIND_HOSTILE_CREEPS,
                                                  {'filter': lambda e: e.owner.username != 'rep71Le'}))
-            spawn_memory.need_defenders = (need_defenders * 2) + 3
+            spawn_memory.need_defenders = need_defenders + 2
             spawn_memory.defenders = number_of_creeps_filtered
             if spawn_memory.need_defenders > number_of_creeps_filtered:
+                desired_job = job_name
+        elif job_name == 'healer':
+            spawn_memory.healers = number_of_creeps_filtered
+            if spawn_memory.healers < spawn_memory.defenders:
                 desired_job = job_name
         elif job_name == 'starter':
             spawn_memory.starters = number_of_creeps_filtered
@@ -278,12 +282,19 @@ def creep_needed_to_spawn(spawn):
 def define_body(spawn, job_name):
     desired_body = []
     if job_name == 'defender':
-        for a in range(1, 3):
+        for a in range(1, 5):
             if spawn.room.energyAvailable >= a * 260:
                 desired_body.extend([TOUGH])
-        for a in range(1, 4):
+        for a in range(1, 5):
             if spawn.room.energyCapacityAvailable >= a * 260:
                 desired_body.extend([RANGED_ATTACK, MOVE, MOVE])
+    if job_name == 'healer':
+        for a in range(1, 4):
+            if spawn.room.energyAvailable >= a * 360:
+                desired_body.extend([TOUGH])
+        for a in range(1, 4):
+            if spawn.room.energyCapacityAvailable >= a * 360:
+                desired_body.extend([HEAL, MOVE, MOVE])
     elif job_name == 'starter':
         for a in range(1, 10):
             if spawn.room.energyAvailable >= a * 200:

@@ -158,7 +158,7 @@ def define_emptiest(creep):
     if creep.store[RESOURCE_ENERGY] > 0:
         containers = _.filter(creep.room.find(FIND_STRUCTURES),
                               lambda s: s.structureType == STRUCTURE_CONTAINER or
-                              s.structureType == STRUCTURE_TOWER)
+                                        s.structureType == STRUCTURE_TOWER)
         if containers:
             for container in containers:
                 if container:
@@ -260,7 +260,8 @@ def define_storage_to_withdraw(creep):
     target = undefined
     if creep.store[RESOURCE_ENERGY] <= 0:
         target = _.filter(creep.room.find(FIND_STRUCTURES),
-                          lambda s: s.structureType == STRUCTURE_STORAGE)
+                          lambda s: s.structureType == STRUCTURE_STORAGE
+                          and s.store[RESOURCE_ENERGY] >= creep.store.getCapacity())
         if target[0]:
             creep.memory.duty = 'withdrawing_from_storage'
             creep.memory.target = target[0].id
@@ -337,8 +338,7 @@ def define_closest_to_transfer(creep):
     if creep.store[RESOURCE_ENERGY] > 0:
         target = _(creep.room.find(FIND_STRUCTURES)) \
             .filter(lambda s: s.structureType == STRUCTURE_CONTAINER or
-                              s.structureType == STRUCTURE_STORAGE or
-                              s.structureType == STRUCTURE_TOWER) \
+                              s.structureType == STRUCTURE_STORAGE) \
             .sortBy(lambda s: s.pos.getRangeTo(creep)).first()
         if target:
             creep.memory.duty = 'transferring_to_closest'
@@ -552,3 +552,19 @@ def define_tower(creep):
             creep.memory.duty = 'delivering_to_tower'
             creep.memory.target = target.id
     return target
+
+
+def define_flag_to_help(creep):
+    flag = undefined
+    for flag_name in Object.keys(Game.flags):
+        if flag_name[:1] == 'A':
+            home = Game.getObjectById(creep.memory.home)
+            if flag_name[6:7] == home.name[5:6]:
+                flag = Game.flags[flag_name]
+                if flag:
+                    creep.memory.flag = flag_name
+                    creep.memory.duty = 'going_to_help'
+                    if creep.pos.inRangeTo(flag, 40):
+                        flag = undefined
+                        del creep.memory.duty
+    return flag

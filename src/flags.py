@@ -76,17 +76,27 @@ def flag_runner(flag):
                       str(stealers) + '/' + str(round(need_stealers, 2)) + '.  Reservation: ' + reservation)
                 flag.memory = flag_memory
             else:
-                flag.memory.need_stealers = 0
-                flag.memory.need_reservators = 0
-                stealers = _.filter(flag.room.find(FIND_MY_CREEPS), lambda c: c.memory.job == 'stealer')
+                defenders = _.sum(flag.room.find(FIND_MY_CREEPS), lambda c: c.memory.job == 'defender')
+                if len(defenders) < 2:
+                    flag.pos.createFlag('A' + flag.name)
+                    flag.remove()
+        else:
+            flag.memory.need_stealers = 3
+    if flag.name[:1] == 'A':
+        if flag.room:
+            stealers = _.filter(flag.room.find(FIND_MY_CREEPS), lambda c: c.memory.job == 'stealer')
+            if len(stealers) > 0:
                 for stealer in stealers:
                     del stealer.memory.duty
                     del stealer.memory.target
                     del stealer.memory.flag
                     del stealer.memory.path
                     stealer.memory.job = 'worker'
-        else:
-            flag.memory.need_stealers = 3
+            defenders = _.sum(flag.room.find(FIND_MY_CREEPS), lambda  c: c.memory.job == 'defender')
+            if len(defenders) >= 2:
+                flag.pos.createFlag(flag.name[1:])
+                flag.remove()
+
     if flag.name[:2] == 'dc':
         define_deconstructions(flag)
     if flag.name[:5] == 'claim':

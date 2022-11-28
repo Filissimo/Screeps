@@ -389,16 +389,6 @@ def not_fleeing(creep):
             ).path
             creep.moveByPath(flee_path)
             not_fleeing_bool = False
-            my_creeps = _.filter(Game.creeps, lambda c: c.memory != undefined)
-            my_creeps_with_memory = _.filter(my_creeps, lambda c: c.memory.job != undefined)
-            creeps_filtered = _.filter(my_creeps_with_memory,
-                                       lambda c: c.memory.home == creep.memory.home and c.memory.job == 'defender' and
-                                                 c.ticksToLive > 50)
-
-            for defender in creeps_filtered:
-                if defender.memory.duty == 'defending' and defender.memory.fleeing_creep is None:
-                    defender.memory.fleeing_creep = creep.id
-                    defender.memory.duty = 'going_to_help'
     return not_fleeing_bool
 
 
@@ -490,6 +480,7 @@ def delivering_to_from_memory(creep):
         if target:
             is_close = creep.pos.isNearTo(target)
             if is_close:
+                creep.memory.work_place = True
                 result = creep.transfer(target, RESOURCE_ENERGY)
                 if result == OK or result == ERR_FULL:
                     del creep.memory.target
@@ -530,7 +521,7 @@ def attacking(creep):
 def move_away_from_creeps(creep):
     result = False
     creep_to_flee = _(creep.room.find(FIND_MY_CREEPS)) \
-        .filter(lambda c: (c.id != creep.id)) \
+        .filter(lambda c: c.id != creep.id and c.id != creep.memory.healer) \
         .sortBy(lambda c: c.pos.getRangeTo(creep)).first()
     if creep_to_flee:
         if creep.pos.inRangeTo(creep_to_flee, 2):
@@ -626,6 +617,7 @@ def transferring_to_closest(creep):
         if target:
             is_close = creep.pos.isNearTo(target)
             if is_close:
+                creep.memory.work_place = True
                 result = creep.transfer(target, RESOURCE_ENERGY)
                 if result == -8:
                     return result
@@ -644,10 +636,10 @@ def transferring_to_closest(creep):
 
 def going_to_help(creep):
     creep.say('🗡️')
-    fleeing_creep = Game.getObjectById(creep.memory.fleeing_creep)
-    if fleeing_creep:
-        moving_by_path(creep, fleeing_creep)
-        if creep.pos.inRangeTo(fleeing_creep, 40):
+    flag_to_defend = Game.flags[creep.memory.flag]
+    if flag_to_defend:
+        moving_by_path(creep, flag_to_defend)
+        if creep.pos.inRangeTo(flag_to_defend, 40):
             jobs.define_target(creep)
     else:
         jobs.define_target(creep)
@@ -832,3 +824,43 @@ def pick_up_energy(creep):
     energy_near = creep.pos.findInRange(FIND_DROPPED_RESOURCES, 1)[0]
     if energy_near:
         creep.pickup(energy_near)
+
+
+def nursing(creep):
+    target = Game.getObjectById(creep.memory.target)
+    if target:
+        if not target.memory.healer:
+            if creep.hits < creep.hitsMax / 4:
+                target.memory.healer = creep.id
+        if creep.pos.isNearTo(target):
+            creep.memory.work_place = True
+        else:
+            creep.memory.work_place = False
+            enemy = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS,
+                                                 {'filter': lambda e: e.owner.username != 'rep71Le'})
+            if enemy:
+                if creep.pos.inRangeTo(enemy, 5):
+                    creep.rangedAttack(enemy)
+                    if 4 < creep.pos.x < 45 and 4 < creep.pos.y < 45:
+                        flee_condition = _.map(creep.room.find(FIND_HOSTILE_CREEPS),
+                                               lambda c: {'pos': c.pos, 'range': 7})
+                        flee_path = PathFinder.search(
+                            creep.pos,
+                            flee_condition,
+                            {'flee': True}
+                        ).path
+                        creep.moveByPath(flee_path)
+                else:
+                    moving_by_path(creep, target)
+        patient = _(creep.pos.findInRange(FIND_MY_CREEPS, 3))\
+            .filter(lambda c: c.hits < c.hitsMax)\
+            .sortBy(lambda c: c.hitsMax / c.hits).first()
+        if patient:
+            if creep.pos.isNearTo(patient):
+                creep.heal(patient)
+            else:
+                creep.rangedHeal(patient)
+        else:
+            creep.heal(creep)
+    else:
+        jobs.define_target(creep)
