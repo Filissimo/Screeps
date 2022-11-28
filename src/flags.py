@@ -53,11 +53,13 @@ def flag_runner(flag):
                 sources = flag.room.find(FIND_SOURCES)
                 for source in sources:
                     if source.energy >= 2900 or source.energy / source.ticksToRegeneration > 10:
-                        if need_stealers < stealers + 1:
+                        if need_stealers < stealers + 2:
                             need_stealers = need_stealers + 0.01
+                            if stealers == 0:
+                                need_stealers = 3
                     if source.energy / source.ticksToRegeneration < 9 or source.energy <= 0:
-                        if need_stealers > stealers - 1:
-                            need_stealers = need_stealers - 0.02
+                        if need_stealers > stealers - 3:
+                            need_stealers = need_stealers - 0.01
                 flag_memory.need_stealers = need_stealers
 
                 controller = flag.room.controller

@@ -350,8 +350,8 @@ def decrease_stealers_needed(creep):
     flag = Game.flags[creep.memory.flag]
     need_stealers = flag.memory.need_stealers
     stealers = flag.memory.stealers
-    if need_stealers >= stealers:
-        need_stealers = need_stealers - 0.01
+    if need_stealers >= stealers - 3:
+        need_stealers = need_stealers - 0.05
     flag.memory.need_stealers = round(need_stealers, 2)
 
 

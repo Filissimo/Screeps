@@ -393,6 +393,7 @@ def define_stealer_targets(creep):
     if not creep.memory.target:
         creep.say('?')
         actions.move_away_from_creeps(creep)
+        duties_and_targets.decrease_stealers_needed(creep)
 
 
 def run_claimer(creep):

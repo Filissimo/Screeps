@@ -1,5 +1,5 @@
 from defs import *
-from src import jobs
+from src import jobs, duties_and_targets
 
 __pragma__('noalias', 'name')
 __pragma__('noalias', 'undefined')
@@ -47,6 +47,7 @@ def stealer_mining(creep):
                     jobs.define_target(creep)
         elif creep.pos.inRangeTo(source, 2):
             if creep.moveTo(source) == -2:
+                duties_and_targets.decrease_stealers_needed(creep)
                 jobs.define_target(creep)
         else:
             moving_by_path(creep, source)
@@ -512,13 +513,14 @@ def attacking(creep):
         creep.say('⚔')
         if creep.pos.inRangeTo(enemy, 3):
             creep.rangedAttack(enemy)
-            flee_condition = _.map(creep.room.find(FIND_HOSTILE_CREEPS), lambda c: {'pos': c.pos, 'range': 5})
-            flee_path = PathFinder.search(
-                creep.pos,
-                flee_condition,
-                {'flee': True}
-            ).path
-            creep.moveByPath(flee_path)
+            if 4 < creep.pos.x < 45 and 4 < creep.pos.y < 45:
+                flee_condition = _.map(creep.room.find(FIND_HOSTILE_CREEPS), lambda c: {'pos': c.pos, 'range': 5})
+                flee_path = PathFinder.search(
+                    creep.pos,
+                    flee_condition,
+                    {'flee': True}
+                ).path
+                creep.moveByPath(flee_path)
         else:
             moving_by_path(creep, enemy)
     else:
@@ -713,7 +715,7 @@ def accidentally_delivering_to_worker(creep):
         targets = creep.pos.findInRange(FIND_MY_CREEPS, 1)
         if targets:
             target_empty_worker = _(targets).filter(lambda t: (t.memory.job == 'worker') and
-                                                    t.store[RESOURCE_ENERGY] < t.store.getCapacity()).sample()
+                                                              t.store[RESOURCE_ENERGY] < t.store.getCapacity()).sample()
             if target_empty_worker:
                 result = creep.transfer(target_empty_worker, RESOURCE_ENERGY)
                 if result != OK:
@@ -768,7 +770,7 @@ def helping_stealers(creep):
                     creep.memory.work_place = False
                     moving_by_path(creep, target)
                     paving_roads(creep)
-                if (target.memory.duty == 'repairing' or target.memory.duty == 'building')\
+                if (target.memory.duty == 'repairing' or target.memory.duty == 'building') \
                         and creep.store[RESOURCE_ENERGY] > 0:
                     creep.transfer(target, RESOURCE_ENERGY)
             else:
@@ -815,7 +817,7 @@ def helping_workers(creep):
                 moving_by_path(creep, target)
             creep.transfer(target, RESOURCE_ENERGY)
             # if creep.store[RESOURCE_ENERGY] < 100:
-            container = _(creep.pos.findInRange(FIND_STRUCTURES, 1))\
+            container = _(creep.pos.findInRange(FIND_STRUCTURES, 1)) \
                 .filter(lambda s: s.structureType == STRUCTURE_CONTAINER or
                                   s.structureType == STRUCTURE_STORAGE).sample()
             if container:

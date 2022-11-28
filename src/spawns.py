@@ -208,7 +208,8 @@ def creep_needed_to_spawn(spawn):
                         flag_memory = flag.memory
                         stealers_on_the_flag = _.filter(creeps_filtered, lambda c: c.memory.flag == flag_name)
                         flag.memory.stealers = len(stealers_on_the_flag)
-                        if flag_memory.need_stealers > flag_memory.stealers:
+                        if flag_memory.need_stealers > flag_memory.stealers\
+                                and spawn_memory.workers > spawn_memory.need_workers - 0.1:
                             worker_to_stealer = _(spawn.room.find(FIND_MY_CREEPS)) \
                                 .filter(lambda c: c.memory.job == 'worker' and
                                                   c.store[RESOURCE_ENERGY] == 0 and
@@ -220,7 +221,7 @@ def creep_needed_to_spawn(spawn):
                                 worker_to_stealer.memory.job = 'stealer'
                                 worker_to_stealer.memory.flag = flag_name
                         if flag.room:
-                            if flag_memory.need_stealers < flag_memory.stealers - 1.5:
+                            if flag_memory.need_stealers < flag_memory.stealers - 1:
                                 stealer_to_worker = _(flag.room.find(FIND_MY_CREEPS)) \
                                     .filter(lambda s: s.store[RESOURCE_ENERGY] <= 0 and
                                                       s.memory.job == 'stealer') \
