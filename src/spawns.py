@@ -116,7 +116,7 @@ def creep_needed_to_spawn(spawn):
         defended = True
 
     spawn_jobs = ['defender', 'miner', 'lorry', 'worker', 'claimer', 'spawn_builder',
-                  'reservator', 'stealer', 'starter']
+                  'reservator', 'stealer', 'starter', 'healer', 'truck']
     my_creeps = _.filter(Game.creeps, lambda c: c.memory != undefined)
     my_creeps_with_memory = _.filter(my_creeps, lambda c: c.memory.job != undefined)
     actual_spawn_builders = _.filter(my_creeps_with_memory,
@@ -129,7 +129,7 @@ def creep_needed_to_spawn(spawn):
     for job_name in spawn_jobs:
         creeps_filtered = _.filter(my_creeps_with_memory,
                                    lambda c: c.memory.home == spawn.id and c.memory.job == job_name and
-                                             c.ticksToLive > 50)
+                                             c.ticksToLive > 70)
         number_of_creeps_filtered = len(creeps_filtered)
 
         if job_name == 'defender':
@@ -175,10 +175,9 @@ def creep_needed_to_spawn(spawn):
             if need_miners > number_of_creeps_filtered:
                 desired_job = job_name
         elif job_name == 'lorry':
-            if defended:
-                spawn_memory.lorries = number_of_creeps_filtered
-                if spawn_memory.need_lorries > number_of_creeps_filtered:
-                    desired_job = job_name
+            spawn_memory.lorries = number_of_creeps_filtered
+            if spawn_memory.need_lorries > number_of_creeps_filtered:
+                desired_job = job_name
 
         elif job_name == 'worker':
             if defended and not need_restart:
@@ -205,14 +204,13 @@ def creep_needed_to_spawn(spawn):
 
         elif job_name == 'stealer':
             if defended:
-                flags = Object.keys(Game.flags)
-                for flag_name in flags:
+                for flag_name in Object.keys(Game.flags):
                     if flag_name[:6] == 'Steal' + spawn.name[5:6]:
                         flag = Game.flags[flag_name]
                         flag_memory = flag.memory
                         stealers_on_the_flag = _.filter(creeps_filtered, lambda c: c.memory.flag == flag_name)
                         flag.memory.stealers = len(stealers_on_the_flag)
-                        if flag_memory.need_stealers > flag_memory.stealers\
+                        if flag_memory.need_stealers > flag_memory.stealers \
                                 and spawn_memory.workers > spawn_memory.need_workers - 0.1:
                             worker_to_stealer = _(spawn.room.find(FIND_MY_CREEPS)) \
                                 .filter(lambda c: c.memory.job == 'worker' and
@@ -236,6 +234,16 @@ def creep_needed_to_spawn(spawn):
                                     del stealer_to_worker.memory.flag
                                     del stealer_to_worker.memory.path
                                     stealer_to_worker.memory.job = 'worker'
+
+        elif job_name == 'truck':
+            if not need_restart and defended and enough_lorries:
+                for flag_name in Object.keys(Game.flags):
+                    if flag_name[:7] == 'Energy' + spawn.name[5:6]:
+                        flag = Game.flags[flag_name]
+                        flag_memory = flag.memory
+                        flag_memory.trucks = number_of_creeps_filtered
+                        if 3 > number_of_creeps_filtered:
+                            desired_job = job_name
 
         elif job_name == 'claimer':
             flag_name = Memory.claim
@@ -286,14 +294,14 @@ def define_body(spawn, job_name):
             if spawn.room.energyAvailable >= a * 260:
                 desired_body.extend([TOUGH])
         for a in range(1, 5):
-            if spawn.room.energyCapacityAvailable >= a * 260:
+            if spawn.room.energyAvailable >= a * 260:
                 desired_body.extend([RANGED_ATTACK, MOVE, MOVE])
     if job_name == 'healer':
         for a in range(1, 4):
             if spawn.room.energyAvailable >= a * 360:
                 desired_body.extend([TOUGH])
         for a in range(1, 4):
-            if spawn.room.energyCapacityAvailable >= a * 360:
+            if spawn.room.energyAvailable >= a * 360:
                 desired_body.extend([HEAL, MOVE, MOVE])
     elif job_name == 'starter':
         for a in range(1, 10):
@@ -308,6 +316,10 @@ def define_body(spawn, job_name):
             desired_body.extend([WORK, WORK, WORK, CARRY, MOVE, MOVE])
     elif job_name == 'lorry':
         for a in range(1, 5):
+            if spawn.room.energyAvailable >= a * 150:
+                desired_body.extend([CARRY, CARRY, MOVE])
+    elif job_name == 'truck':
+        for a in range(1, 11):
             if spawn.room.energyCapacityAvailable >= a * 150:
                 desired_body.extend([CARRY, CARRY, MOVE])
     elif job_name[:10] == 'reservator' or job_name == 'claimer':

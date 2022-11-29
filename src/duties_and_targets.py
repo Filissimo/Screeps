@@ -145,10 +145,10 @@ def define_creep_to_pickup_tombstone(creep):
                     coworkers = _.sum(creep_to_pickup.room.find(FIND_MY_CREEPS),
                                       lambda c: c.memory.target == tombstone.id)
                     if coworkers < 1:
+                        del creep.memory.path
                         target = tombstone
                         creep_to_pickup.memory.duty = 'picking_up_tombstone'
                         creep_to_pickup.memory.target = target.id
-                        del creep.memory.path
     return target
 
 
@@ -261,7 +261,7 @@ def define_storage_to_withdraw(creep):
     if creep.store[RESOURCE_ENERGY] <= 0:
         target = _.filter(creep.room.find(FIND_STRUCTURES),
                           lambda s: s.structureType == STRUCTURE_STORAGE
-                          and s.store[RESOURCE_ENERGY] >= creep.store.getCapacity())
+                                    and s.store[RESOURCE_ENERGY] >= creep.store.getCapacity())
         if target[0]:
             creep.memory.duty = 'withdrawing_from_storage'
             creep.memory.target = target[0].id
@@ -475,7 +475,7 @@ def decrease_lorries_needed(creep):
     need_additional_lorries = home.memory.need_additional_lorries
     need_lorries = home.memory.need_lorries
     lorries = home.memory.lorries
-    if need_lorries >= lorries + 1:
+    if need_lorries >= lorries - 2:
         need_additional_lorries = need_additional_lorries - 0.03
     home.memory.need_additional_lorries = round(need_additional_lorries, 2)
 
@@ -568,3 +568,31 @@ def define_flag_to_help(creep):
                         flag = undefined
                         del creep.memory.duty
     return flag
+
+
+def define_truck_stations(creep):
+    target = undefined
+    home = Game.getObjectById(creep.memory.home)
+    for flag_name in Object.keys(Game.flags):
+        if flag_name[:7] == 'Energy' + home.name[5:6]:
+            if not creep.memory.station2:
+                creep.memory.station2 = Game.spawns['Spawn' + flag_name[7:8]].id
+                target = creep.memory.station2
+                creep.memory.flag = flag_name
+    return target
+
+
+def define_filling_up_truck(creep):
+    target = undefined
+    if creep.store[RESOURCE_ENERGY] == 0:
+        creep.memory.target = creep.memory.home
+        creep.memory.duty = 'filling_up'
+    return target
+
+
+def define_unloading_truck(creep):
+    target = undefined
+    if creep.store[RESOURCE_ENERGY] >= creep.store.getCapacity():
+        creep.memory.target = creep.memory.station2
+        creep.memory.duty = 'unloading'
+    return target

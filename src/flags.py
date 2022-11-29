@@ -77,7 +77,7 @@ def flag_runner(flag):
                 flag.memory = flag_memory
             else:
                 defenders = _.sum(flag.room.find(FIND_MY_CREEPS), lambda c: c.memory.job == 'defender')
-                if len(defenders) < 2:
+                if len(defenders) < 1:
                     flag.pos.createFlag('A' + flag.name)
                     flag.remove()
         else:
@@ -93,7 +93,7 @@ def flag_runner(flag):
                     del stealer.memory.path
                     stealer.memory.job = 'worker'
             defenders = _.sum(flag.room.find(FIND_MY_CREEPS), lambda  c: c.memory.job == 'defender')
-            if len(defenders) >= 2:
+            if defenders >= 1:
                 flag.pos.createFlag(flag.name[1:])
                 flag.remove()
 

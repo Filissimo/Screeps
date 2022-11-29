@@ -24,13 +24,14 @@ class SpawnRunner:
         if towers:
             for tower in towers:
                 if tower.store[RESOURCE_ENERGY] >= 10:
-                    enemy = _(tower.pos.findInRange((FIND_HOSTILE_CREEPS,
-                                                    {'filter': lambda e: e.owner.username != 'rep71Le'}), 10)) \
-                        .sortBy(lambda e: e.pos.getRangeTo(tower)).first()
+                    enemy = _(tower.room.find(FIND_HOSTILE_CREEPS,
+                                              {'filter': lambda e: e.owner.username != 'rep71Le'})).sortBy(
+                        lambda e: e.pos.getRangeTo(tower)).first()
                     if enemy:
-                        tower.attack(enemy)
-                    damaged_creep = _(tower.pos.findInRange(FIND_MY_CREEPS, 10))\
-                        .filter(lambda c: c.hits < c.hitsMax - 100) \
+                        if tower.pos.inRangeTo(enemy, 15):
+                            tower.attack(enemy)
+                    damaged_creep = _(tower.pos.findInRange(FIND_MY_CREEPS, 15)) \
+                        .filter(lambda c: c.hits < c.hitsMax - 300) \
                         .sortBy(lambda c: c.pos.getRangeTo(tower)).first()
                     if damaged_creep:
                         tower.heal(damaged_creep)

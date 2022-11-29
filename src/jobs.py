@@ -21,10 +21,14 @@ def job_runner(creep):
         run_worker(creep)
     elif job == 'lorry':
         run_lorry(creep)
+    elif job == 'truck':
+        run_truck(creep)
     elif job == 'stealorry':
         run_stealorry(creep)
     elif job == 'defender':
         run_defender(creep)
+    elif job == 'healer':
+        run_healer(creep)
     elif job == 'reservator':
         run_reservator(creep)
     elif job == 'stealer':
@@ -46,12 +50,16 @@ def define_target(creep):
             define_miner_targets(creep)
         elif job == 'lorry':
             define_lorry_target(creep)
+        elif job == 'truck':
+            define_truck_target(creep)
         elif job == 'stealorry':
             define_stealorry_target(creep)
         elif job == 'worker':
             define_worker_target(creep)
         elif job == 'defender':
             define_defender_targets(creep)
+        elif job == 'healer':
+            define_healer_targets(creep)
         elif job == 'reservator':
             define_reservator_targets(creep)
         elif job == 'stealer':
@@ -238,8 +246,8 @@ def define_lorry_target(creep):
     if not duties_and_targets.define_creep_to_pickup_tombstone(creep):
         if not duties_and_targets.define_fullest(creep):
             if not duties_and_targets.define_storage_to_withdraw(creep):
-                if not duties_and_targets.define_deliver_for_spawn_target(creep):
-                    if not duties_and_targets.define_tower(creep):
+                if not duties_and_targets.define_tower(creep):
+                    if not duties_and_targets.define_deliver_for_spawn_target(creep):
                         if not duties_and_targets.define_emptiest(creep):
                             duties_and_targets.define_storage_to_deliver(creep)
     if not creep.memory.target:
@@ -249,6 +257,28 @@ def define_lorry_target(creep):
         actions.move_away_from_creeps(creep)
         actions.accidentally_delivering_to_worker(creep)
         duties_and_targets.decrease_lorries_needed(creep)
+
+
+def run_truck(creep):
+    duty = creep.memory.duty
+    target = creep.memory.target
+    if target and actions.not_fleeing(creep):
+        if duty == 'filling_up':
+            actions.filling_up(creep)
+            actions.paving_roads(creep)
+        if duty == 'unloading':
+            actions.unloading(creep)
+            actions.paving_roads(creep)
+    else:
+        define_truck_target(creep)
+
+
+def define_truck_target(creep):
+    del creep.memory.duty
+    del creep.memory.target
+    if not duties_and_targets.define_truck_stations(creep):
+        if not duties_and_targets.define_filling_up_truck(creep):
+            duties_and_targets.define_unloading_truck(creep)
 
 
 def run_stealorry(creep):
@@ -303,8 +333,10 @@ def run_defender(creep):
     if duty:
         healer = Game.getObjectById(creep.memory.healer)
         if healer:
-            if healer.hits < healer.hitsMax / 4:
+            if healer.hits < healer.hitsMax / 4 or healer.memory.target != creep.id:
                 del creep.memory.healer
+        else:
+            del creep.memory.healer
         if duty != 'defending' or actions.move_away_from_creeps(creep):
             creep.memory.start_point = 0
         if duty == 'attacking':
@@ -322,7 +354,8 @@ def define_defender_targets(creep):
     enemy = creep.room.find(FIND_HOSTILE_CREEPS, {'filter': lambda e: e.owner.username != 'rep71Le'})
     if len(enemy) == 0:
         if not duties_and_targets.define_flag_to_help(creep):
-            creep.memory.duty = 'defending'
+            if not actions.going_home(creep):
+                creep.memory.duty = 'defending'
     else:
         creep.memory.duty = 'attacking'
 
@@ -340,10 +373,17 @@ def define_healer_targets(creep):
     del creep.memory.duty
     for creep_name in Object.keys(Game.creeps):
         any_creep = Game.creeps[creep_name]
-        if any_creep.memory.job == 'defender' and not any_creep.memory.healer:
-            any_creep.memory.healer = creep.id
-            creep.memory.target = any_creep.id
-            creep.memory.duty = 'nursing'
+        if any_creep.memory.job == 'defender' \
+                and any_creep.memory.home == creep.memory.home:
+            if not any_creep.memory.healer:
+                any_creep.memory.healer = creep.id
+                creep.memory.target = any_creep.id
+                creep.memory.duty = 'nursing'
+                return
+    if not creep.memory.target:
+        if not actions.just_heal_anything(creep):
+            creep.say('?')
+            actions.move_away_from_creeps(creep)
 
 
 def run_reservator(creep):
