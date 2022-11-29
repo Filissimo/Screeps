@@ -419,7 +419,7 @@ def run_stealer(creep):
         elif duty == 'dismantling':
             actions.dismantling(creep)
         elif duty == 'mining':
-            actions.stealer_mining(creep)
+            actions.creep_mining(creep)
         elif duty == 'repairing':
             actions.creep_repairing(creep)
             actions.paving_roads(creep)
@@ -450,7 +450,7 @@ def define_stealer_targets(creep):
     if not duties_and_targets.define_closest_to_transfer(creep):
         if not duties_and_targets.define_going_to_flag(creep):
             if not duties_and_targets.define_creep_to_pickup_tombstone(creep):
-                if not duties_and_targets.define_stealing_target(creep):
+                if not duties_and_targets.define_mining_target(creep):
                     if not duties_and_targets.define_dismantling_target(creep):
                         if not duties_and_targets.define_repairing_target(creep):
                             if not duties_and_targets.define_building_target(creep):

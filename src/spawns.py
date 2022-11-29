@@ -58,10 +58,10 @@ def creep_needed_to_spawn(spawn):
             else:
                 if spawn_memory.lorries + 1 >= spawn_memory.need_lorries > len(sources) + 0.5:
                     spawn_memory.need_additional_lorries = spawn_memory.need_additional_lorries - 0.05
-            if container_emptiest.store[RESOURCE_ENERGY] > container_emptiest.store.getCapacity() * 0.3:
+            if container_emptiest.store[RESOURCE_ENERGY] > container_emptiest.store.getCapacity() * 0.35:
                 if spawn_memory.need_workers <= spawn_memory.workers + 1:
                     spawn_memory.need_additional_workers = spawn_memory.need_additional_workers + 0.01
-            if container_emptiest.store[RESOURCE_ENERGY] <= container_emptiest.store.getCapacity() * 0.1:
+            if container_emptiest.store[RESOURCE_ENERGY] <= container_emptiest.store.getCapacity() * 0.3:
                 if spawn_memory.need_workers >= spawn_memory.workers - 1.5:
                     spawn_memory.need_additional_workers = spawn_memory.need_additional_workers - 0.02
     containers_near_mine = 0
@@ -224,7 +224,7 @@ def creep_needed_to_spawn(spawn):
                                 worker_to_stealer.memory.flag = flag_name
                         if flag.room:
                             if flag_memory.need_stealers < flag_memory.stealers - 1:
-                                stealer_to_worker = _(flag.room.find(FIND_MY_CREEPS)) \
+                                stealer_to_worker = _(spawn.room.find(FIND_MY_CREEPS)) \
                                     .filter(lambda s: s.store[RESOURCE_ENERGY] <= 0 and
                                                       s.memory.job == 'stealer') \
                                     .sample()
@@ -304,11 +304,11 @@ def define_body(spawn, job_name):
             if spawn.room.energyAvailable >= a * 360:
                 desired_body.extend([HEAL, MOVE, MOVE])
     elif job_name == 'starter':
-        for a in range(1, 10):
+        for a in range(1, 6):
             if spawn.room.energyAvailable >= a * 200:
                 desired_body.extend([WORK, CARRY, MOVE])
     elif job_name == 'worker':
-        for a in range(1, 10):
+        for a in range(1, 6):
             if spawn.room.energyCapacityAvailable >= a * 200:
                 desired_body.extend([WORK, CARRY, MOVE])
     elif job_name == 'miner':

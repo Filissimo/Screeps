@@ -14,6 +14,16 @@ __pragma__('noalias', 'update')
 def main():
     if Game.cpu.bucket >= 10000:
         Game.cpu.generatePixel()
+
+    list_of_jobs = ['defender-', 'miner-', 'lorry-', 'worker-', 'claimer-', 'spawn_builder-',
+                    'reservator-', 'stealer-', 'starter-', 'healer-', 'truck-']
+    for i in range(Memory.Number_of_creep - 410, Memory.Number_of_creep - 400):
+        for j in list_of_jobs:
+            c_name = j + str(i)
+            if Memory.creeps[c_name]:
+                if not Game.creeps[c_name]:
+                    del Memory.creeps[c_name]
+
     if not Memory.countdown:
         Memory.countdown = 0
     countdown = Memory.countdown
@@ -21,9 +31,9 @@ def main():
     Memory.countdown = countdown
     spaces = '  ' + str(countdown)
     for i in range(countdown):
-        spaces = '  )}]>-  ' + spaces
+        spaces = '>-' + spaces
     print('-  NEW TICK -' + spaces)
-    if countdown >= 10:
+    if countdown >= 100:
         Memory.countdown = 0
     r_i_m_to_remove = None
     message_about_removing = undefined
@@ -70,6 +80,22 @@ def main():
         flag = Game.flags[flag_name]
         s = FlagRunner(flag)
         s.flagging_flag()
+
+    if not Memory.cpu:
+        Memory.cpu = []
+    memory_cpu = Memory.cpu
+    cpu_sum = 0
+    for i in range(0, 99):
+        for j in memory_cpu:
+            if j[i] != undefined:
+                cpu_sum = cpu_sum + j[i]
+                if i == countdown:
+                    memory_cpu.remove(j)
+    print('                                                       Average CPU at last 100 ticks = '
+          + str(round(cpu_sum/100, 2)))
+    memory_cpu.append({countdown: Game.cpu.getUsed()})
+
+    print('                                                       Used CPU at this tick: ' + str(Game.cpu.getUsed()))
 
 
 module.exports.loop = main

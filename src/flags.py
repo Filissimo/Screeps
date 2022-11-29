@@ -57,8 +57,8 @@ def flag_runner(flag):
                             need_stealers = need_stealers + 0.05
                             if stealers == 0:
                                 need_stealers = 3
-                    if source.energy / source.ticksToRegeneration < 9 or source.energy <= 0:
-                        if need_stealers > stealers - 3:
+                    if source.energy / source.ticksToRegeneration < 8 or source.energy <= 0:
+                        if need_stealers > stealers - 1.5 and need_stealers > 0:
                             need_stealers = need_stealers - 0.05
                 flag_memory.need_stealers = need_stealers
 

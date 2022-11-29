@@ -24,7 +24,7 @@ def define_closest_to_withdraw(creep):
     return target
 
 
-def define_mining_target(creep):
+def define_mining_target_old(creep):
     target = undefined
     if creep.store[RESOURCE_ENERGY] <= 0:
         target = creep.pos.findClosestByPath(FIND_SOURCES_ACTIVE)
@@ -34,14 +34,48 @@ def define_mining_target(creep):
     return target
 
 
-def define_stealing_target(creep):
+def define_mining_target(creep):
     target = undefined
     if creep.store[RESOURCE_ENERGY] <= 0:
-        source = creep.pos.findClosestByPath(FIND_SOURCES_ACTIVE)
-        target = source
-        if target:
-            creep.memory.duty = 'mining'
-            creep.memory.target = target.id
+        fullest_source = undefined
+        # source_full = _(creep.room.find(FIND_SOURCES))\
+        #     .filter(lambda s: s.energy == 3000
+        #             or s.energy == 1500)\
+        #     .sortBy(lambda s: s.pos.getRangeTo(creep)).first()
+        # if source_full:
+        #     print(source_full.ticksToRegeneration + ' regen')
+        #     target = source_full
+        #     creep.memory.duty = 'mining'
+        #     creep.memory.target = target.id
+        # else:
+        sources = creep.room.find(FIND_SOURCES_ACTIVE)
+        if sources:
+            for source in sources:
+                if source:
+                    coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
+                                         lambda c: c.memory.duty == 'mining' and
+                                         c.memory.target == source.id)
+                    energy_of_source = source.energy
+                    energy_on_the_way = 0
+                    if coworkers:
+                        for coworker in coworkers:
+                            if coworker.store.getCapacity() > - 200:
+                                energy_on_the_way = energy_on_the_way + coworker.store[RESOURCE_ENERGY] \
+                                                    - coworker.store.getCapacity()
+                        total_energy_of_source = energy_of_source + energy_on_the_way
+                        source.total_energy_of_source = total_energy_of_source
+                        if source.ticksToRegeneration == undefined:
+                            source.ticks = 1
+                        else:
+                            source.ticks = source.ticksToRegeneration
+            fullest_source = _(sources).sortBy(lambda s: s.total_energy_of_source / s.ticks).last()
+            if fullest_source:
+                print(str(fullest_source.total_energy_of_source) + '/' + fullest_source.ticksToRegeneration +
+                      '  fullest  ' + fullest_source.id)
+                if fullest_source.total_energy_of_source > 0:
+                    target = fullest_source
+                    creep.memory.duty = 'mining'
+                    creep.memory.target = target.id
     return target
 
 
@@ -348,11 +382,12 @@ def define_closest_to_transfer(creep):
 
 def decrease_stealers_needed(creep):
     flag = Game.flags[creep.memory.flag]
-    need_stealers = flag.memory.need_stealers
-    stealers = flag.memory.stealers
-    if need_stealers >= stealers - 2:
-        need_stealers = need_stealers - 0.1
-    flag.memory.need_stealers = round(need_stealers, 2)
+    if flag:
+        need_stealers = flag.memory.need_stealers
+        stealers = flag.memory.stealers
+        if need_stealers >= stealers - 2:
+            need_stealers = need_stealers - 0.03
+        flag.memory.need_stealers = round(need_stealers, 2)
 
 
 def define_claimers_flag(creep):
