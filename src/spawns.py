@@ -51,13 +51,13 @@ def creep_needed_to_spawn(spawn):
         if container_fullest and container_emptiest:
             if container_fullest.store[RESOURCE_ENERGY] - container_emptiest.store[RESOURCE_ENERGY] > 700:
                 if spawn_memory.need_lorries <= spawn_memory.lorries + 1:
-                    spawn_memory.need_additional_lorries = spawn_memory.need_additional_lorries + 0.02
+                    spawn_memory.need_additional_lorries = spawn_memory.need_additional_lorries + 0.03
             elif container_fullest.store[RESOURCE_ENERGY] >= container_fullest.store.getCapacity():
                 if spawn_memory.need_lorries <= spawn_memory.lorries + 1:
-                    spawn_memory.need_additional_lorries = spawn_memory.need_additional_lorries + 0.02
+                    spawn_memory.need_additional_lorries = spawn_memory.need_additional_lorries + 0.03
             else:
                 if spawn_memory.lorries + 1 >= spawn_memory.need_lorries > len(sources) + 0.5:
-                    spawn_memory.need_additional_lorries = spawn_memory.need_additional_lorries - 0.05
+                    spawn_memory.need_additional_lorries = spawn_memory.need_additional_lorries - 0.02
             if container_emptiest.store[RESOURCE_ENERGY] > container_emptiest.store.getCapacity() * 0.35:
                 if spawn_memory.need_workers <= spawn_memory.workers + 1:
                     spawn_memory.need_additional_workers = spawn_memory.need_additional_workers + 0.01
@@ -69,7 +69,7 @@ def creep_needed_to_spawn(spawn):
         spawn_memory.need_starters = len(sources)
     need_starters = spawn_memory.need_starters
     enough_lorries = False
-    if spawn_memory.lorries >= len(sources) + 1:
+    if spawn_memory.lorries >= spawn_memory.need_lorries:
         enough_lorries = True
     for source in sources:
         container_near_mine = _.filter(source.pos.findInRange(FIND_STRUCTURES, 2),
@@ -116,7 +116,7 @@ def creep_needed_to_spawn(spawn):
         defended = True
 
     spawn_jobs = ['defender', 'miner', 'lorry', 'worker', 'claimer', 'spawn_builder',
-                  'reservator', 'stealer', 'starter', 'healer', 'truck']
+                  'reservator', 'stealer', 'starter', 'healer', 'truck', 'offender']
     my_creeps = _.filter(Game.creeps, lambda c: c.memory != undefined)
     my_creeps_with_memory = _.filter(my_creeps, lambda c: c.memory.job != undefined)
     actual_spawn_builders = _.filter(my_creeps_with_memory,
@@ -139,9 +139,15 @@ def creep_needed_to_spawn(spawn):
             spawn_memory.defenders = number_of_creeps_filtered
             if spawn_memory.need_defenders > number_of_creeps_filtered:
                 desired_job = job_name
+        elif job_name == 'offender':
+            if not need_restart and defended and enough_lorries:
+                spawn_memory.need_offenders = 1
+                spawn_memory.offenders = number_of_creeps_filtered
+                if spawn_memory.need_offenders > number_of_creeps_filtered:
+                    desired_job = job_name
         elif job_name == 'healer':
             spawn_memory.healers = number_of_creeps_filtered
-            if spawn_memory.healers < spawn_memory.defenders:
+            if spawn_memory.healers < spawn_memory.defenders + spawn_memory.offenders:
                 desired_job = job_name
         elif job_name == 'starter':
             spawn_memory.starters = number_of_creeps_filtered
@@ -187,20 +193,19 @@ def creep_needed_to_spawn(spawn):
                         desired_job = job_name
 
         elif job_name == 'reservator':
-            if not need_restart and defended:
-                if enough_lorries:
-                    flags = Object.keys(Game.flags)
-                    for flag_name in flags:
-                        if flag_name[:6] == 'Steal' + spawn.name[5:6]:
-                            flag = Game.flags[flag_name]
-                            flag_memory = flag.memory
-                            reservators_on_the_flag = _.filter(creeps_filtered, lambda c: c.memory.flag == flag_name)
-                            flag_memory.reservators = len(reservators_on_the_flag)
-                            if flag.room:
-                                if flag_memory.need_reservators > len(reservators_on_the_flag):
-                                    if flag_memory.reservation < 2000:
-                                        desired_job = job_name
-                            flag.memory = flag_memory
+            if not need_restart and defended and enough_lorries:
+                flags = Object.keys(Game.flags)
+                for flag_name in flags:
+                    if flag_name[:6] == 'Steal' + spawn.name[5:6]:
+                        flag = Game.flags[flag_name]
+                        flag_memory = flag.memory
+                        reservators_on_the_flag = _.filter(creeps_filtered, lambda c: c.memory.flag == flag_name)
+                        flag_memory.reservators = len(reservators_on_the_flag)
+                        if flag.room:
+                            if flag_memory.need_reservators > len(reservators_on_the_flag):
+                                if flag_memory.reservation < 2000:
+                                    desired_job = job_name
+                        flag.memory = flag_memory
 
         elif job_name == 'stealer':
             if defended:
@@ -256,7 +261,7 @@ def creep_needed_to_spawn(spawn):
                         flag.remove()
                         del Memory.claim
                 else:
-                    if number_of_creeps_filtered <= 0:
+                    if number_of_creeps_filtered < 1:
                         desired_job = job_name
 
         elif job_name == 'spawn_builder':
@@ -289,7 +294,7 @@ def creep_needed_to_spawn(spawn):
 
 def define_body(spawn, job_name):
     desired_body = []
-    if job_name == 'defender':
+    if job_name == 'defender' or job_name == 'offender':
         for a in range(1, 5):
             if spawn.room.energyAvailable >= a * 260:
                 desired_body.extend([TOUGH])
@@ -315,10 +320,9 @@ def define_body(spawn, job_name):
         if spawn.room.energyCapacityAvailable >= 400:
             desired_body.extend([WORK, WORK, WORK, CARRY, MOVE, MOVE])
     elif job_name == 'lorry':
-        # for a in range(1, 5):
-        #     if spawn.room.energyAvailable >= a * 150:
-        #         desired_body.extend([CARRY, CARRY, MOVE])
-        desired_body = [CARRY, CARRY, MOVE]
+        for a in range(1, 3):
+            if spawn.room.energyCapacityAvailable >= a * 150:
+                desired_body.extend([CARRY, CARRY, MOVE])
     elif job_name == 'truck':
         for a in range(1, 11):
             if spawn.room.energyCapacityAvailable >= a * 150:
@@ -359,25 +363,25 @@ def verify_square_and_place_extension(position):
                     position.y = position.y - 1
                     extension_placed = place_extension(position)
                     if extension_placed:
-                        break
+                        return
                 if direction == 2:
                     position.x = position.x + 1
                     position.y = position.y + 1
                     extension_placed = place_extension(position)
                     if extension_placed:
-                        break
+                        return
                 if direction == 3:
                     position.x = position.x - 1
                     position.y = position.y + 1
                     extension_placed = place_extension(position)
                     if extension_placed:
-                        break
+                        return
                 if direction == 4:
                     position.x = position.x - 1
                     position.y = position.y - 1
                     extension_placed = place_extension(position)
                     if extension_placed:
-                        break
+                        return
 
 
 def place_extension(position):
@@ -389,6 +393,7 @@ def place_extension(position):
         if terrain != 'wall' and len(roads) > 0:
             position.createFlag('dc' + roads[0].id)
             extension_placed = True
+            return extension_placed
         elif terrain != 'wall' and len(structures) == 0:
             extensions = _.sum(position.findInRange(FIND_STRUCTURES, 1),
                                lambda s: s.structureType == STRUCTURE_EXTENSION or
@@ -398,7 +403,7 @@ def place_extension(position):
             if extensions > 0 and swamps == 0:
                 position.createConstructionSite(STRUCTURE_EXTENSION)
                 extension_placed = True
-    return extension_placed
+                return extension_placed
 
 
 def look_for_spots_near_position(position):

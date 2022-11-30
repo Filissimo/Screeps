@@ -97,7 +97,9 @@ def flag_runner(flag):
             if defenders >= 1 and enemies == 0:
                 flag.pos.createFlag(flag.name[1:])
                 flag.remove()
-
+    if flag.name[:1] == 'o':
+        spawn = Game.spawns['Spawn' + flag.name[1:2]]
+        spawn.memory.need_offenders = int(flag.name[2:3])
     if flag.name[:2] == 'dc':
         define_deconstructions(flag)
     if flag.name[:5] == 'claim':

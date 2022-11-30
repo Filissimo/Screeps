@@ -314,8 +314,6 @@ def define_reservators_flag(creep):
                     if flag.memory.need_reservators > flag.memory.reservators:
                         if creep.pos.inRangeTo(flag, 40):
                             flag = undefined
-                            del creep.memory.duty
-                            del creep.memory.target
                         else:
                             creep.memory.flag = flag_name
                             creep.memory.target = flag_name
@@ -324,11 +322,9 @@ def define_reservators_flag(creep):
 
 
 def define_controller(creep):
-    flag = Game.flags[creep.memory.flag]
     controller = creep.room.controller
     if controller:
         creep.memory.controller = controller.id
-        print(controller.id)
         if creep.memory.job == 'reservator':
             creep.memory.duty = 'reserving'
         if creep.memory.job == 'claimer':
@@ -349,21 +345,12 @@ def define_going_home(creep):
 def define_going_to_flag(creep):
     flag = Game.flags[creep.memory.flag]
     if flag:
-        home = Game.getObjectById(creep.memory.home)
         if creep.pos.inRangeTo(flag, 40):
             flag = undefined
             del creep.memory.duty
         else:
             creep.memory.target = flag.name
             creep.memory.duty = 'go_to_flag'
-        # if creep.room == home.room:
-        #     creep.memory.target = flag.name
-        #     creep.memory.duty = 'go_to_flag'
-        #     if creep.pos.inRangeTo(flag, 40):
-        #         flag = undefined
-        #         del creep.memory.duty
-        # else:
-        #     flag = undefined
     return flag
 
 

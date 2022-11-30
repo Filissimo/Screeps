@@ -27,6 +27,8 @@ def job_runner(creep):
         run_stealorry(creep)
     elif job == 'defender':
         run_defender(creep)
+    elif job == 'offender':
+        run_offender(creep)
     elif job == 'healer':
         run_healer(creep)
     elif job == 'reservator':
@@ -58,6 +60,8 @@ def define_target(creep):
             define_worker_target(creep)
         elif job == 'defender':
             define_defender_targets(creep)
+        elif job == 'offender':
+            define_offender_targets(creep)
         elif job == 'healer':
             define_healer_targets(creep)
         elif job == 'reservator':
@@ -224,16 +228,20 @@ def run_lorry(creep):
             actions.accidentally_delivering_for_spawning(creep)
             actions.paving_roads(creep)
         elif duty == 'delivering_to_tower':
+            actions.accidentally_delivering_for_spawning(creep)
             actions.accidentally_delivering_to_worker(creep)
             actions.delivering_to_from_memory(creep)
             actions.paving_roads(creep)
         elif duty == 'delivering_to_emptiest':
             actions.accidentally_delivering_to_worker(creep)
+            actions.accidentally_delivering_for_spawning(creep)
             actions.delivering_to_from_memory(creep)
             actions.paving_roads(creep)
         elif duty == 'helping_workers':
             actions.helping_workers(creep)
         elif duty == 'delivering_to_storage':
+            actions.accidentally_delivering_for_spawning(creep)
+            actions.accidentally_delivering_to_worker(creep)
             actions.delivering_to_from_memory(creep)
             actions.paving_roads(creep)
     else:
@@ -350,7 +358,6 @@ def run_defender(creep):
 
 
 def define_defender_targets(creep):
-    creep.memory.fleeing_creep = None
     enemy = creep.room.find(FIND_HOSTILE_CREEPS, {'filter': lambda e: e.owner.username != 'rep71Le'})
     if len(enemy) == 0:
         if not duties_and_targets.define_flag_to_help(creep):
@@ -368,6 +375,47 @@ def define_defender_targets(creep):
             creep.memory.duty = 'attacking'
 
 
+def run_offender(creep):
+    duty = creep.memory.duty
+    if duty:
+        healer = Game.getObjectById(creep.memory.healer)
+        if healer:
+            if healer.hits < healer.hitsMax / 4 or healer.memory.target != creep.id:
+                del creep.memory.healer
+        else:
+            del creep.memory.healer
+        if duty == 'attacking':
+            actions.attacking(creep)
+        if duty == 'go_to_flag':
+            actions.going_to_flag(creep)
+    else:
+        define_offender_targets(creep)
+
+
+def define_offender_targets(creep):
+    if not creep.memory.flag:
+        for flag_name in Object.keys(Game.flags):
+            if flag_name[:1] == 'o':
+                creep.memory.flag = flag_name
+    if not duties_and_targets.define_going_to_flag(creep):
+        if 2 < creep.pos.x < 47 and 2 < creep.pos.y < 47:
+            flag = Game.flags[creep.memory.flag]
+            if flag:
+                creep.moveTo(flag)
+            else:
+                home = Game.getObjectById(creep.memory.home)
+                home.memory.need_offenders = 0
+                creep.moveTo(home)
+                creep.memory.job = 'defender'
+                del creep.memory.duty
+        else:
+            creep.memory.duty = 'attacking'
+
+    if not creep.memory.target:
+        creep.say('?')
+        actions.move_away_from_creeps(creep)
+
+
 def run_healer(creep):
     duty = creep.memory.duty
     if duty:
@@ -381,7 +429,7 @@ def define_healer_targets(creep):
     del creep.memory.duty
     for creep_name in Object.keys(Game.creeps):
         any_creep = Game.creeps[creep_name]
-        if any_creep.memory.job == 'defender' \
+        if (any_creep.memory.job == 'defender' or any_creep.memory.job == 'offender') \
                 and any_creep.memory.home == creep.memory.home:
             if not any_creep.memory.healer:
                 any_creep.memory.healer = creep.id
@@ -407,7 +455,9 @@ def run_reservator(creep):
 
 
 def define_reservator_targets(creep):
+    del creep.memory.controller
     del creep.memory.duty
+    del creep.memory.target
     if not duties_and_targets.define_reservators_flag(creep):
         duties_and_targets.define_controller(creep)
     if not creep.memory.duty:

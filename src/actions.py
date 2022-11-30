@@ -355,9 +355,7 @@ def dismantling(creep):
                     jobs.define_target(creep)
                     print("[{}] Unknown result from creep.dismantle({}): {}"
                           .format(creep.name, 'dismantle', result))
-            result = moving_by_path(creep, target)
-            if result != OK:
-                jobs.define_target(creep)
+            moving_by_path(creep, target)
         else:
             jobs.define_target(creep)
     else:
@@ -477,7 +475,6 @@ def delivering_to_from_memory(creep):
         if target:
             is_close = creep.pos.isNearTo(target)
             if is_close:
-                creep.memory.work_place = True
                 result = creep.transfer(target, RESOURCE_ENERGY)
                 if result == OK or result == ERR_FULL:
                     del creep.memory.target
@@ -500,17 +497,29 @@ def attacking(creep):
         creep.say('⚔')
         if creep.pos.inRangeTo(enemy, 3):
             creep.rangedAttack(enemy)
-            flee_condition = _.map(creep.room.find(FIND_HOSTILE_CREEPS), lambda c: {'pos': c.pos, 'range': 5})
-            flee_path = PathFinder.search(
-                creep.pos,
-                flee_condition,
-                {'flee': True}
-            ).path
-            creep.moveByPath(flee_path)
+            if enemy.getActiveBodyparts(RANGED_ATTACK) > 0 or enemy.getActiveBodyparts(ATTACK) > 0:
+                flee_condition = _.map(creep.room.find(FIND_HOSTILE_CREEPS), lambda c: {'pos': c.pos, 'range': 5})
+                flee_path = PathFinder.search(
+                    creep.pos,
+                    flee_condition,
+                    {'flee': True}
+                ).path
+                creep.moveByPath(flee_path)
         else:
             creep.moveTo(enemy)
     else:
-        jobs.define_target(creep)
+        structure = creep.pos.findClosestByRange(FIND_HOSTILE_STRUCTURES)
+        if structure:
+            if structure.structureType != STRUCTURE_CONTROLLER:
+                creep.say('⚔')
+                if creep.pos.inRangeTo(structure, 3):
+                    creep.rangedAttack(structure)
+                else:
+                    creep.moveTo(structure)
+            else:
+                jobs.define_target(creep)
+        else:
+            jobs.define_target(creep)
 
 
 def move_away_from_creeps(creep):
@@ -572,20 +581,21 @@ def not_going_to_flag(creep):
 def reserving(creep):
     controller = Game.getObjectById(creep.memory.controller)
     if creep.pos.isNearTo(controller):
-        creep.memory.work_place = True
-        if creep.reserveController(controller) != OK:
-            if not controller.my:
+        if controller.my:
+            if controller.reservation:
+                creep.reserveController(controller)
+            else:
+                jobs.define_target(creep)
+        else:
+            if creep.reserveController(controller) != OK:
                 if creep.attackController(controller) == -11:
                     creep.say('W')
                 else:
                     creep.say('A')
             else:
-                jobs.define_target(creep)
-        else:
-            creep.say('R')
+                creep.say('R')
     else:
         creep.say('📍')
-        paving_roads(creep)
     moving_by_path(creep, controller)
 
 
@@ -649,11 +659,16 @@ def claiming(creep):
         if result == ERR_NOT_IN_RANGE:
             moving_by_path(creep, controller)
             creep.say('MY')
-        else:
+        if result == OK:
             flag = Game.flags[Memory.claim]
             if flag:
                 flag.pos.createConstructionSite(STRUCTURE_SPAWN)
                 Memory.building_spawn = flag.name
+        if result == -7:
+            if creep.attackController(controller) == -11:
+                creep.say('W')
+            else:
+                creep.say('A')
 
 
 def not_going_to_bs(creep):
@@ -670,7 +685,7 @@ def not_going_to_bs(creep):
 def moving_by_path(creep, target):
     result = undefined
     if target:
-        if creep.pos.inRangeTo(target, 3):
+        if creep.pos.inRangeTo(target, 2):
             if creep.pos.isNearTo(target):
                 creep.memory.work_place = True
             else:
@@ -678,9 +693,10 @@ def moving_by_path(creep, target):
             if creep.memory.path:
                 del creep.memory.path
         else:
-            creeps_close = creep.pos.findInRange(FIND_MY_CREEPS, 3)
+            creep.memory.work_place = False
+            creeps_close = creep.pos.findInRange(FIND_MY_CREEPS, 2)
             busy_creep = _(creeps_close).filter(lambda c: c.memory.work_place is True).sample()
-            not_my_creep_close = _(creep.pos.findInRange(FIND_HOSTILE_CREEPS, 1)).sample()
+            not_my_creep_close = _(creep.pos.findInRange(FIND_HOSTILE_CREEPS, 2)).sample()
             if busy_creep or not_my_creep_close:
                 result = creep.moveTo(target)
                 if creep.memory.path:
@@ -715,7 +731,6 @@ def accidentally_delivering_to_worker(creep):
                 if result != OK:
                     print("[{}] Unknown result from creep.transfer({}, {}): {}".format(
                         creep.name, 'accidentally to worker', RESOURCE_ENERGY, result))
-                jobs.define_target(creep)
 
 
 def accidentally_delivering_to_lorry(creep):
@@ -844,14 +859,15 @@ def nursing(creep):
             if enemy:
                 if creep.pos.inRangeTo(enemy, 4):
                     if 4 < creep.pos.x < 45 and 4 < creep.pos.y < 45:
-                        flee_condition = _.map(creep.room.find(FIND_HOSTILE_CREEPS),
-                                               lambda c: {'pos': c.pos, 'range': 5})
-                        flee_path = PathFinder.search(
-                            creep.pos,
-                            flee_condition,
-                            {'flee': True}
-                        ).path
-                        creep.moveByPath(flee_path)
+                        if enemy.getActiveBodyparts(RANGED_ATTACK) > 0 or enemy.getActiveBodyparts(ATTACK) > 0:
+                            flee_condition = _.map(creep.room.find(FIND_HOSTILE_CREEPS),
+                                                   lambda c: {'pos': c.pos, 'range': 5})
+                            flee_path = PathFinder.search(
+                                creep.pos,
+                                flee_condition,
+                                {'flee': True}
+                            ).path
+                            creep.moveByPath(flee_path)
                 else:
                     creep.moveTo(target)
             else:
