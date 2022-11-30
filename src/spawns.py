@@ -315,9 +315,10 @@ def define_body(spawn, job_name):
         if spawn.room.energyCapacityAvailable >= 400:
             desired_body.extend([WORK, WORK, WORK, CARRY, MOVE, MOVE])
     elif job_name == 'lorry':
-        for a in range(1, 5):
-            if spawn.room.energyAvailable >= a * 150:
-                desired_body.extend([CARRY, CARRY, MOVE])
+        # for a in range(1, 5):
+        #     if spawn.room.energyAvailable >= a * 150:
+        #         desired_body.extend([CARRY, CARRY, MOVE])
+        desired_body = [CARRY, CARRY, MOVE]
     elif job_name == 'truck':
         for a in range(1, 11):
             if spawn.room.energyCapacityAvailable >= a * 150:
