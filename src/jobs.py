@@ -357,7 +357,15 @@ def define_defender_targets(creep):
             if not actions.going_home(creep):
                 creep.memory.duty = 'defending'
     else:
-        creep.memory.duty = 'attacking'
+        if 2 < creep.pos.x < 47 and 2 < creep.pos.y < 47:
+            flag = Game.flags[creep.memory.flag]
+            if flag:
+                creep.moveTo(flag)
+            else:
+                home = Game.getObjectById(creep.memory.home)
+                creep.moveTo(home)
+        else:
+            creep.memory.duty = 'attacking'
 
 
 def run_healer(creep):

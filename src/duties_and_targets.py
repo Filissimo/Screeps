@@ -59,7 +59,7 @@ def define_mining_target(creep):
                     energy_on_the_way = 0
                     if coworkers:
                         for coworker in coworkers:
-                            if coworker.store.getCapacity() > - 200:
+                            if coworker.store.getCapacity() > - 250:
                                 energy_on_the_way = energy_on_the_way + coworker.store[RESOURCE_ENERGY] \
                                                     - coworker.store.getCapacity()
                         total_energy_of_source = energy_of_source + energy_on_the_way

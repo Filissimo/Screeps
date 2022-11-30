@@ -320,7 +320,7 @@ def paving_roads(creep):
                 roads_memory.append(road_coors_new_object)
             else:
                 if new_counter:
-                    if new_counter >= 2000:
+                    if new_counter >= 3000:
                         construction_sites = _.sum(creep.room.find(FIND_CONSTRUCTION_SITES),
                                                    lambda cs: cs.progress < cs.progressTotal)
                         if construction_sites <= 4:
@@ -497,26 +497,18 @@ def delivering_to_from_memory(creep):
 def attacking(creep):
     enemy = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS, {'filter': lambda e: e.owner.username != 'rep71Le'})
     if enemy:
-        creep.memory.enemy = enemy.id
         creep.say('⚔')
-        if not standing_on_entrance(creep):
-            del creep.memory.enemy
-            if creep.pos.inRangeTo(enemy, 4):
-                creep.rangedAttack(enemy)
-                if 4 < creep.pos.x < 45 and 4 < creep.pos.y < 45:
-                    flee_condition = _.map(creep.room.find(FIND_HOSTILE_CREEPS), lambda c: {'pos': c.pos, 'range': 5})
-                    flee_path = PathFinder.search(
-                        creep.pos,
-                        flee_condition,
-                        {'flee': True}
-                    ).path
-                    creep.moveByPath(flee_path)
-            else:
-                creep.moveTo(enemy)
+        if creep.pos.inRangeTo(enemy, 3):
+            creep.rangedAttack(enemy)
+            flee_condition = _.map(creep.room.find(FIND_HOSTILE_CREEPS), lambda c: {'pos': c.pos, 'range': 5})
+            flee_path = PathFinder.search(
+                creep.pos,
+                flee_condition,
+                {'flee': True}
+            ).path
+            creep.moveByPath(flee_path)
         else:
-            target = Game.getObjectById(creep.memory.enemy)
-            if target:
-                creep.moveTo(target)
+            creep.moveTo(enemy)
     else:
         jobs.define_target(creep)
 
