@@ -25,9 +25,31 @@ def define_deconstructions(flag):
 
 
 def flag_runner(flag):
-    if flag.name[:3] == 'sto':
+    if flag.name[:3] == 'tow':
         if flag.room:
             if len(flag.room.find(FIND_CONSTRUCTION_SITES)) == 0:
+                flag.pos.createConstructionSite(STRUCTURE_TOWER)
+                flag.remove()
+    if flag.name[:3] == 'lin':
+        if flag.room:
+            if len(flag.room.find(FIND_CONSTRUCTION_SITES)) == 0:
+                structures = flag.pos.lookFor(LOOK_STRUCTURES)
+                if structures:
+                    flag.pos.createFlag('dc' + flag.name)
+                    flag.pos.createFlag('fut' + flag.name)
+                    flag.remove()
+                else:
+                    flag.pos.createConstructionSite(STRUCTURE_LINK)
+                    flag.remove()
+    if flag.name[:3] == 'fut':
+        if flag.room:
+            if len(flag.room.find(FIND_CONSTRUCTION_SITES)) == 0:
+                if len(flag.pos.lookFor(LOOK_STRUCTURES)) == 0:
+                    flag.pos.createConstructionSite(STRUCTURE_LINK)
+                    flag.remove()
+    if flag.name[:3] == 'sto':
+        if flag.room:
+            if len(flag.room.find(FIND_CONSTRUCTION_SITES)) == 0 and flag.room.energyCapacityAvailable >= 1300:
                 flag.pos.createConstructionSite(STRUCTURE_STORAGE)
                 flag.remove()
     if flag.name[:3] == 'con':

@@ -10,7 +10,20 @@ __pragma__('noalias', 'type')
 __pragma__('noalias', 'update')
 
 
+def run_links(spawn):
+    links = _.filter(spawn.room.find(FIND_STRUCTURES), lambda s: s.structureType == STRUCTURE_LINK)
+    if len(links) > 1:
+        sorted_links = _.sortBy(links, lambda l: l.store[RESOURCE_ENERGY])
+        if sorted_links[len(sorted_links) - 1].cooldown == 0:
+            if sorted_links[len(sorted_links) - 1].store[RESOURCE_ENERGY]\
+                    > sorted_links[0].store[RESOURCE_ENERGY] + 300:
+                amount_to_transfer = (sorted_links[len(sorted_links) - 1].store[RESOURCE_ENERGY]
+                                      - sorted_links[0].store[RESOURCE_ENERGY]) * 0.48 + 150
+                sorted_links[len(sorted_links) - 1].transferEnergy(sorted_links[0], round(amount_to_transfer))
+
+
 def spawn_runner(spawn):
+    run_links(spawn)
     create_extension(spawn)
     job_name = creep_needed_to_spawn(spawn)
     if not spawn.spawning:
@@ -37,48 +50,64 @@ def spawn_runner(spawn):
 def creep_needed_to_spawn(spawn):
     spawn_memory = spawn.memory
     need_restart = True
-    if spawn_memory.miners >= spawn_memory.need_miners - 1 and spawn_memory.miners >= 2 and spawn_memory.lorries > 0:
+    if spawn_memory.miners >= spawn_memory.need_miners - 1 and spawn_memory.miners >= 1 and spawn_memory.lorries > 0:
         need_restart = False
     desired_job = undefined
     sources = spawn.room.find(FIND_SOURCES)
     if not need_restart:
-        container_fullest = _(spawn.room.find(FIND_STRUCTURES)) \
-            .filter(lambda s: s.structureType == STRUCTURE_CONTAINER) \
+        containers = _.filter(spawn.room.find(FIND_STRUCTURES),
+                              lambda s: s.structureType == STRUCTURE_CONTAINER
+                                        or s.structureType == STRUCTURE_LINK)
+        container_fullest = _(containers) \
             .sortBy(lambda s: s.store[RESOURCE_ENERGY]).last()
-        container_emptiest = _(spawn.room.find(FIND_STRUCTURES)) \
-            .filter(lambda s: s.structureType == STRUCTURE_CONTAINER) \
-            .sortBy(lambda s: s.store[RESOURCE_ENERGY]).first()
-        if container_fullest and container_emptiest:
-            if container_fullest.store[RESOURCE_ENERGY] - container_emptiest.store[RESOURCE_ENERGY] > 700:
-                if spawn_memory.need_lorries <= spawn_memory.lorries + 1:
-                    spawn_memory.need_additional_lorries = spawn_memory.need_additional_lorries + 0.03
-            elif container_fullest.store[RESOURCE_ENERGY] >= container_fullest.store.getCapacity():
-                if spawn_memory.need_lorries <= spawn_memory.lorries + 1:
-                    spawn_memory.need_additional_lorries = spawn_memory.need_additional_lorries + 0.03
+        total_capacity = 0
+        total_energy = 0
+        for container in containers:
+            total_capacity = total_capacity \
+                             + container.store[RESOURCE_ENERGY] \
+                             + container.store.getFreeCapacity(RESOURCE_ENERGY)
+            total_energy = total_energy + container.store[RESOURCE_ENERGY]
+
+        if containers:
+            need_workers = spawn_memory.need_workers
+            if total_capacity / total_energy > 2:
+                if need_workers > 1:
+                    need_workers = need_workers - 0.01
             else:
-                if spawn_memory.lorries + 1 >= spawn_memory.need_lorries > len(sources) + 0.5:
-                    spawn_memory.need_additional_lorries = spawn_memory.need_additional_lorries - 0.02
-            if container_emptiest.store[RESOURCE_ENERGY] > container_emptiest.store.getCapacity() * 0.35:
-                if spawn_memory.need_workers <= spawn_memory.workers + 1:
-                    spawn_memory.need_additional_workers = spawn_memory.need_additional_workers + 0.01
-            if container_emptiest.store[RESOURCE_ENERGY] <= container_emptiest.store.getCapacity() * 0.3:
-                if spawn_memory.need_workers >= spawn_memory.workers - 1.5:
-                    spawn_memory.need_additional_workers = spawn_memory.need_additional_workers - 0.02
-    containers_near_mine = 0
+                need_workers = need_workers + 0.01
+            spawn_memory.need_workers = round(need_workers, 2)
+            need_lorries = spawn_memory.need_lorries
+            if container_fullest.store.getFreeCapacity(RESOURCE_ENERGY) * 4 \
+                    < container_fullest.store[RESOURCE_ENERGY] \
+                    and container_fullest.structureType == STRUCTURE_CONTAINER:
+                need_lorries = need_lorries + 0.01
+            else:
+                if need_lorries > 3:
+                    need_lorries = need_lorries - 0.01
+            spawn_memory.need_lorries = round(need_lorries, 2)
+
+        print('                ' + spawn.name + '. Containers and links: '
+              + '    ' + total_capacity + '/' + total_energy)
+
+    mines_near_container = 0
     if not spawn_memory.need_starters:
         spawn_memory.need_starters = len(sources)
     need_starters = spawn_memory.need_starters
+    enough_miners = False
+    if spawn_memory.miners >= spawn_memory.need_miners:
+        enough_miners = True
     enough_lorries = False
     if spawn_memory.lorries >= spawn_memory.need_lorries:
         enough_lorries = True
     for source in sources:
-        container_near_mine = _.filter(source.pos.findInRange(FIND_STRUCTURES, 2),
-                                       lambda s: (s.structureType == STRUCTURE_CONTAINER))
+        mine_near_container = _.filter(source.pos.findInRange(FIND_STRUCTURES, 2),
+                                       lambda s: (s.structureType == STRUCTURE_CONTAINER
+                                                  or s.structureType == STRUCTURE_LINK))
 
-        if len(container_near_mine) == 0:
+        if len(mine_near_container) == 0:
             create_container(source)
         else:
-            containers_near_mine = containers_near_mine + len(container_near_mine)
+            mines_near_container = mines_near_container + 1
 
         starters = spawn_memory.starters
         if need_restart:
@@ -100,16 +129,17 @@ def creep_needed_to_spawn(spawn):
                 worker_to_starter.memory.job = 'starter'
                 del worker_to_starter.memory.duty
                 del worker_to_starter.memory.target
+                del worker_to_starter.memory.path
 
     if not need_restart:
         starter_to_worker = _(spawn.room.find(FIND_MY_CREEPS)
                               .filter(lambda c: c.memory != undefined)
-                              .filter(lambda c: c.memory.job == 'starter' and
-                                                c.store[RESOURCE_ENERGY] <= 0)).sample()
+                              .filter(lambda c: c.memory.job == 'starter')).sample()
         if starter_to_worker:
             starter_to_worker.memory.job = 'worker'
             del starter_to_worker.memory.duty
             del starter_to_worker.memory.target
+            del starter_to_worker.memory.path
 
     defended = False
     if spawn_memory.defenders >= 2:
@@ -122,7 +152,7 @@ def creep_needed_to_spawn(spawn):
     actual_spawn_builders = _.filter(my_creeps_with_memory,
                                      lambda c: c.memory.home == spawn.id and
                                                c.memory.flag == 'BS' and
-                                               c.ticksToLive > 30)
+                                               c.ticksToLive > 20)
     flag_bs = Game.flags['BS']
     if flag_bs:
         flag_bs.memory.spawn_builders = len(actual_spawn_builders)
@@ -140,8 +170,7 @@ def creep_needed_to_spawn(spawn):
             if spawn_memory.need_defenders > number_of_creeps_filtered:
                 desired_job = job_name
         elif job_name == 'offender':
-            if not need_restart and defended and enough_lorries:
-                spawn_memory.need_offenders = 1
+            if not need_restart and defended and enough_lorries and enough_miners:
                 spawn_memory.offenders = number_of_creeps_filtered
                 if spawn_memory.need_offenders > number_of_creeps_filtered:
                     desired_job = job_name
@@ -155,45 +184,24 @@ def creep_needed_to_spawn(spawn):
                 desired_job = job_name
         elif job_name == 'miner':
             spawn_memory.miners = number_of_creeps_filtered
-            need_miners = containers_near_mine * 2
+            need_miners = mines_near_container * 2
             spawn_memory.need_miners = need_miners
-            if not spawn_memory.need_additional_workers:
-                spawn_memory.need_additional_workers = 0
-            need_additional_workers = spawn_memory.need_additional_workers
-            if not spawn_memory.need_additional_lorries:
-                spawn_memory.need_additional_lorries = 0
-            need_additional_lorries = spawn_memory.need_additional_lorries
-            need_workers = 0
-            if containers_near_mine > 0:
-                need_workers = 1
-            if spawn_memory.lorries > 0:
-                need_workers = containers_near_mine
-            need_lorries = 3
-            if spawn_memory.miners == 0:
-                need_lorries = 0
-                need_additional_lorries = 0
-            if spawn_memory.miners > 0:
-                need_lorries = 3
-            spawn_memory.need_lorries = round((need_lorries + need_additional_lorries), 2)
-            spawn_memory.need_workers = round((need_workers + need_additional_workers), 2)
-            spawn_memory.need_additional_lorries = need_additional_lorries
-            spawn_memory.need_additional_workers = need_additional_workers
             if need_miners > number_of_creeps_filtered:
                 desired_job = job_name
         elif job_name == 'lorry':
-            spawn_memory.lorries = number_of_creeps_filtered
-            if spawn_memory.need_lorries > number_of_creeps_filtered:
-                desired_job = job_name
+            if enough_miners:
+                spawn_memory.lorries = number_of_creeps_filtered
+                if spawn_memory.need_lorries > number_of_creeps_filtered:
+                    desired_job = job_name
 
         elif job_name == 'worker':
-            if defended and not need_restart:
-                spawn_memory.workers = number_of_creeps_filtered
+            spawn_memory.workers = number_of_creeps_filtered
+            if defended and not need_restart and enough_lorries and enough_miners:
                 if spawn_memory.need_workers > number_of_creeps_filtered:
-                    if enough_lorries:
-                        desired_job = job_name
+                    desired_job = job_name
 
         elif job_name == 'reservator':
-            if not need_restart and defended and enough_lorries:
+            if not need_restart and defended and enough_lorries and enough_miners:
                 flags = Object.keys(Game.flags)
                 for flag_name in flags:
                     if flag_name[:6] == 'Steal' + spawn.name[5:6]:
@@ -202,7 +210,7 @@ def creep_needed_to_spawn(spawn):
                         reservators_on_the_flag = _.filter(creeps_filtered, lambda c: c.memory.flag == flag_name)
                         flag_memory.reservators = len(reservators_on_the_flag)
                         if flag.room:
-                            if flag_memory.need_reservators > len(reservators_on_the_flag):
+                            if flag_memory.need_reservators > len(reservators_on_the_flag) + 1:
                                 if flag_memory.reservation < 2000:
                                     desired_job = job_name
                         flag.memory = flag_memory
@@ -241,7 +249,7 @@ def creep_needed_to_spawn(spawn):
                                     stealer_to_worker.memory.job = 'worker'
 
         elif job_name == 'truck':
-            if not need_restart and defended and enough_lorries:
+            if not need_restart and defended and enough_lorries and enough_miners:
                 for flag_name in Object.keys(Game.flags):
                     if flag_name[:7] == 'Energy' + spawn.name[5:6]:
                         flag = Game.flags[flag_name]
@@ -265,7 +273,7 @@ def creep_needed_to_spawn(spawn):
                         desired_job = job_name
 
         elif job_name == 'spawn_builder':
-            if enough_lorries and defended:
+            if enough_lorries and defended and enough_miners and not need_restart:
                 flag = Game.flags['BS']
                 if flag:
                     flag_memory = flag.memory
@@ -296,31 +304,31 @@ def define_body(spawn, job_name):
     desired_body = []
     if job_name == 'defender' or job_name == 'offender':
         for a in range(1, 5):
-            if spawn.room.energyAvailable >= a * 260:
-                desired_body.extend([TOUGH])
+            if spawn.room.energyAvailable >= a * 380:
+                desired_body.extend([TOUGH, TOUGH, TOUGH, MOVE, MOVE])
         for a in range(1, 5):
-            if spawn.room.energyAvailable >= a * 260:
-                desired_body.extend([RANGED_ATTACK, MOVE, MOVE])
+            if spawn.room.energyAvailable >= a * 380:
+                desired_body.extend([MOVE, MOVE, RANGED_ATTACK])
     if job_name == 'healer':
         for a in range(1, 4):
-            if spawn.room.energyAvailable >= a * 360:
-                desired_body.extend([TOUGH])
+            if spawn.room.energyAvailable >= a * 480:
+                desired_body.extend([TOUGH, TOUGH, TOUGH, MOVE, MOVE])
         for a in range(1, 4):
-            if spawn.room.energyAvailable >= a * 360:
-                desired_body.extend([HEAL, MOVE, MOVE])
+            if spawn.room.energyAvailable >= a * 480:
+                desired_body.extend([MOVE, MOVE, HEAL])
     elif job_name == 'starter':
-        for a in range(1, 6):
+        for a in range(1, 8):
             if spawn.room.energyAvailable >= a * 200:
                 desired_body.extend([WORK, CARRY, MOVE])
     elif job_name == 'worker':
-        for a in range(1, 6):
+        for a in range(1, 8):
             if spawn.room.energyCapacityAvailable >= a * 200:
                 desired_body.extend([WORK, CARRY, MOVE])
     elif job_name == 'miner':
         if spawn.room.energyCapacityAvailable >= 400:
             desired_body.extend([WORK, WORK, WORK, CARRY, MOVE, MOVE])
     elif job_name == 'lorry':
-        for a in range(1, 3):
+        for a in range(1, 5):
             if spawn.room.energyCapacityAvailable >= a * 150:
                 desired_body.extend([CARRY, CARRY, MOVE])
     elif job_name == 'truck':
@@ -336,20 +344,31 @@ def define_body(spawn, job_name):
 
 def create_extension(spawn):
     if len(spawn.room.find(FIND_CONSTRUCTION_SITES)) == 0:
-        controller_lvl = spawn.room.controller.level
-        extensions = _.filter(spawn.room.find(FIND_STRUCTURES), lambda s: s.structureType == STRUCTURE_EXTENSION)
-        if controller_lvl == 2:
-            if len(extensions) < 5:
-                max_range = len(extensions) + 1
-                verify_square_and_place_extension(spawn.pos)
-                for extension in extensions:
-                    verify_square_and_place_extension(extension.pos)
-        elif controller_lvl > 2:
-            if len(extensions) < (controller_lvl - 2) * 10:
-                max_range = len(extensions) + 1
-                verify_square_and_place_extension(spawn.pos)
-                for extension in extensions:
-                    verify_square_and_place_extension(extension.pos)
+        deconstructions = Memory.deconstructions
+        have_to_dismantle_in_the_room = False
+        if deconstructions:
+            for deconstruction in deconstructions:
+                deconstruction_site = Game.getObjectById(deconstruction)
+                if deconstruction_site:
+                    if deconstruction_site.room == spawn.room:
+                        have_to_dismantle_in_the_room = True
+        if not have_to_dismantle_in_the_room:
+            controller_lvl = spawn.room.controller.level
+            extensions = _.filter(spawn.room.find(FIND_STRUCTURES), lambda s: s.structureType == STRUCTURE_EXTENSION)
+            if controller_lvl == 2:
+                if len(extensions) < 5:
+                    if verify_square_and_place_extension(spawn.pos):
+                        return
+                    for extension in extensions:
+                        if verify_square_and_place_extension(extension.pos):
+                            return
+            elif controller_lvl > 2:
+                if len(extensions) < (controller_lvl - 2) * 10:
+                    if verify_square_and_place_extension(spawn.pos):
+                        return
+                    for extension in extensions:
+                        if verify_square_and_place_extension(extension.pos):
+                            return
 
 
 def verify_square_and_place_extension(position):
@@ -363,29 +382,28 @@ def verify_square_and_place_extension(position):
                     position.y = position.y - 1
                     extension_placed = place_extension(position)
                     if extension_placed:
-                        return
+                        return extension_placed
                 if direction == 2:
                     position.x = position.x + 1
                     position.y = position.y + 1
                     extension_placed = place_extension(position)
                     if extension_placed:
-                        return
+                        return extension_placed
                 if direction == 3:
                     position.x = position.x - 1
                     position.y = position.y + 1
                     extension_placed = place_extension(position)
                     if extension_placed:
-                        return
+                        return extension_placed
                 if direction == 4:
                     position.x = position.x - 1
                     position.y = position.y - 1
                     extension_placed = place_extension(position)
                     if extension_placed:
-                        return
+                        return extension_placed
 
 
 def place_extension(position):
-    extension_placed = False
     if 4 < position.x < 45 and 4 < position.y < 45:
         terrain = position.lookFor(LOOK_TERRAIN)
         structures = position.lookFor(LOOK_STRUCTURES)
@@ -398,9 +416,7 @@ def place_extension(position):
             extensions = _.sum(position.findInRange(FIND_STRUCTURES, 1),
                                lambda s: s.structureType == STRUCTURE_EXTENSION or
                                          s.structureType == STRUCTURE_SPAWN)
-            swamps = _.sum(position.findInRange(LOOK_TERRAIN, 3),
-                           lambda t: t.type == 'swamp')
-            if extensions > 0 and swamps == 0:
+            if extensions > 0:
                 position.createConstructionSite(STRUCTURE_EXTENSION)
                 extension_placed = True
                 return extension_placed
