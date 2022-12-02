@@ -14,11 +14,11 @@ def run_links(spawn):
     links = _.filter(spawn.room.find(FIND_STRUCTURES), lambda s: s.structureType == STRUCTURE_LINK)
     if len(links) > 1:
         sorted_links = _.sortBy(links, lambda l: l.store[RESOURCE_ENERGY])
-        if sorted_links[len(sorted_links) - 1].cooldown == 0:
+        if sorted_links[len(sorted_links) - 1].cooldown == 0 and sorted_links[0].cooldown < 3:
             if sorted_links[len(sorted_links) - 1].store[RESOURCE_ENERGY]\
                     > sorted_links[0].store[RESOURCE_ENERGY] + 300:
                 amount_to_transfer = (sorted_links[len(sorted_links) - 1].store[RESOURCE_ENERGY]
-                                      - sorted_links[0].store[RESOURCE_ENERGY]) * 0.48 + 150
+                                      - sorted_links[0].store[RESOURCE_ENERGY])
                 sorted_links[len(sorted_links) - 1].transferEnergy(sorted_links[0], round(amount_to_transfer))
 
 

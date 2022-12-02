@@ -661,7 +661,7 @@ def define_link_to_transfer(creep):
     if creep.store[RESOURCE_ENERGY] > 0:
         link = creep.pos.findClosestByPath(FIND_STRUCTURES, {'filter': lambda s: s.structureType == STRUCTURE_LINK})
         if link:
-            if link.store[RESOURCE_ENERGY] < link.store.getFreeCapacity(RESOURCE_ENERGY):
+            if link.store[RESOURCE_ENERGY] * 2 < link.store.getFreeCapacity(RESOURCE_ENERGY):
                 coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
                                      lambda c: (c.memory.duty == 'transferring_to_link') and
                                                c.memory.target == link.id)
