@@ -105,16 +105,22 @@ def withdraw_from_closest(creep):
 
 
 def delivering_for_spawning(creep):
-    if creep.store[RESOURCE_ENERGY] > 0:
-        creep.say('🚼')
-        target = Game.getObjectById(creep.memory.target)
-        if target:
-            if target.energy < target.energyCapacity:
-                is_close = creep.pos.isNearTo(target)
-                if is_close:
-                    del creep.memory.target
+    if creep.store[RESOURCE_ENERGY] > 0 and creep.room.energyAvailable < creep.room.energyCapacityAvailable:
+        spawning_structures = _.filter(creep.room.find(FIND_STRUCTURES),
+                                       lambda s: (s.structureType == STRUCTURE_SPAWN or
+                                                  s.structureType == STRUCTURE_EXTENSION) and
+                                                 s.energy < s.energyCapacity)
+        if spawning_structures:
+            target = _(spawning_structures).sortBy(lambda s: s.pos.getRangeTo(creep)).first()
+            if target:
+                if target.energy < target.energyCapacity:
+                    if creep.pos.isNearTo(target):
+                        creep.say('🪂')
+                    else:
+                        creep.say('⚙')
+                        creep.moveTo(target)
+                else:
                     jobs.define_target(creep)
-                moving_by_path(creep, target)
             else:
                 jobs.define_target(creep)
         else:
@@ -136,7 +142,6 @@ def accidentally_delivering_for_spawning(creep):
                 if result != OK:
                     print("[{}] Unknown result from creep.transfer({}, {}): {}".format(
                         creep.name, 'accidentally spawning', RESOURCE_ENERGY, result))
-                jobs.define_target(creep)
 
 
 def building(creep):
@@ -939,7 +944,7 @@ def just_heal_anything(creep):
 
 
 def filling_up(creep):
-    if creep.ticksToLive > 300:
+    if creep.ticksToLive > 200:
         if creep.store[RESOURCE_ENERGY] < creep.store.getCapacity():
             target = Game.getObjectById(creep.memory.target)
             if creep.room != target.room:

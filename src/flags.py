@@ -74,7 +74,7 @@ def flag_runner(flag):
                 stealers = flag_memory.stealers
                 sources = flag.room.find(FIND_SOURCES)
                 for source in sources:
-                    if source.energy >= 2900 or source.energy / source.ticksToRegeneration > 10:
+                    if source.energy >= 3000 or source.energy / source.ticksToRegeneration > 10:
                         if need_stealers < stealers + 2:
                             need_stealers = need_stealers + 0.05
                             if stealers == 0:

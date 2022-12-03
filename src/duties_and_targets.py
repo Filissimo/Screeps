@@ -86,7 +86,7 @@ def define_deliver_for_spawn_target(creep):
                                                           s.structureType == STRUCTURE_EXTENSION) and
                                                          s.energy < s.energyCapacity)
                 if spawning_structures:
-                    target = _(spawning_structures).sortBy(lambda s: s.pos.getRangeTo(creep)).last()
+                    target = _(spawning_structures).sortBy(lambda s: s.pos.getRangeTo(creep)).first()
                     if target:
                         creep.memory.duty = 'delivering_for_spawn'
                         creep.memory.target = target.id
@@ -275,6 +275,7 @@ def define_storage_to_deliver(creep):
         if target[0]:
             creep.memory.duty = 'delivering_to_storage'
             creep.memory.target = target[0].id
+            decrease_lorries_needed(creep)
     return target
 
 
@@ -487,8 +488,15 @@ def define_stealer_to_help(creep):
 def decrease_lorries_needed(creep):
     home = Game.getObjectById(creep.memory.home)
     need_lorries = home.memory.need_lorries
-    if need_lorries > 3:
+    if need_lorries > 1:
         need_lorries = need_lorries - 0.03
+    home.memory.need_lorries = round(need_lorries, 2)
+
+
+def increase_lorries_needed(creep):
+    home = Game.getObjectById(creep.memory.home)
+    need_lorries = home.memory.need_lorries
+    need_lorries = need_lorries + 0.01
     home.memory.need_lorries = round(need_lorries, 2)
 
 

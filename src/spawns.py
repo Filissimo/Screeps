@@ -15,7 +15,7 @@ def run_links(spawn):
     if len(links) > 1:
         sorted_links = _.sortBy(links, lambda l: l.store[RESOURCE_ENERGY])
         if sorted_links[len(sorted_links) - 1].cooldown == 0 and sorted_links[0].cooldown < 10:
-            if sorted_links[len(sorted_links) - 1].store[RESOURCE_ENERGY]\
+            if sorted_links[len(sorted_links) - 1].store[RESOURCE_ENERGY] \
                     > sorted_links[0].store[RESOURCE_ENERGY] + 300:
                 amount_to_transfer = (sorted_links[len(sorted_links) - 1].store[RESOURCE_ENERGY]
                                       - sorted_links[0].store[RESOURCE_ENERGY])
@@ -82,6 +82,9 @@ def creep_needed_to_spawn(spawn):
                     and container_fullest.structureType == STRUCTURE_CONTAINER:
                 need_lorries = need_lorries + 0.01
             else:
+                if need_lorries > 1:
+                    need_lorries = need_lorries - 0.01
+            if spawn.spawning and spawn.room.energyAvailable >= spawn.room.energyCapacityAvailable:
                 if need_lorries > 1:
                     need_lorries = need_lorries - 0.01
             spawn_memory.need_lorries = round(need_lorries, 2)
@@ -216,37 +219,34 @@ def creep_needed_to_spawn(spawn):
                         flag.memory = flag_memory
 
         elif job_name == 'stealer':
-            if defended:
-                for flag_name in Object.keys(Game.flags):
-                    if flag_name[:6] == 'Steal' + spawn.name[5:6]:
-                        flag = Game.flags[flag_name]
-                        flag_memory = flag.memory
-                        stealers_on_the_flag = _.filter(creeps_filtered, lambda c: c.memory.flag == flag_name)
-                        flag.memory.stealers = len(stealers_on_the_flag)
-                        if flag_memory.need_stealers > flag_memory.stealers \
-                                and spawn_memory.workers > spawn_memory.need_workers - 0.1:
-                            worker_to_stealer = _(spawn.room.find(FIND_MY_CREEPS)) \
-                                .filter(lambda c: c.memory.job == 'worker' and
-                                                  c.store[RESOURCE_ENERGY] == 0 and
-                                                  c.store.getCapacity() >= 150).sample()
-                            if worker_to_stealer:
-                                del worker_to_stealer.memory.duty
-                                del worker_to_stealer.memory.path
-                                del worker_to_stealer.memory.target
-                                worker_to_stealer.memory.job = 'stealer'
-                                worker_to_stealer.memory.flag = flag_name
-                        if flag.room:
-                            if flag_memory.need_stealers < flag_memory.stealers - 1:
-                                stealer_to_worker = _(spawn.room.find(FIND_MY_CREEPS)) \
-                                    .filter(lambda s: s.store[RESOURCE_ENERGY] <= 0 and
-                                                      s.memory.job == 'stealer') \
-                                    .sample()
-                                if stealer_to_worker:
-                                    del stealer_to_worker.memory.duty
-                                    del stealer_to_worker.memory.target
-                                    del stealer_to_worker.memory.flag
-                                    del stealer_to_worker.memory.path
-                                    stealer_to_worker.memory.job = 'worker'
+            for flag_name in Object.keys(Game.flags):
+                if flag_name[:6] == 'Steal' + spawn.name[5:6]:
+                    flag = Game.flags[flag_name]
+                    flag_memory = flag.memory
+                    stealers_on_the_flag = _.filter(creeps_filtered, lambda c: c.memory.flag == flag_name)
+                    flag.memory.stealers = len(stealers_on_the_flag)
+                    if flag_memory.need_stealers > flag_memory.stealers and spawn_memory.workers > 1:
+                        worker_to_stealer = _(spawn.room.find(FIND_MY_CREEPS)) \
+                            .filter(lambda c: c.memory.job == 'worker' and
+                                              c.store[RESOURCE_ENERGY] == 0 and
+                                              c.store.getCapacity() >= 150).sample()
+                        if worker_to_stealer:
+                            del worker_to_stealer.memory.duty
+                            del worker_to_stealer.memory.path
+                            del worker_to_stealer.memory.target
+                            worker_to_stealer.memory.job = 'stealer'
+                            worker_to_stealer.memory.flag = flag_name
+                    if flag_memory.need_stealers < flag_memory.stealers - 1:
+                        stealer_to_worker = _(spawn.room.find(FIND_MY_CREEPS)) \
+                            .filter(lambda s: s.store[RESOURCE_ENERGY] <= 0 and
+                                              s.memory.job == 'stealer') \
+                            .sample()
+                        if stealer_to_worker:
+                            del stealer_to_worker.memory.duty
+                            del stealer_to_worker.memory.target
+                            del stealer_to_worker.memory.flag
+                            del stealer_to_worker.memory.path
+                            stealer_to_worker.memory.job = 'worker'
 
         elif job_name == 'truck':
             if not need_restart and defended and enough_lorries and enough_miners:

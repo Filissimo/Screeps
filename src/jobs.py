@@ -229,6 +229,8 @@ def run_lorry(creep):
             actions.delivering_for_spawning(creep)
             actions.pick_up_energy(creep)
             actions.accidentally_delivering_for_spawning(creep)
+            if creep.room.energyAvailable * 2 < creep.room.energyCapacityAvailable:
+                duties_and_targets.increase_lorries_needed(creep)
             actions.paving_roads(creep)
         elif duty == 'delivering_to_tower':
             actions.accidentally_delivering_for_spawning(creep)
@@ -259,6 +261,8 @@ def run_lorry(creep):
 def define_lorry_target(creep):
     del creep.memory.duty
     del creep.memory.target
+    if creep.name[:5] == 'truck' and creep.ticksToLive > 300:
+        creep.memory.job = 'truck'
     if not duties_and_targets.define_creep_to_pickup_tombstone(creep):
         if not duties_and_targets.define_fullest(creep):
             if not duties_and_targets.define_link_to_withdraw(creep):
