@@ -70,16 +70,23 @@ def define_mining_target(creep):
 def define_deliver_for_spawn_target(creep):
     target = undefined
     if creep.store[RESOURCE_ENERGY] > 0:
-        spawning_structures = _.filter(creep.room.find(FIND_STRUCTURES),
-                                       lambda s: (s.structureType == STRUCTURE_SPAWN or
-                                                  s.structureType == STRUCTURE_EXTENSION) and
-                                                 s.energy < s.energyCapacity)
-        if spawning_structures:
-            for spawning_structure in spawning_structures:
-                coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
-                                     lambda c: c.memory.target == spawning_structure.id)
-                if len(coworkers) == 0:
-                    target = spawning_structure
+        if creep.room.energyCapacityAvailable > creep.room.energyAvailable:
+            coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
+                                 lambda c: c.memory.duty == 'delivering_for_spawn')
+            energy_of_room = creep.room.energyAvailable
+            if coworkers:
+                energy_on_the_way = 0
+                for coworker in coworkers:
+                    if coworker.store.getCapacity() > 0:
+                        energy_on_the_way = energy_on_the_way + (coworker.store[RESOURCE_ENERGY])
+                energy_of_room = energy_of_room + energy_on_the_way
+            if energy_of_room < creep.room.energyCapacityAvailable:
+                spawning_structures = _.filter(creep.room.find(FIND_STRUCTURES),
+                                               lambda s: (s.structureType == STRUCTURE_SPAWN or
+                                                          s.structureType == STRUCTURE_EXTENSION) and
+                                                         s.energy < s.energyCapacity)
+                if spawning_structures:
+                    target = _(spawning_structures).sortBy(lambda s: s.pos.getRangeTo(creep)).last()
                     if target:
                         creep.memory.duty = 'delivering_for_spawn'
                         creep.memory.target = target.id
@@ -622,7 +629,7 @@ def define_link_to_withdraw(creep):
     if creep.store[RESOURCE_ENERGY] <= 0:
         link = creep.pos.findClosestByPath(FIND_STRUCTURES, {'filter': lambda s: s.structureType == STRUCTURE_LINK})
         if link:
-            if link.store[RESOURCE_ENERGY] >= link.store.getFreeCapacity(RESOURCE_ENERGY) * 2 \
+            if link.store[RESOURCE_ENERGY] >= link.store.getFreeCapacity(RESOURCE_ENERGY) * 1.5 \
                     and (link.cooldown == 0 or link.cooldown > 18):
                 coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
                                      lambda c: (c.memory.duty == 'withdrawing_from_link') and

@@ -181,7 +181,7 @@ def miner_mines(creep):
     container = Game.getObjectById(creep_memory.container)
     if container:
         if creep.pos.isNearTo(source) and creep.pos.isNearTo(container):
-            if creep.store[RESOURCE_ENERGY] <= 44 and creep.memory.work_place:
+            if creep.store[RESOURCE_ENERGY] <= 92 and creep.memory.work_place:
                 pick_up_energy(creep)
                 creep.say('⛏')
                 source = Game.getObjectById(creep.memory.source)
@@ -189,9 +189,13 @@ def miner_mines(creep):
                 if result != OK and result != -6:
                     print("[{}] Unknown result from creep.harvest({}): {}".format(creep.name, 'mine', result))
                 creep.transfer(container, RESOURCE_ENERGY)
-            elif creep.store[RESOURCE_ENERGY] > 44 and creep.memory.work_place:
+            elif creep.store[RESOURCE_ENERGY] > 92 and creep.memory.work_place:
                 creep.say('💼')
                 creep.transfer(container, RESOURCE_ENERGY)
+                home = Game.getObjectById(creep_memory.home)
+                need_lorries = home.memory.need_lorries
+                need_lorries = need_lorries + 0.01
+                home.memory.need_lorries = round(need_lorries, 2)
         else:
             jobs.define_target(creep)
     else:

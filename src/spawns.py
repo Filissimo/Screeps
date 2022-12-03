@@ -14,7 +14,7 @@ def run_links(spawn):
     links = _.filter(spawn.room.find(FIND_STRUCTURES), lambda s: s.structureType == STRUCTURE_LINK)
     if len(links) > 1:
         sorted_links = _.sortBy(links, lambda l: l.store[RESOURCE_ENERGY])
-        if sorted_links[len(sorted_links) - 1].cooldown == 0 and sorted_links[0].cooldown < 3:
+        if sorted_links[len(sorted_links) - 1].cooldown == 0 and sorted_links[0].cooldown < 10:
             if sorted_links[len(sorted_links) - 1].store[RESOURCE_ENERGY]\
                     > sorted_links[0].store[RESOURCE_ENERGY] + 300:
                 amount_to_transfer = (sorted_links[len(sorted_links) - 1].store[RESOURCE_ENERGY]
@@ -82,7 +82,7 @@ def creep_needed_to_spawn(spawn):
                     and container_fullest.structureType == STRUCTURE_CONTAINER:
                 need_lorries = need_lorries + 0.01
             else:
-                if need_lorries > 3:
+                if need_lorries > 1:
                     need_lorries = need_lorries - 0.01
             spawn_memory.need_lorries = round(need_lorries, 2)
 
@@ -325,10 +325,10 @@ def define_body(spawn, job_name):
             if spawn.room.energyCapacityAvailable >= a * 200:
                 desired_body.extend([WORK, CARRY, MOVE])
     elif job_name == 'miner':
-        if spawn.room.energyCapacityAvailable >= 400:
-            desired_body.extend([WORK, WORK, WORK, CARRY, MOVE, MOVE])
+        if spawn.room.energyCapacityAvailable >= 550:
+            desired_body.extend([WORK, WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE])
     elif job_name == 'lorry':
-        for a in range(1, 5):
+        for a in range(1, 6):
             if spawn.room.energyCapacityAvailable >= a * 150:
                 desired_body.extend([CARRY, CARRY, MOVE])
     elif job_name == 'truck':
@@ -442,7 +442,7 @@ def look_for_spots_near_position(position):
 
 
 def create_container(source):
-    if source.room.energyCapacityAvailable >= 400:
+    if source.room.energyCapacityAvailable >= 550:
         if len(source.room.find(FIND_CONSTRUCTION_SITES)) == 0:
             flag = _(source.pos.findInRange(FIND_FLAGS, 2)).filter(lambda f: f.name[:3] == 'con').sample()
             if flag:

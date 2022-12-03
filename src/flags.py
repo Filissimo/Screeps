@@ -54,7 +54,7 @@ def flag_runner(flag):
                 flag.remove()
     if flag.name[:3] == 'con':
         if flag.room:
-            if flag.room.energyCapacityAvailable >= 400:
+            if flag.room.energyCapacityAvailable >= 550:
                 if len(flag.room.find(FIND_CONSTRUCTION_SITES)) == 0:
                     flag.pos.createConstructionSite(STRUCTURE_CONTAINER)
                     flag.remove()
@@ -80,8 +80,8 @@ def flag_runner(flag):
                             if stealers == 0:
                                 need_stealers = 3
                     if source.energy / source.ticksToRegeneration < 8 or source.energy <= 0:
-                        if need_stealers > stealers - 1.5 and need_stealers > 0:
-                            need_stealers = need_stealers - 0.05
+                        if need_stealers > 1:
+                            need_stealers = need_stealers - 0.01
                 flag_memory.need_stealers = need_stealers
 
                 controller = flag.room.controller
