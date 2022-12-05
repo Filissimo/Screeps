@@ -43,7 +43,17 @@ def spawning_creep(spawn, job_name, flag_name):
                 Memory.Number_of_creep = number_of_creep
 
 
+def run_terminals(spawn):
+    terminal = spawn.room.terminal
+    if terminal:
+        if terminal.store[RESOURCE_ENERGY] > terminal.store.getFreeCapacity(RESOURCE_ENERGY):
+            Memory.sending_terminal = terminal.id
+        if terminal.store[RESOURCE_ENERGY] < terminal.store.getFreeCapacity(RESOURCE_ENERGY):
+            Memory.receiving_terminal = terminal.id
+
+
 def spawn_runner(spawn):
+    run_terminals(spawn)
     run_links(spawn)
     create_extension(spawn)
     spawn_memory = spawn.memory

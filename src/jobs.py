@@ -293,6 +293,9 @@ def run_lorry(creep):
         elif duty == 'withdrawing_from_stealing':
             actions.withdrawing_from_memory(creep)
             actions.pick_up_energy(creep)
+        elif duty == 'withdrawing_from_terminal':
+            actions.withdrawing_from_memory(creep)
+            actions.pick_up_energy(creep)
         elif duty == 'withdrawing_from_storage':
             actions.withdrawing_from_memory(creep)
             actions.pick_up_energy(creep)
@@ -318,6 +321,11 @@ def run_lorry(creep):
             actions.accidentally_delivering_to_worker(creep)
             actions.delivering_to_from_memory(creep)
             actions.paving_roads(creep)
+        elif duty == 'delivering_to_terminal':
+            actions.accidentally_delivering_for_spawning(creep)
+            actions.accidentally_delivering_to_worker(creep)
+            actions.delivering_to_from_memory(creep)
+            actions.paving_roads(creep)
         elif duty == 'delivering_to_storage':
             actions.accidentally_delivering_for_spawning(creep)
             actions.accidentally_delivering_to_worker(creep)
@@ -337,13 +345,15 @@ def define_lorry_target(creep):
             if not duties_and_targets.define_link_to_withdraw(creep):
                 if not duties_and_targets.define_stealing_container(creep):
                     if not duties_and_targets.define_creep_to_pickup_tombstone(creep):
-                        if not duties_and_targets.define_storage_to_withdraw(creep):
-                            if not duties_and_targets.define_going_home(creep):
-                                if not duties_and_targets.define_tower(creep):
-                                    if not duties_and_targets.define_deliver_for_spawn_target(creep):
-                                        if not duties_and_targets.define_emptiest(creep):
-                                            if not duties_and_targets.define_link_to_transfer(creep):
-                                                duties_and_targets.define_storage_to_deliver(creep)
+                        if not duties_and_targets.define_terminal_to_withdraw(creep):
+                            if not duties_and_targets.define_storage_to_withdraw(creep):
+                                if not duties_and_targets.define_going_home(creep):
+                                    if not duties_and_targets.define_tower(creep):
+                                        if not duties_and_targets.define_deliver_for_spawn_target(creep):
+                                            if not duties_and_targets.define_emptiest(creep):
+                                                if not duties_and_targets.define_link_to_transfer(creep):
+                                                    if not duties_and_targets.define_terminal_to_deliver(creep):
+                                                        duties_and_targets.define_storage_to_deliver(creep)
     if not creep.memory.target:
         if creep.room != Game.getObjectById(creep.memory.home).room:
             creep.memory.target = 'home'

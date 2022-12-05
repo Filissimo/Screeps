@@ -35,6 +35,11 @@ def main():
     print('-  NEW TICK -' + spaces)
     if countdown >= 100:
         Memory.countdown = 0
+        sending_terminal = Game.getObjectById(Memory.sending_terminal)
+        receiving_terminal = Game.getObjectById(Memory.receiving_terminal)
+        if sending_terminal and receiving_terminal:
+            sending_terminal.send(RESOURCE_ENERGY, 10000, receiving_terminal.room)
+
     r_i_m_to_remove = None
     message_about_removing = undefined
     roads_in_memory = Memory.roads
@@ -80,7 +85,7 @@ def main():
         Memory.cpu_averaged = 100
     cpu_used = Memory.cpu
     cpu_averaged = Memory.cpu_averaged
-    cpu_averaged_processed = cpu_averaged + ((cpu_used - cpu_averaged) / 25)
+    cpu_averaged_processed = cpu_averaged + ((cpu_used - cpu_averaged) / 1000)
 
     print('                                                       Average CPU used = '
           + str(round(cpu_averaged, 3)))

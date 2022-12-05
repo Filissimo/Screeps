@@ -293,11 +293,24 @@ def define_storage_to_deliver(creep):
     target = undefined
     if creep.store[RESOURCE_ENERGY] > 0:
         target = _.filter(creep.room.find(FIND_STRUCTURES),
-                          lambda s: s.structureType == STRUCTURE_STORAGE)
+                          lambda s: s.structureType == STRUCTURE_STORAGE
+                                    and s.store.getFreeCapacity(RESOURCE_ENERGY) > 0)
         if target[0]:
             creep.memory.duty = 'delivering_to_storage'
             creep.memory.target = target[0].id
             decrease_lorries_needed(creep)
+    return target
+
+
+def define_terminal_to_deliver(creep):
+    target = undefined
+    if creep.store[RESOURCE_ENERGY] > 0:
+        terminal = creep.room.terminal
+        if terminal:
+            if terminal.store.getFreeCapacity(RESOURCE_ENERGY) > 0:
+                target = terminal
+                creep.memory.duty = 'delivering_to_terminal'
+                creep.memory.target = target.id
     return target
 
 
@@ -313,24 +326,46 @@ def define_storage_to_withdraw(creep):
     return target
 
 
+def define_terminal_to_withdraw(creep):
+    target = undefined
+    if creep.store[RESOURCE_ENERGY] <= 0:
+        terminal = creep.room.terminal
+        if terminal:
+            if terminal.store[RESOURCE_ENERGY] > creep.store.getCapacity():
+                target = terminal
+                creep.memory.duty = 'withdrawing_from_storage'
+                creep.memory.target = target.id
+    return target
+
+
 def define_reservators_flag(creep):
     target = undefined
-    home = Game.getObjectById(creep.memory.home)
-    flags = Object.keys(Game.flags)
-    for flag_name in flags:
-        if flag_name[:6] == 'Steal' + home.name[5:6]:
-            flag = Game.flags[flag_name]
-            if flag:
-                if flag.memory.need_reservators > flag.memory.reservators:
-                    if creep.pos.inRangeTo(flag, 40):
-                        target = undefined
-                        creep.memory.duty = 'reserving'
-                        creep.memory.controller = creep.room.controller
-                    else:
-                        target = flag
-                        creep.memory.flag = flag_name
-                        creep.memory.target = flag_name
-                        creep.memory.duty = 'go_to_flag'
+    flag = Game.flags[creep.memory.flag]
+    if flag:
+        if creep.pos.inRangeTo(flag, 40):
+            target = undefined
+            creep.memory.duty = 'reserving'
+            creep.memory.controller = creep.room.controller
+        else:
+            target = flag
+            creep.memory.duty = 'go_to_flag'
+    else:
+        home = Game.getObjectById(creep.memory.home)
+        flags = Object.keys(Game.flags)
+        for flag_name in flags:
+            if flag_name[:6] == 'Steal' + home.name[5:6]:
+                flag = Game.flags[flag_name]
+                if flag:
+                    if flag.memory.need_reservators > flag.memory.reservators:
+                        if creep.pos.inRangeTo(flag, 40):
+                            target = undefined
+                            creep.memory.duty = 'reserving'
+                            creep.memory.controller = creep.room.controller
+                        else:
+                            target = flag
+                            creep.memory.flag = flag_name
+                            creep.memory.target = flag_name
+                            creep.memory.duty = 'go_to_flag'
     return target
 
 
