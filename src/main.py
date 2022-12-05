@@ -60,13 +60,6 @@ def main():
         spawn = Game.spawns[spawn_name]
         s = SpawnRunner(spawn)
         s.spawning_spawn()
-        spawn_memory = spawn.memory
-        print('    ' + spawn.name + ' - ' +
-              'Starters:  ' + spawn_memory.starters + '/' + round(spawn_memory.need_starters, 3) +
-              '. Miners:  ' + spawn_memory.miners + '/' + round(spawn_memory.need_miners, 3) +
-              '. Lorries:  ' + spawn_memory.lorries + '/' + round(spawn_memory.need_lorries, 3) +
-              ". Workers:  " + spawn_memory.workers + '/' + round(spawn_memory.need_workers, 3) +
-              '.           Desired job: ' + spawn_memory.desired_job)
         s.towering_towers(spawn)
 
     for creep_name in Object.keys(Game.creeps):

@@ -38,11 +38,8 @@ def creep_mining(creep):
                 jobs.define_target(creep)
         else:
             creep.say('⛏')
-        moving_by_path(creep, source)
         if creep.pos.isNearTo(source):
-            close_creep = _(creep.pos.findInRange(FIND_MY_CREEPS, 1)) \
-                .filter(lambda c: c.pos.isNearTo(source)) \
-                .sortBy(lambda c: c.store[RESOURCE_ENERGY]).first()
+            close_creep = _(creep.pos.findInRange(FIND_MY_CREEPS, 1)).sortBy(lambda c: c.store[RESOURCE_ENERGY]).first()
             if close_creep:
                 if creep.store[RESOURCE_ENERGY] >= close_creep.store[RESOURCE_ENERGY]:
                     creep.transfer(close_creep, RESOURCE_ENERGY)
@@ -61,9 +58,11 @@ def creep_mining(creep):
                     flag = Game.flags[creep.memory.flag]
                     flag.memory.need_stealers = 0
                     jobs.define_target(creep)
-        elif creep.pos.inRangeTo(source, 4):
+        elif creep.pos.inRangeTo(source, 3):
             if creep.moveTo(source) == -2:
                 jobs.define_target(creep)
+        elif not creep.pos.inRangeTo(source, 3):
+            moving_by_path(creep, source)
         else:
             if source.energy <= 0:
                 coworkers = _.filter(creep.room.find(FIND_MY_CREEPS),
@@ -863,6 +862,9 @@ def pick_up_energy(creep):
     energy_near = creep.pos.findInRange(FIND_DROPPED_RESOURCES, 1)[0]
     if energy_near:
         creep.pickup(energy_near)
+    tombstone = creep.pos.findInRange(FIND_TOMBSTONES, 1)[0]
+    if tombstone:
+        creep.withdraw(tombstone, RESOURCE_ENERGY)
 
 
 def nursing(creep):

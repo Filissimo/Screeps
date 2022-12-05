@@ -133,12 +133,26 @@ def define_repairing_target(creep):
             if target:
                 creep.memory.duty = 'repairing'
                 creep.memory.target = target.id
-        else:
-            flag = Game.flags[creep.memory.flag]
-            if flag:
-                if flag.room:
-                    if flag.memory.need_repairs:
-                        creep.memory.duty = 'repairing'
+    return target
+
+
+def define_repairing_target_for_stealers(creep):
+    target = undefined
+    if creep.store[RESOURCE_ENERGY] > 0:
+        target = _(creep.room.find(FIND_STRUCTURES)) \
+            .filter(lambda s: (s.hits < s.hitsMax * 0.3) and
+                              s.structureType != STRUCTURE_WALL) \
+            .sortBy(lambda s: (s.hitsMax / s.hits)).last()
+        if target != undefined:
+            do_not_repairs = Memory.deconstructions
+            if do_not_repairs:
+                for do_not_repair in do_not_repairs:
+                    if target:
+                        if target.id == do_not_repair:
+                            target = undefined
+            if target:
+                creep.memory.duty = 'repairing'
+                creep.memory.target = target.id
     return target
 
 
@@ -392,10 +406,8 @@ def decrease_stealers_needed(creep):
     flag = Game.flags[creep.memory.flag]
     if flag:
         need_stealers = flag.memory.need_stealers
-        stealers = flag.memory.stealers
-        if need_stealers >= stealers - 2:
-            need_stealers = need_stealers - 0.001
-        flag.memory.need_stealers = need_stealers
+        if need_stealers >= 2:
+            flag.memory.need_stealers = need_stealers - 0.005
 
 
 def define_claimers_flag(creep):

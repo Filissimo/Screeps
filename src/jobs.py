@@ -234,6 +234,9 @@ def define_steaminer_targets(creep):
         verify_steaminers_place(creep)
     creep.memory = creep_memory
 
+    if not creep.memory.target:
+        actions.move_away_from_creeps(creep)
+
 
 def run_worker(creep):
     if not actions.going_home(creep):
@@ -510,14 +513,18 @@ def run_stealer(creep):
         if duty == 'go_to_flag':
             actions.going_to_flag(creep)
             actions.paving_roads(creep)
+            actions.pick_up_energy(creep)
         elif duty == 'picking_up_tombstone':
             actions.pick_up_tombstone(creep)
+            actions.pick_up_energy(creep)
         elif duty == 'dismantling':
             actions.dismantling(creep)
         elif duty == 'mining':
             actions.creep_mining(creep)
+            actions.pick_up_energy(creep)
         elif duty == 'withdrawing_from_closest':
             actions.withdraw_from_closest(creep)
+            actions.pick_up_energy(creep)
         elif duty == 'repairing':
             actions.creep_repairing(creep)
             actions.paving_roads(creep)
@@ -544,9 +551,10 @@ def define_stealer_targets(creep):
         if not duties_and_targets.removed_flag(creep):
             if not duties_and_targets.define_creep_to_pickup_tombstone(creep):
                 if not duties_and_targets.define_closest_to_withdraw(creep):
+                    duties_and_targets.decrease_stealers_needed(creep)
                     if not duties_and_targets.define_mining_target(creep):
                         if not duties_and_targets.define_dismantling_target(creep):
-                            if not duties_and_targets.define_repairing_target(creep):
+                            if not duties_and_targets.define_repairing_target_for_stealers(creep):
                                 if not duties_and_targets.define_building_target(creep):
                                     if not duties_and_targets.define_closest_to_transfer(creep):
                                         duties_and_targets.define_going_home(creep)

@@ -63,77 +63,77 @@ def flag_runner(flag):
                     if len(flag.room.find(FIND_CONSTRUCTION_SITES)) == 0:
                         flag.pos.createConstructionSite(STRUCTURE_CONTAINER)
                         flag.remove()
-    if flag.name[:5] == 'Steal':
-        if flag.room:
-            enemies = flag.room.find(FIND_HOSTILE_CREEPS, {'filter': lambda e: e.owner.username != 'rep71Le'})
-            if len(enemies) <= 0:
-                sources = flag.room.find(FIND_SOURCES)
-                mines_near_container = 0
-                for source in sources:
-                    mine_near_container = _.filter(source.pos.findInRange(FIND_STRUCTURES, 2),
-                                                   lambda s: (s.structureType == STRUCTURE_CONTAINER
-                                                              or s.structureType == STRUCTURE_LINK))
-
-                    if len(mine_near_container) == 1:
-                        mines_near_container = mines_near_container + 1
-                flag_memory = flag.memory
-                flag_memory.need_miners = mines_near_container * 2
-                if mines_near_container < len(sources):
-                    if not flag_memory.need_stealers:
-                        flag_memory.need_stealers = 3
-                    need_stealers = flag_memory.need_stealers
-                    stealers = flag_memory.stealers
-                    for source in sources:
-                        if source.energy >= 3000 or source.energy / source.ticksToRegeneration > 10:
-                            if need_stealers < stealers + 2:
-                                need_stealers = need_stealers + 0.05
-                                if stealers == 0:
-                                    need_stealers = 3
-                        if source.energy / source.ticksToRegeneration < 8 or source.energy <= 0:
-                            if need_stealers > 1:
-                                need_stealers = need_stealers - 0.001
-                    flag_memory.need_stealers = need_stealers
-                else:
-                    need_repairs = _(flag.room.find(FIND_STRUCTURES)) \
-                        .filter(lambda s: (s.hits < s.hitsMax * 0.2) and
-                                          s.structureType != STRUCTURE_WALL) \
-                        .sortBy(lambda s: (s.hitsMax / s.hits)).last()
-                    if need_repairs:
-                        do_not_repairs = Memory.deconstructions
-                        if do_not_repairs:
-                            for do_not_repair in do_not_repairs:
-                                if need_repairs:
-                                    if need_repairs.id == do_not_repair:
-                                        flag_memory.need_repairs = True
-                                        need_repairs = undefined
-                                        flag_memory.need_stealers = 1
-                    else:
-                        flag_memory.need_repairs = False
-                        flag_memory.need_stealers = 0
-                controller = flag.room.controller
-                reservation = 0
-                if controller.reservation:
-                    reservation = controller.reservation.ticksToEnd
-                flag_memory.reservation = reservation
-                if reservation < 2000:
-                    flag_memory.need_reservators = 2
-                else:
-                    flag_memory.need_reservators = 1
-                print('      ' + flag.name +
-                      '  -  Stealers: ' +
-                      str(flag_memory.stealers) + '/' + str(round(flag_memory.need_stealers, 3)) +
-                      '.  Reservation: ' + reservation +
-                      '.  Miners: ' +
-                      str(flag_memory.miners) + '/' + str(round(flag_memory.need_miners, 3))
-                      )
-                flag.memory = flag_memory
-            else:
-                defenders = _.sum(flag.room.find(FIND_MY_CREEPS), lambda c: c.memory.job == 'defender')
-                if len(defenders) < 1:
-                    flag.pos.createFlag('A' + flag.name)
-                    flag.remove()
-        else:
-            flag.memory.need_stealers = 3
+    # if flag.name[:5] == 'Steal':
+    #     if flag.room:
+    #         enemies = flag.room.find(FIND_HOSTILE_CREEPS, {'filter': lambda e: e.owner.username != 'rep71Le'})
+    #         if len(enemies) <= 0:
+    #             sources = flag.room.find(FIND_SOURCES)
+    #             mines_near_container = 0
+    #             for source in sources:
+    #                 mine_near_container = _.filter(source.pos.findInRange(FIND_STRUCTURES, 2),
+    #                                                lambda s: (s.structureType == STRUCTURE_CONTAINER
+    #                                                           or s.structureType == STRUCTURE_LINK))
+    #
+    #                 if len(mine_near_container) == 1:
+    #                     mines_near_container = mines_near_container + 1
+    #             flag_memory = flag.memory
+    #             flag_memory.need_miners = mines_near_container * 2
+    #             if mines_near_container < len(sources):
+    #                 if not flag_memory.need_stealers:
+    #                     flag_memory.need_stealers = 3
+    #                 need_stealers = flag_memory.need_stealers
+    #                 stealers = flag_memory.stealers
+    #                 for source in sources:
+    #                     if source.energy >= 3000 or source.energy / source.ticksToRegeneration > 10:
+    #                         if need_stealers < 10:
+    #                             need_stealers = need_stealers + 0.01
+    #                             if stealers == 0:
+    #                                 need_stealers = 3
+    #                     if source.energy / source.ticksToRegeneration < 8 or source.energy <= 0:
+    #                         if need_stealers > 1:
+    #                             need_stealers = need_stealers - 0.001
+    #                 flag_memory.need_stealers = need_stealers
+    #             else:
+    #                 need_repairs = _(flag.room.find(FIND_STRUCTURES)) \
+    #                     .filter(lambda s: (s.hits < s.hitsMax * 0.2) and
+    #                                       s.structureType != STRUCTURE_WALL) \
+    #                     .sortBy(lambda s: (s.hitsMax / s.hits)).last()
+    #                 if need_repairs:
+    #                     do_not_repairs = Memory.deconstructions
+    #                     if do_not_repairs:
+    #                         for do_not_repair in do_not_repairs:
+    #                             if need_repairs:
+    #                                 if need_repairs.id == do_not_repair:
+    #                                     flag_memory.need_repairs = True
+    #                                     need_repairs = undefined
+    #                                     flag_memory.need_stealers = 1
+    #                 else:
+    #                     flag_memory.need_repairs = False
+    #                     flag_memory.need_stealers = 0
+    #             controller = flag.room.controller
+    #             reservation = 0
+    #             if controller.reservation:
+    #                 reservation = controller.reservation.ticksToEnd
+    #             flag_memory.reservation = reservation
+    #             if reservation < 2000:
+    #                 flag_memory.need_reservators = 2
+    #             else:
+    #                 flag_memory.need_reservators = 1
+    #             print('      ' + flag.name +
+    #                   '  -  Stealers: ' +
+    #                   str(flag_memory.stealers) + '/' + str(round(flag_memory.need_stealers, 3)) +
+    #                   '.  Reservation: ' + reservation +
+    #                   '.  Miners: ' +
+    #                   str(flag_memory.miners) + '/' + str(round(flag_memory.need_miners, 3))
+    #                   )
+    #             flag.memory = flag_memory
+    #         else:
+    #             defenders = _.sum(flag.room.find(FIND_MY_CREEPS), lambda c: c.memory.job == 'defender')
+    #             if len(defenders) < 1:
+    #                 flag.pos.createFlag('A' + flag.name)
+    #                 flag.remove()
+    #     else:
+    #         flag.memory.need_stealers = 3
     if flag.name[:1] == 'A':
         if flag.room:
             stealers = _.filter(flag.room.find(FIND_MY_CREEPS), lambda c: c.memory.job == 'stealer')
