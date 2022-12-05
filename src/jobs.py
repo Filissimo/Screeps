@@ -345,8 +345,8 @@ def define_lorry_target(creep):
             if not duties_and_targets.define_link_to_withdraw(creep):
                 if not duties_and_targets.define_stealing_container(creep):
                     if not duties_and_targets.define_creep_to_pickup_tombstone(creep):
-                        if not duties_and_targets.define_terminal_to_withdraw(creep):
-                            if not duties_and_targets.define_storage_to_withdraw(creep):
+                        if not duties_and_targets.define_storage_to_withdraw(creep):
+                            if not duties_and_targets.define_terminal_to_withdraw(creep):
                                 if not duties_and_targets.define_going_home(creep):
                                     if not duties_and_targets.define_tower(creep):
                                         if not duties_and_targets.define_deliver_for_spawn_target(creep):

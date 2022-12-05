@@ -357,7 +357,7 @@ def spawn_runner(spawn):
           '. Miners:  ' + spawn_memory.miners + '/' + round(spawn_memory.need_miners, 3) +
           '. Lorries:  ' + spawn_memory.lorries + '/' + round(spawn_memory.need_lorries, 3) +
           ". Workers:  " + spawn_memory.workers + '/' + round(spawn_memory.need_workers, 3) +
-          '.           Desired job: ' + spawn_memory.desired_job)
+          '.                                        Desired job: ' + spawn_memory.desired_job)
 
     for flag_name in Object.keys(Game.flags):
         if flag_name[:6] == 'Steal' + spawn.name[5:6]:
@@ -393,7 +393,7 @@ def spawn_runner(spawn):
                         flag_memory.need_stealers = need_stealers
                     else:
                         need_repairs = _(flag.room.find(FIND_STRUCTURES)) \
-                            .filter(lambda s: (s.hits < s.hitsMax * 0.4) and
+                            .filter(lambda s: (s.hits < s.hitsMax * 0.7) and
                                               s.structureType != STRUCTURE_WALL) \
                             .sortBy(lambda s: (s.hitsMax / s.hits)).last()
                         if need_repairs:
@@ -404,13 +404,13 @@ def spawn_runner(spawn):
                                         if need_repairs.id == do_not_repair:
                                             flag_memory.need_repairs = False
                                             need_repairs = undefined
-                                            flag_memory.need_stealers = 0
+                                            flag_memory.need_stealers = 1
                                         else:
                                             flag_memory.need_repairs = True
-                                            flag_memory.need_stealers = 1
+                                            flag_memory.need_stealers = 2
                         else:
                             flag_memory.need_repairs = False
-                            flag_memory.need_stealers = 0
+                            flag_memory.need_stealers = 1
                     controller = flag.room.controller
                     reservation = 0
                     if controller.reservation:

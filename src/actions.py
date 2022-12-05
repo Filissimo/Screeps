@@ -184,17 +184,27 @@ def miner_mines(creep):
     container = Game.getObjectById(creep_memory.container)
     if container:
         if creep.pos.isNearTo(source) and creep.pos.isNearTo(container):
-            if creep.store[RESOURCE_ENERGY] <= 92 and creep.memory.work_place:
+            if creep.store[RESOURCE_ENERGY] <= 92 and creep.memory.work_place and not creep.memory.repairing:
                 pick_up_energy(creep)
                 creep.say('⛏')
                 source = Game.getObjectById(creep.memory.source)
                 result = creep.harvest(source)
                 if result != OK and result != -6:
                     print("[{}] Unknown result from creep.harvest({}): {}".format(creep.name, 'mine', result))
-                creep.transfer(container, RESOURCE_ENERGY)
+                if container.hits > container.hitsMax * 0.5:
+                    creep.transfer(container, RESOURCE_ENERGY)
+            elif creep.store[RESOURCE_ENERGY] > 0 and creep.memory.work_place and creep.memory.repairing:
+                creep.say('🔧')
+                creep.repair(container)
             elif creep.store[RESOURCE_ENERGY] > 92 and creep.memory.work_place:
-                creep.say('💼')
-                creep.transfer(container, RESOURCE_ENERGY)
+                if container.hits <= container.hitsMax * 0.5:
+                    creep.memory.repairing = True
+                else:
+                    creep.memory.repairing = False
+                    creep.say('💼')
+                    creep.transfer(container, RESOURCE_ENERGY)
+            elif creep.store[RESOURCE_ENERGY] <= 0:
+                creep.memory.repairing = False
         else:
             jobs.define_target(creep)
     else:
@@ -315,7 +325,9 @@ def paving_roads(creep):
     on_road = _(creep.pos.lookFor(LOOK_STRUCTURES)) \
         .filter(lambda s: (s.structureType == STRUCTURE_ROAD or
                            s.structureType == STRUCTURE_SPAWN)).sample()
-    if on_road:
+    banned_place = _(creep.pos.lookFor(LOOK_FLAGS)) \
+        .filter(lambda s: s.name[:3] == 'ban').sample()
+    if on_road or banned_place:
         for road_memory in roads_memory:
             str_road_memory = str(road_memory)
             str_road_coors = '{\'' + real_coors_str + '\': ' + str(road_memory[real_coors_str]) + '}'

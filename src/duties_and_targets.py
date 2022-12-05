@@ -140,7 +140,7 @@ def define_repairing_target_for_stealers(creep):
     target = undefined
     if creep.store[RESOURCE_ENERGY] > 0:
         target = _(creep.room.find(FIND_STRUCTURES)) \
-            .filter(lambda s: (s.hits < s.hitsMax * 0.3) and
+            .filter(lambda s: (s.hits < s.hitsMax * 0.8) and
                               s.structureType != STRUCTURE_WALL) \
             .sortBy(lambda s: (s.hitsMax / s.hits)).last()
         if target != undefined:
