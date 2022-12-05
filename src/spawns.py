@@ -75,7 +75,7 @@ def spawn_runner(spawn):
                     need_workers = need_workers - 0.001
             else:
                 need_workers = need_workers + 0.01
-            storage = _(spawn.room.find(FIND_STRUCTURES))\
+            storage = _(spawn.room.find(FIND_STRUCTURES)) \
                 .filter(lambda s: s.structureType == STRUCTURE_STORAGE).sample()
             if storage:
                 if storage.store.getFreeCapacity() < storage.store.getCapacity() / 2:
@@ -234,7 +234,7 @@ def spawn_runner(spawn):
                     spawning_creep(spawn, job_name, flag_name)
 
         elif job_name == 'reservator':
-            if not need_restart and defended and enough_lorries and enough_miners\
+            if not need_restart and defended and enough_lorries and enough_miners \
                     and spawn.room.energyCapacityAvailable >= 700:
                 flags = Object.keys(Game.flags)
                 for flag_name in flags:
@@ -244,7 +244,7 @@ def spawn_runner(spawn):
                         reservators_on_the_flag = _.filter(creeps_filtered, lambda c: c.memory.flag == flag_name)
                         flag_memory.reservators = len(reservators_on_the_flag)
                         if flag.room:
-                            if flag_memory.need_reservators > len(reservators_on_the_flag) + 1:
+                            if flag_memory.need_reservators > len(reservators_on_the_flag):
                                 if flag_memory.reservation < 2000:
                                     desired_job = job_name
                                     spawning_creep(spawn, job_name, flag_name)
@@ -383,7 +383,7 @@ def spawn_runner(spawn):
                         flag_memory.need_stealers = need_stealers
                     else:
                         need_repairs = _(flag.room.find(FIND_STRUCTURES)) \
-                            .filter(lambda s: (s.hits < s.hitsMax * 0.2) and
+                            .filter(lambda s: (s.hits < s.hitsMax * 0.4) and
                                               s.structureType != STRUCTURE_WALL) \
                             .sortBy(lambda s: (s.hitsMax / s.hits)).last()
                         if need_repairs:
@@ -392,8 +392,11 @@ def spawn_runner(spawn):
                                 for do_not_repair in do_not_repairs:
                                     if need_repairs:
                                         if need_repairs.id == do_not_repair:
-                                            flag_memory.need_repairs = True
+                                            flag_memory.need_repairs = False
                                             need_repairs = undefined
+                                            flag_memory.need_stealers = 0
+                                        else:
+                                            flag_memory.need_repairs = True
                                             flag_memory.need_stealers = 1
                         else:
                             flag_memory.need_repairs = False
@@ -410,9 +413,11 @@ def spawn_runner(spawn):
                     print('      ' + flag.name +
                           '  -  Stealers: ' +
                           str(flag_memory.stealers) + '/' + str(round(flag_memory.need_stealers, 3)) +
-                          '.    Reservation: ' + reservation +
-                          '.    Miners: ' +
-                          str(flag_memory.miners) + '/' + str(round(flag_memory.need_miners, 3)) +
+                          '.     << Reservation: ' + str(reservation) +
+                          '. Reservators: ' +
+                          str(flag_memory.reservators) + '/' + str(flag_memory.need_reservators) +
+                          '. >>     Miners: ' +
+                          str(flag_memory.miners) + '/' + str(flag_memory.need_miners) +
                           '.      Need repairs: ' + str(flag_memory.need_repairs)
                           )
                     flag.memory = flag_memory
