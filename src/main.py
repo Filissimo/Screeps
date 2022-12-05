@@ -61,10 +61,12 @@ def main():
         s = SpawnRunner(spawn)
         s.spawning_spawn()
         spawn_memory = spawn.memory
-        print('    ' + spawn.name + ' - ' + 'Starters:  ' + spawn_memory.starters + '/' + spawn_memory.need_starters +
-              '. Miners:  ' + spawn_memory.miners + '/' + spawn_memory.need_miners +
-              '. Lorries:  ' + spawn_memory.lorries + '/' + spawn_memory.need_lorries +
-              ". Workers:  " + spawn_memory.workers + '/' + spawn_memory.need_workers)
+        print('    ' + spawn.name + ' - ' +
+              'Starters:  ' + spawn_memory.starters + '/' + round(spawn_memory.need_starters, 3) +
+              '. Miners:  ' + spawn_memory.miners + '/' + round(spawn_memory.need_miners, 3) +
+              '. Lorries:  ' + spawn_memory.lorries + '/' + round(spawn_memory.need_lorries, 3) +
+              ". Workers:  " + spawn_memory.workers + '/' + round(spawn_memory.need_workers, 3) +
+              '.           Desired job: ' + spawn_memory.desired_job)
         s.towering_towers(spawn)
 
     for creep_name in Object.keys(Game.creeps):
@@ -81,21 +83,18 @@ def main():
         s = FlagRunner(flag)
         s.flagging_flag()
 
-    if not Memory.cpu:
-        Memory.cpu = []
-    memory_cpu = Memory.cpu
-    cpu_sum = 0
-    for i in range(0, 99):
-        for j in memory_cpu:
-            if j[i] != undefined:
-                cpu_sum = cpu_sum + j[i]
-                if i == countdown:
-                    memory_cpu.remove(j)
-    print('                                                       Average CPU at last 100 ticks = '
-          + str(round(cpu_sum/100, 2)))
-    memory_cpu.append({countdown: Game.cpu.getUsed()})
+    if not Memory.cpu_averaged:
+        Memory.cpu_averaged = 100
+    cpu_used = Memory.cpu
+    cpu_averaged = Memory.cpu_averaged
+    cpu_averaged_processed = cpu_averaged + ((cpu_used - cpu_averaged) / 25)
 
-    print('                                                       Used CPU at this tick: ' + str(Game.cpu.getUsed()))
+    print('                                                       Average CPU used = '
+          + str(round(cpu_averaged, 3)))
+    Memory.cpu_averaged = cpu_averaged_processed
+    Memory.cpu = Game.cpu.getUsed()
+    print('                                                       Used CPU at this tick: '
+          + str(round(Game.cpu.getUsed(), 3)))
 
 
 module.exports.loop = main

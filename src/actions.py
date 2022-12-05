@@ -61,9 +61,8 @@ def creep_mining(creep):
                     flag = Game.flags[creep.memory.flag]
                     flag.memory.need_stealers = 0
                     jobs.define_target(creep)
-        elif creep.pos.inRangeTo(source, 2):
+        elif creep.pos.inRangeTo(source, 4):
             if creep.moveTo(source) == -2:
-                duties_and_targets.decrease_stealers_needed(creep)
                 jobs.define_target(creep)
         else:
             if source.energy <= 0:
@@ -81,14 +80,14 @@ def creep_mining(creep):
 
 def withdraw_from_closest(creep):
     if creep.store[RESOURCE_ENERGY] <= 0:
-        creep.say('🛒')
         target = _(creep.room.find(FIND_STRUCTURES)) \
-            .filter(lambda s: (s.structureType == STRUCTURE_CONTAINER
-                               or s.structureType == STRUCTURE_STORAGE
+            .filter(lambda s: (s.structureType == STRUCTURE_CONTAINER or
+                               s.structureType == STRUCTURE_STORAGE
                                or s.structureType == STRUCTURE_LINK) and
-                    s.store[RESOURCE_ENERGY] >= creep.store.getCapacity())\
+                              s.store[RESOURCE_ENERGY] >= creep.store.getCapacity()) \
             .sortBy(lambda s: s.pos.getRangeTo(creep)).first()
         if target:
+            creep.say('🛒')
             moving_by_path(creep, target)
             is_close = creep.pos.isNearTo(target)
             if is_close:
@@ -106,23 +105,23 @@ def withdraw_from_closest(creep):
 
 def delivering_for_spawning(creep):
     if creep.store[RESOURCE_ENERGY] > 0 and creep.room.energyAvailable < creep.room.energyCapacityAvailable:
-        spawning_structures = _.filter(creep.room.find(FIND_STRUCTURES),
-                                       lambda s: (s.structureType == STRUCTURE_SPAWN or
-                                                  s.structureType == STRUCTURE_EXTENSION) and
-                                                 s.energy < s.energyCapacity)
-        if spawning_structures:
-            target = _(spawning_structures).sortBy(lambda s: s.pos.getRangeTo(creep)).first()
-            if target:
-                if target.energy < target.energyCapacity:
-                    if creep.pos.isNearTo(target):
-                        creep.say('🪂')
-                    else:
-                        creep.say('⚙')
-                        creep.moveTo(target)
+        target = Game.getObjectById(creep.memory.target)
+        if target:
+            if target.energy < target.energyCapacity:
+                if creep.pos.isNearTo(target):
+                    creep.say('🪂')
                 else:
-                    jobs.define_target(creep)
+                    creep.say('⚙')
+                    moving_by_path(creep, target)
             else:
-                jobs.define_target(creep)
+                spawning_structures = _.filter(creep.room.find(FIND_STRUCTURES),
+                                               lambda s: (s.structureType == STRUCTURE_SPAWN or
+                                                          s.structureType == STRUCTURE_EXTENSION) and
+                                                         s.energy < s.energyCapacity)
+                if spawning_structures:
+                    target = _(spawning_structures).sortBy(lambda s: s.pos.getRangeTo(creep)).first()
+                    creep.memory.target = target.id
+                    del creep.memory.path
         else:
             jobs.define_target(creep)
     else:
@@ -197,10 +196,6 @@ def miner_mines(creep):
             elif creep.store[RESOURCE_ENERGY] > 92 and creep.memory.work_place:
                 creep.say('💼')
                 creep.transfer(container, RESOURCE_ENERGY)
-                home = Game.getObjectById(creep_memory.home)
-                need_lorries = home.memory.need_lorries
-                need_lorries = need_lorries + 0.01
-                home.memory.need_lorries = round(need_lorries, 2)
         else:
             jobs.define_target(creep)
     else:
@@ -222,31 +217,36 @@ def recalculate_miners_path(creep):
             place2.x = place2.x + 1
             if place1.y == place2.y:
                 place2.y = place2.y + 1
-                if place2.lookFor(LOOK_TERRAIN).type == 'wall':
+                road = _.sum(place2.lookFor(LOOK_STRUCTURES), lambda s: s.structureType == STRUCTURE_ROAD)
+                if place2.lookFor(LOOK_TERRAIN).type == 'wall' and road == 0:
                     place2.y = place2.y - 2
         elif source.pos.x - container.pos.x == - 2:
             place1.x = place1.x + 1
             place2.x = place2.x - 1
             if place1.y == place2.y:
                 place2.y = place2.y + 1
-                if place2.lookFor(LOOK_TERRAIN).type == 'wall':
+                road = _.sum(place2.lookFor(LOOK_STRUCTURES), lambda s: s.structureType == STRUCTURE_ROAD)
+                if place2.lookFor(LOOK_TERRAIN).type == 'wall' and road == 0:
                     place2.y = place2.y - 2
         elif source.pos.y - container.pos.y == 2:
             place1.y = place1.y - 1
             place2.y = place2.y + 1
             if place1.x == place2.x:
                 place2.x = place2.x + 1
-                if place2.lookFor(LOOK_TERRAIN).type == 'wall':
+                road = _.sum(place2.lookFor(LOOK_STRUCTURES), lambda s: s.structureType == STRUCTURE_ROAD)
+                if place2.lookFor(LOOK_TERRAIN).type == 'wall' and road == 0:
                     place2.x = place2.x - 2
         elif source.pos.y - container.pos.y == - 2:
             place1.y = place1.y + 1
             place2.y = place2.y - 1
             if place1.x == place2.x:
                 place2.x = place2.x + 1
-                if place2.lookFor(LOOK_TERRAIN).type == 'wall':
+                road = _.sum(place2.lookFor(LOOK_STRUCTURES), lambda s: s.structureType == STRUCTURE_ROAD)
+                if place2.lookFor(LOOK_TERRAIN).type == 'wall' and road == 0:
                     place2.x = place2.x - 2
 
-        miner = _.sum(place2.lookFor(LOOK_CREEPS), lambda c: c.memory.job == 'miner')
+        miner = _.sum(place2.lookFor(LOOK_CREEPS), lambda c: c.memory.job == 'miner' or
+                                                             c.memory.job == 'steaminer')
         if miner == 0:
             creeps_close = creep.pos.findInRange(FIND_MY_CREEPS, 2)
             busy_creep = _(creeps_close).filter(lambda c: c.memory.work_place is True).sample()
@@ -369,6 +369,9 @@ def dismantling(creep):
                     jobs.define_target(creep)
                     print("[{}] Unknown result from creep.dismantle({}): {}"
                           .format(creep.name, 'dismantle', result))
+                if target.store:
+                    if target.store[RESOURCE_ENERGY] > 0:
+                        creep.withdraw(target, RESOURCE_ENERGY)
             moving_by_path(creep, target)
         else:
             jobs.define_target(creep)
@@ -448,14 +451,12 @@ def pick_up_tombstone(creep):
         if target.store[RESOURCE_ENERGY] > 0:
             creep.say('⚰')
             if creep.pos.isNearTo(target):
+                del creep.memory.path
                 result = creep.withdraw(target, RESOURCE_ENERGY)
-                if result == OK or result == -6:
+                if result == OK or result == -6 or result == -8:
                     del creep.memory.target
                     jobs.define_target(creep)
-                if result == -8:
-                    del creep.memory.target
-                    jobs.define_target(creep)
-            moving_by_path(creep, target)
+            creep.moveTo(target)
         else:
             jobs.define_target(creep)
     else:
@@ -467,7 +468,7 @@ def withdrawing_from_memory(creep):
         creep.say('🚚')
         target = Game.getObjectById(creep.memory.target)
         if target:
-            if target.store[RESOURCE_ENERGY] >= creep.store.getCapacity():
+            if target.store[RESOURCE_ENERGY] >= creep.store.getCapacity() / 2:
                 is_close = creep.pos.isNearTo(target)
                 if is_close:
                     result = creep.withdraw(target, RESOURCE_ENERGY)
@@ -620,11 +621,9 @@ def going_home(creep):
     going_home_bool = False
     home = Game.getObjectById(creep.memory.home)
     if creep.room != home.room:
-        if (creep.store[RESOURCE_ENERGY] > 0 and creep.memory.job == 'stealer') \
+        if (creep.store[RESOURCE_ENERGY] > 0 and (creep.memory.job == 'stealer' or creep.memory.job == 'lorry')) \
                 or creep.memory.job == 'worker' or \
-                creep.memory.job == 'starter' or \
-                creep.memory.job == 'lorry' or \
-                creep.memory.job == 'stealorry':
+                creep.memory.job == 'starter':
             creep.say('🏡')
             moving_by_path(creep, home)
             going_home_bool = True
@@ -674,20 +673,23 @@ def going_to_help(creep):
 def claiming(creep):
     controller = Game.getObjectById(creep.memory.controller)
     if controller:
-        result = creep.claimController(controller)
-        if result == ERR_NOT_IN_RANGE:
-            moving_by_path(creep, controller)
-            creep.say('MY')
-        if result == OK:
-            flag = Game.flags[Memory.claim]
-            if flag:
-                flag.pos.createConstructionSite(STRUCTURE_SPAWN)
-                Memory.building_spawn = flag.name
-        if result == -7:
-            if creep.attackController(controller) == -11:
-                creep.say('W')
-            else:
-                creep.say('A')
+        if controller.my:
+            jobs.define_target(creep)
+        else:
+            result = creep.claimController(controller)
+            if result == ERR_NOT_IN_RANGE:
+                moving_by_path(creep, controller)
+                creep.say('MY')
+            if result == OK:
+                flag = Game.flags[Memory.claim]
+                if flag:
+                    Memory.building_spawn = flag.name
+                    del Memory.claim
+            if result == -7:
+                if creep.attackController(controller) == -11:
+                    creep.say('W')
+                else:
+                    creep.say('A')
 
 
 def not_going_to_bs(creep):
@@ -955,9 +957,9 @@ def filling_up(creep):
                 creep.say('🛒')
                 target = _(creep.room.find(FIND_STRUCTURES)) \
                     .filter(lambda s: (s.structureType == STRUCTURE_CONTAINER or
-                               s.structureType == STRUCTURE_STORAGE
-                               or s.structureType == STRUCTURE_TOWER
-                               or s.structureType == STRUCTURE_LINK) and
+                                       s.structureType == STRUCTURE_STORAGE
+                                       or s.structureType == STRUCTURE_TOWER
+                                       or s.structureType == STRUCTURE_LINK) and
                                       s.store[RESOURCE_ENERGY] > 50) \
                     .sortBy(lambda s: (s.pos.getRangeTo(creep))).first()
                 if target:
@@ -993,9 +995,9 @@ def unloading(creep):
             creep.say('🚛')
             target = _(creep.room.find(FIND_STRUCTURES)) \
                 .filter(lambda s: (s.structureType == STRUCTURE_CONTAINER or
-                               s.structureType == STRUCTURE_STORAGE
-                               or s.structureType == STRUCTURE_TOWER
-                               or s.structureType == STRUCTURE_LINK) and
+                                   s.structureType == STRUCTURE_STORAGE
+                                   or s.structureType == STRUCTURE_TOWER
+                                   or s.structureType == STRUCTURE_LINK) and
                                   s.store[RESOURCE_ENERGY] < s.store.getCapacity()) \
                 .sortBy(lambda s: (s.pos.getRangeTo(creep))).first()
             if target:
@@ -1011,6 +1013,34 @@ def unloading(creep):
         #                                        and c.store[RESOURCE_ENERGY] < c.store.getCapacity())[0]
         # if creep_to_transfer:
         #     creep.transfer(creep_to_transfer, RESOURCE_ENERGY)
+    else:
+        jobs.define_target(creep)
+
+
+def unloading_lorry(creep):
+    if creep.store[RESOURCE_ENERGY] > 0:
+        target = Game.getObjectById(creep.memory.home)
+        if creep.room != target.room:
+            creep.say('🏡')
+            creep.moveTo(target)
+            creep.memory.work_place = False
+        else:
+            creep.say('🚛')
+            target = _(creep.room.find(FIND_STRUCTURES)) \
+                .filter(lambda s: (s.structureType == STRUCTURE_CONTAINER or
+                                   s.structureType == STRUCTURE_STORAGE
+                                   or s.structureType == STRUCTURE_TOWER
+                                   or s.structureType == STRUCTURE_LINK) and
+                                  s.store[RESOURCE_ENERGY] < s.store.getCapacity()) \
+                .sortBy(lambda s: (s.pos.getRangeTo(creep))).first()
+            if target:
+                is_close = creep.pos.isNearTo(target)
+                if is_close:
+                    result = creep.transfer(target, RESOURCE_ENERGY)
+                    if result != OK:
+                        print("[{}] Unknown result from creep.transfer({}):"
+                              " {}".format(creep.name, 'transfer', result))
+                moving_by_path(creep, target)
     else:
         jobs.define_target(creep)
 

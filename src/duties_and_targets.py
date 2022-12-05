@@ -13,13 +13,14 @@ __pragma__('noalias', 'update')
 def define_closest_to_withdraw(creep):
     target = undefined
     if creep.store[RESOURCE_ENERGY] <= 0:
-        target = _(creep.room.find(FIND_STRUCTURES)) \
+        container = _(creep.room.find(FIND_STRUCTURES)) \
             .filter(lambda s: (s.structureType == STRUCTURE_CONTAINER or
                                s.structureType == STRUCTURE_STORAGE
                                or s.structureType == STRUCTURE_LINK) and
                               s.store[RESOURCE_ENERGY] >= creep.store.getCapacity()) \
             .sortBy(lambda s: s.pos.getRangeTo(creep)).first()
-        if target:
+        if container:
+            target = container
             creep.memory.duty = 'withdrawing_from_closest'
             creep.memory.target = target.id
     return target
@@ -86,7 +87,7 @@ def define_deliver_for_spawn_target(creep):
                                                           s.structureType == STRUCTURE_EXTENSION) and
                                                          s.energy < s.energyCapacity)
                 if spawning_structures:
-                    target = _(spawning_structures).sortBy(lambda s: s.pos.getRangeTo(creep)).first()
+                    target = _(spawning_structures).sortBy(lambda s: s.pos.getRangeTo(creep)).last()
                     if target:
                         creep.memory.duty = 'delivering_for_spawn'
                         creep.memory.target = target.id
@@ -132,6 +133,12 @@ def define_repairing_target(creep):
             if target:
                 creep.memory.duty = 'repairing'
                 creep.memory.target = target.id
+        else:
+            flag = Game.flags[creep.memory.flag]
+            if flag:
+                if flag.room:
+                    if flag.memory.need_repairs:
+                        creep.memory.duty = 'repairing'
     return target
 
 
@@ -165,8 +172,9 @@ def define_creep_to_pickup_tombstone(creep):
                                   (c.memory.job == 'lorry' or
                                    c.memory.job == 'stealorry' or
                                    c.memory.job == 'starter' or
-                                   ((c.memory.job == 'stealer' or
-                                     c.memory.job == 'miner') and
+                                   c.memory.job == 'stealer' or
+                                   ((c.memory.job == 'miner' or
+                                     c.memory.job == 'steaminer') and
                                     c.pos.isNearTo(tombstone)))) \
                 .sortBy(lambda c: (c.pos.getRangeTo(tombstone))).first()
             if creep_to_pickup:
@@ -324,39 +332,59 @@ def define_controller(creep):
 
 
 def define_going_home(creep):
-    home = undefined
+    target = undefined
     if creep.store[RESOURCE_ENERGY] > 0:
         home = Game.getObjectById(creep.memory.home)
         if home.room != creep.room:
+            target = home
             creep.memory.duty = 'going_home'
             creep.memory.target = home.id
-    return home
+    return target
 
 
 def define_going_to_flag(creep):
+    target = undefined
     flag = Game.flags[creep.memory.flag]
     if flag:
         if creep.pos.inRangeTo(flag, 40):
-            flag = undefined
+            target = undefined
             del creep.memory.duty
         else:
+            target = flag
             creep.memory.target = flag.name
             creep.memory.duty = 'go_to_flag'
-    return flag
+    return target
+
+
+def define_going_to_flag_empty(creep):
+    target = undefined
+    if creep.store[RESOURCE_ENERGY] <= 0:
+        flag = Game.flags[creep.memory.flag]
+        if flag:
+            if creep.pos.inRangeTo(flag, 40):
+                target = undefined
+                del creep.memory.duty
+            else:
+                target = flag
+                creep.memory.target = flag.name
+                creep.memory.duty = 'go_to_flag'
+    return target
 
 
 def define_closest_to_transfer(creep):
     target = undefined
-    if creep.store[RESOURCE_ENERGY] > 0:
-        target = _(creep.room.find(FIND_STRUCTURES)) \
-            .filter(lambda s: s.structureType == STRUCTURE_CONTAINER or
-                              s.structureType == STRUCTURE_STORAGE
-                              or s.structureType == STRUCTURE_TOWER
-                              or s.structureType == STRUCTURE_LINK) \
-            .sortBy(lambda s: s.pos.getRangeTo(creep)).first()
-        if target:
-            creep.memory.duty = 'transferring_to_closest'
-            creep.memory.target = target.id
+    home = Game.getObjectById(creep.memory.home)
+    if creep.room == home.room:
+        if creep.store[RESOURCE_ENERGY] > 0:
+            container = _(creep.room.find(FIND_STRUCTURES)) \
+                .filter(lambda s: s.structureType == STRUCTURE_CONTAINER or
+                                  s.structureType == STRUCTURE_STORAGE
+                                  or s.structureType == STRUCTURE_LINK) \
+                .sortBy(lambda s: s.pos.getRangeTo(creep)).first()
+            if container:
+                target = container
+                creep.memory.duty = 'transferring_to_closest'
+                creep.memory.target = target.id
     return target
 
 
@@ -366,8 +394,8 @@ def decrease_stealers_needed(creep):
         need_stealers = flag.memory.need_stealers
         stealers = flag.memory.stealers
         if need_stealers >= stealers - 2:
-            need_stealers = need_stealers - 0.01
-        flag.memory.need_stealers = round(need_stealers, 2)
+            need_stealers = need_stealers - 0.001
+        flag.memory.need_stealers = need_stealers
 
 
 def define_claimers_flag(creep):
@@ -489,15 +517,15 @@ def decrease_lorries_needed(creep):
     home = Game.getObjectById(creep.memory.home)
     need_lorries = home.memory.need_lorries
     if need_lorries > 1:
-        need_lorries = need_lorries - 0.03
-    home.memory.need_lorries = round(need_lorries, 2)
+        need_lorries = need_lorries - 0.001
+    home.memory.need_lorries = need_lorries
 
 
 def increase_lorries_needed(creep):
     home = Game.getObjectById(creep.memory.home)
     need_lorries = home.memory.need_lorries
     need_lorries = need_lorries + 0.01
-    home.memory.need_lorries = round(need_lorries, 2)
+    home.memory.need_lorries = need_lorries
 
 
 def check_if_repairing_needed(creep):
@@ -663,7 +691,7 @@ def define_link_to_withdraw(creep):
             link_processed = link
 
     if link_processed:
-        if link_processed.total_energy_of_container >= creep.store.getCapacity():
+        if link_processed.total_energy_of_container > creep.store.getCapacity() / 2:
             target = link_processed
             creep.memory.duty = 'withdrawing_from_link'
             creep.memory.target = target.id
@@ -706,4 +734,47 @@ def define_link_to_transfer(creep):
             target = link_processed
             creep.memory.duty = 'transferring_to_link'
             creep.memory.target = target.id
+    return target
+
+
+def define_stealing_container(creep):
+    target = undefined
+    if creep.store[RESOURCE_ENERGY] <= 0:
+        home = Game.getObjectById(creep.memory.home)
+        for flag_name in Object.keys(Game.flags):
+            if flag_name[:6] == 'Steal' + home.name[5:6]:
+                flag = Game.flags[flag_name]
+                if flag.room:
+                    container = _(flag.room.find(FIND_STRUCTURES)) \
+                        .filter(lambda s: (s.structureType == STRUCTURE_CONTAINER) and
+                                          s.store[RESOURCE_ENERGY] >= creep.store.getCapacity()) \
+                        .sortBy(lambda s: s.store[RESOURCE_ENERGY]).last()
+                    if container:
+                        coworkers_in_flag_room = _.filter(flag.room.find(FIND_MY_CREEPS),
+                                                          lambda c: (c.memory.duty == 'withdrawing_from_stealing') and
+                                                                    c.memory.target == container.id)
+                        energy_of_container = container.store[RESOURCE_ENERGY]
+                        energy_on_the_way = 0
+                        if coworkers_in_flag_room:
+                            for coworker in coworkers_in_flag_room:
+                                if coworker.store.getCapacity() > 0:
+                                    energy_on_the_way = energy_on_the_way + coworker.store[RESOURCE_ENERGY] \
+                                                        - coworker.store.getCapacity()
+                            energy_of_container = energy_of_container + energy_on_the_way
+                        home = Game.getObjectById(creep.memory.home)
+                        coworkers_in_home_room = _.filter(home.room.find(FIND_MY_CREEPS),
+                                                          lambda c: (c.memory.duty == 'withdrawing_from_stealing') and
+                                                                    c.memory.target == container.id)
+                        if coworkers_in_home_room:
+                            for coworker in coworkers_in_home_room:
+                                if coworker.store.getCapacity() > 0:
+                                    energy_on_the_way = energy_on_the_way + coworker.store[RESOURCE_ENERGY] \
+                                                        - coworker.store.getCapacity()
+                            energy_of_container = energy_of_container + energy_on_the_way
+                        container.total_energy_of_container = energy_of_container
+                        if container.total_energy_of_container >= creep.store.getCapacity():
+                            target = container
+                            creep.memory.flag = flag_name
+                            creep.memory.duty = 'withdrawing_from_stealing'
+                            creep.memory.target = target.id
     return target

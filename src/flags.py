@@ -67,23 +67,49 @@ def flag_runner(flag):
         if flag.room:
             enemies = flag.room.find(FIND_HOSTILE_CREEPS, {'filter': lambda e: e.owner.username != 'rep71Le'})
             if len(enemies) <= 0:
-                flag_memory = flag.memory
-                if not flag_memory.need_stealers:
-                    flag_memory.need_stealers = 3
-                need_stealers = flag_memory.need_stealers
-                stealers = flag_memory.stealers
                 sources = flag.room.find(FIND_SOURCES)
+                mines_near_container = 0
                 for source in sources:
-                    if source.energy >= 3000 or source.energy / source.ticksToRegeneration > 10:
-                        if need_stealers < stealers + 2:
-                            need_stealers = need_stealers + 0.05
-                            if stealers == 0:
-                                need_stealers = 3
-                    if source.energy / source.ticksToRegeneration < 8 or source.energy <= 0:
-                        if need_stealers > 1:
-                            need_stealers = need_stealers - 0.01
-                flag_memory.need_stealers = need_stealers
+                    mine_near_container = _.filter(source.pos.findInRange(FIND_STRUCTURES, 2),
+                                                   lambda s: (s.structureType == STRUCTURE_CONTAINER
+                                                              or s.structureType == STRUCTURE_LINK))
 
+                    if len(mine_near_container) == 1:
+                        mines_near_container = mines_near_container + 1
+                flag_memory = flag.memory
+                flag_memory.need_miners = mines_near_container * 2
+                if mines_near_container < len(sources):
+                    if not flag_memory.need_stealers:
+                        flag_memory.need_stealers = 3
+                    need_stealers = flag_memory.need_stealers
+                    stealers = flag_memory.stealers
+                    for source in sources:
+                        if source.energy >= 3000 or source.energy / source.ticksToRegeneration > 10:
+                            if need_stealers < stealers + 2:
+                                need_stealers = need_stealers + 0.05
+                                if stealers == 0:
+                                    need_stealers = 3
+                        if source.energy / source.ticksToRegeneration < 8 or source.energy <= 0:
+                            if need_stealers > 1:
+                                need_stealers = need_stealers - 0.001
+                    flag_memory.need_stealers = need_stealers
+                else:
+                    need_repairs = _(flag.room.find(FIND_STRUCTURES)) \
+                        .filter(lambda s: (s.hits < s.hitsMax * 0.2) and
+                                          s.structureType != STRUCTURE_WALL) \
+                        .sortBy(lambda s: (s.hitsMax / s.hits)).last()
+                    if need_repairs:
+                        do_not_repairs = Memory.deconstructions
+                        if do_not_repairs:
+                            for do_not_repair in do_not_repairs:
+                                if need_repairs:
+                                    if need_repairs.id == do_not_repair:
+                                        flag_memory.need_repairs = True
+                                        need_repairs = undefined
+                                        flag_memory.need_stealers = 1
+                    else:
+                        flag_memory.need_repairs = False
+                        flag_memory.need_stealers = 0
                 controller = flag.room.controller
                 reservation = 0
                 if controller.reservation:
@@ -95,7 +121,11 @@ def flag_runner(flag):
                     flag_memory.need_reservators = 1
                 print('      ' + flag.name +
                       '  -  Stealers: ' +
-                      str(stealers) + '/' + str(round(need_stealers, 2)) + '.  Reservation: ' + reservation)
+                      str(flag_memory.stealers) + '/' + str(round(flag_memory.need_stealers, 3)) +
+                      '.  Reservation: ' + reservation +
+                      '.  Miners: ' +
+                      str(flag_memory.miners) + '/' + str(round(flag_memory.need_miners, 3))
+                      )
                 flag.memory = flag_memory
             else:
                 defenders = _.sum(flag.room.find(FIND_MY_CREEPS), lambda c: c.memory.job == 'defender')
@@ -114,7 +144,7 @@ def flag_runner(flag):
                     del stealer.memory.flag
                     del stealer.memory.path
                     stealer.memory.job = 'worker'
-            defenders = _.sum(flag.room.find(FIND_MY_CREEPS), lambda  c: c.memory.job == 'defender')
+            defenders = _.sum(flag.room.find(FIND_MY_CREEPS), lambda c: c.memory.job == 'defender')
             enemies = _.sum(flag.room.find(FIND_HOSTILE_CREEPS))
             if defenders >= 1 and enemies == 0:
                 flag.pos.createFlag(flag.name[1:])
@@ -130,6 +160,7 @@ def flag_runner(flag):
         need_spawn_builders = flag.memory.need_spawn_builders
         spawn_builders = flag.memory.spawn_builders
         sources = flag.room.find(FIND_SOURCES)
+        flag.pos.createConstructionSite(STRUCTURE_SPAWN)
         for source in sources:
             if source.energy > source.ticksToRegeneration * 10 or source.energy >= 2900:
                 if need_spawn_builders <= spawn_builders:
@@ -137,10 +168,11 @@ def flag_runner(flag):
             if source.energy / source.ticksToRegeneration < 8 or source.energy <= 0:
                 if need_spawn_builders >= spawn_builders - 1:
                     need_spawn_builders = need_spawn_builders - 0.02
-            flag.memory.need_spawn_builders = round(need_spawn_builders, 2)
-        print(flag.name + ': spawn_builders - ' + spawn_builders + ' / ' + need_spawn_builders)
+            flag.memory.need_spawn_builders = need_spawn_builders
+        print(flag.name + ': spawn_builders - ' + spawn_builders + ' / ' + round(need_spawn_builders, 3))
         if flag.room.energyCapacityAvailable > 0:
             flag.remove()
+            del Memory.building_spawn
     if flag.name == 's' or flag.name[:1] == 'e':
         flag_pos = flag.pos
         # flag.remove()
