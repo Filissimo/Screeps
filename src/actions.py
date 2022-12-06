@@ -191,13 +191,13 @@ def miner_mines(creep):
                 result = creep.harvest(source)
                 if result != OK and result != -6:
                     print("[{}] Unknown result from creep.harvest({}): {}".format(creep.name, 'mine', result))
-                if container.hits > container.hitsMax * 0.5:
+                if container.hits > container.hitsMax * 0.2:
                     creep.transfer(container, RESOURCE_ENERGY)
             elif creep.store[RESOURCE_ENERGY] > 0 and creep.memory.work_place and creep.memory.repairing:
                 creep.say('🔧')
                 creep.repair(container)
             elif creep.store[RESOURCE_ENERGY] > 92 and creep.memory.work_place:
-                if container.hits <= container.hitsMax * 0.5:
+                if container.hits <= container.hitsMax * 0.2:
                     creep.memory.repairing = True
                 else:
                     creep.memory.repairing = False
@@ -253,6 +253,8 @@ def recalculate_miners_path(creep):
                 road = _.sum(place2.lookFor(LOOK_STRUCTURES), lambda s: s.structureType == STRUCTURE_ROAD)
                 if place2.lookFor(LOOK_TERRAIN).type == 'wall' and road == 0:
                     place2.x = place2.x - 2
+
+        # print(str(place1) + '  ' + str(place2) + '   ' + creep.name)
 
         miner = _.sum(place2.lookFor(LOOK_CREEPS), lambda c: c.memory.job == 'miner' or
                                                              c.memory.job == 'steaminer')
@@ -431,10 +433,10 @@ def creep_repairing(creep):
         creep.say('🔧')
         target = Game.getObjectById(creep.memory.target)
         if target:
-            if target.hits > target.hitsMax * 0.8:
+            if target.hits >= target.hitsMax:
                 del creep.memory.path
                 target = _(creep.room.find(FIND_STRUCTURES)) \
-                    .filter(lambda s: (s.hits < s.hitsMax * 0.8) and
+                    .filter(lambda s: (s.hits < s.hitsMax) and
                                       s.structureType != STRUCTURE_WALL) \
                     .sortBy(lambda s: (s.pos.getRangeTo(target))).first()
                 if target:

@@ -38,7 +38,8 @@ def main():
         sending_terminal = Game.getObjectById(Memory.sending_terminal)
         receiving_terminal = Game.getObjectById(Memory.receiving_terminal)
         if sending_terminal and receiving_terminal:
-            sending_terminal.send(RESOURCE_ENERGY, 10000, receiving_terminal.room)
+            sending_terminal.send(RESOURCE_ENERGY, 25000,
+                                  str(receiving_terminal.room)[6:(len(str(receiving_terminal.room)) - 1)])
 
     r_i_m_to_remove = None
     message_about_removing = undefined

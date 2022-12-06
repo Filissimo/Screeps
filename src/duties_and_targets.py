@@ -119,40 +119,42 @@ def define_upgrading_target(creep):
 def define_repairing_target(creep):
     target = undefined
     if creep.store[RESOURCE_ENERGY] > 0:
-        target = _(creep.room.find(FIND_STRUCTURES)) \
+        need_repairs = _(creep.room.find(FIND_STRUCTURES)) \
             .filter(lambda s: (s.hits < s.hitsMax * 0.05) and
                               s.structureType != STRUCTURE_WALL) \
             .sortBy(lambda s: (s.hitsMax / s.hits)).last()
-        if target != undefined:
+        if need_repairs != undefined:
             do_not_repairs = Memory.deconstructions
             if do_not_repairs:
                 for do_not_repair in do_not_repairs:
-                    if target:
-                        if target.id == do_not_repair:
+                    if need_repairs:
+                        if need_repairs.id == do_not_repair:
                             target = undefined
-            if target:
-                creep.memory.duty = 'repairing'
-                creep.memory.target = target.id
+                        else:
+                            target = need_repairs
+                            creep.memory.duty = 'repairing'
+                            creep.memory.target = target.id
     return target
 
 
 def define_repairing_target_for_stealers(creep):
     target = undefined
     if creep.store[RESOURCE_ENERGY] > 0:
-        target = _(creep.room.find(FIND_STRUCTURES)) \
-            .filter(lambda s: (s.hits < s.hitsMax * 0.8) and
+        need_repairs = _(creep.room.find(FIND_STRUCTURES)) \
+            .filter(lambda s: (s.hits < s.hitsMax * 0.7) and
                               s.structureType != STRUCTURE_WALL) \
-            .sortBy(lambda s: (s.hitsMax / s.hits)).last()
-        if target != undefined:
+            .sortBy(lambda s: s.pos.getRangeTo(creep)).first()
+        if need_repairs != undefined:
             do_not_repairs = Memory.deconstructions
             if do_not_repairs:
                 for do_not_repair in do_not_repairs:
-                    if target:
-                        if target.id == do_not_repair:
+                    if need_repairs:
+                        if need_repairs.id == do_not_repair:
                             target = undefined
-            if target:
-                creep.memory.duty = 'repairing'
-                creep.memory.target = target.id
+                        else:
+                            target = need_repairs
+                            creep.memory.duty = 'repairing'
+                            creep.memory.target = target.id
     return target
 
 
@@ -776,8 +778,9 @@ def define_link_to_transfer(creep):
                 link_processed = link
 
     if link_processed:
-        if link_processed.total_energy_of_container \
-                <= link_processed.store.getFreeCapacity(RESOURCE_ENERGY) + link_processed.store[RESOURCE_ENERGY]:
+        if creep.store[RESOURCE_ENERGY] / 2 \
+                <= (link_processed.store.getFreeCapacity(RESOURCE_ENERGY) + link_processed.store[RESOURCE_ENERGY])\
+                - link_processed.total_energy_of_container:
             target = link_processed
             creep.memory.duty = 'transferring_to_link'
             creep.memory.target = target.id

@@ -254,6 +254,7 @@ def run_worker(creep):
             elif duty == 'building':
                 actions.building(creep)
             elif duty == 'upgrading':
+                actions.accidentally_delivering_for_spawning(creep)
                 actions.upgrading(creep)
         else:
             define_worker_target(creep)

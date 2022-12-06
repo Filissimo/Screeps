@@ -16,9 +16,9 @@ def run_links(spawn):
         sorted_links = _.sortBy(links, lambda l: l.store[RESOURCE_ENERGY])
         if sorted_links[len(sorted_links) - 1].cooldown == 0 and sorted_links[0].cooldown < 10:
             if sorted_links[len(sorted_links) - 1].store[RESOURCE_ENERGY] \
-                    > sorted_links[0].store[RESOURCE_ENERGY] + 300:
+                    > sorted_links[0].store[RESOURCE_ENERGY]:
                 amount_to_transfer = (sorted_links[len(sorted_links) - 1].store[RESOURCE_ENERGY]
-                                      - sorted_links[0].store[RESOURCE_ENERGY])
+                                      - sorted_links[0].store[RESOURCE_ENERGY]) * 0.48
                 sorted_links[len(sorted_links) - 1].transferEnergy(sorted_links[0], round(amount_to_transfer))
 
 
@@ -48,8 +48,12 @@ def run_terminals(spawn):
     if terminal:
         if terminal.store[RESOURCE_ENERGY] > terminal.store.getFreeCapacity(RESOURCE_ENERGY):
             Memory.sending_terminal = terminal.id
+        else:
+            Memory.sending_terminal = None
         if terminal.store[RESOURCE_ENERGY] < terminal.store.getFreeCapacity(RESOURCE_ENERGY):
             Memory.receiving_terminal = terminal.id
+        else:
+            Memory.receiving_terminal = None
 
 
 def spawn_runner(spawn):
@@ -369,11 +373,12 @@ def spawn_runner(spawn):
                     mines_near_container = 0
                     for source in sources:
                         mine_near_container = _.filter(source.pos.findInRange(FIND_STRUCTURES, 2),
-                                                       lambda s: (s.structureType == STRUCTURE_CONTAINER
-                                                                  or s.structureType == STRUCTURE_LINK))
-
+                                                       lambda s: s.structureType == STRUCTURE_CONTAINER)
                         if len(mine_near_container) == 1:
                             mines_near_container = mines_near_container + 1
+                            if mine_near_container[0].store.getFreeCapacity(RESOURCE_ENERGY) * 4\
+                                    < mine_near_container[0].store[RESOURCE_ENERGY]:
+                                spawn_memory.need_lorries = spawn_memory.need_lorries + 0.01
                     flag_memory = flag.memory
                     flag_memory.need_miners = mines_near_container * 2
                     if mines_near_container < len(sources):
@@ -393,10 +398,13 @@ def spawn_runner(spawn):
                         flag_memory.need_stealers = need_stealers
                     else:
                         need_repairs = _(flag.room.find(FIND_STRUCTURES)) \
-                            .filter(lambda s: (s.hits < s.hitsMax * 0.7) and
+                            .filter(lambda s: (s.hits < s.hitsMax * 0.5) and
                                               s.structureType != STRUCTURE_WALL) \
                             .sortBy(lambda s: (s.hitsMax / s.hits)).last()
-                        if need_repairs:
+                        constructions = flag.room.find(FIND_CONSTRUCTION_SITES)
+                        if len(constructions) > 0:
+                            flag_memory.need_stealers = 3
+                        elif need_repairs and len(constructions) == 0:
                             do_not_repairs = Memory.deconstructions
                             if do_not_repairs:
                                 for do_not_repair in do_not_repairs:
@@ -475,7 +483,7 @@ def define_body(spawn, job_name):
             desired_body.extend([WORK, WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE])
     elif job_name == 'lorry':
         for a in range(1, 6):
-            if spawn.room.energyCapacityAvailable >= a * 150:
+            if spawn.room.energyAvailable >= a * 150:
                 desired_body.extend([CARRY, CARRY, MOVE])
     elif job_name == 'truck':
         for a in range(1, 11):
