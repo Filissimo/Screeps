@@ -46,14 +46,16 @@ def spawning_creep(spawn, job_name, flag_name):
 def run_terminals(spawn):
     terminal = spawn.room.terminal
     if terminal:
-        if terminal.store[RESOURCE_ENERGY] > terminal.store.getFreeCapacity(RESOURCE_ENERGY):
+        if terminal.store[RESOURCE_ENERGY] >= terminal.store.getFreeCapacity(RESOURCE_ENERGY):
             Memory.sending_terminal = terminal.id
         else:
-            Memory.sending_terminal = None
+            if terminal.id == Memory.sending_terminal:
+                Memory.sending_terminal = None
         if terminal.store[RESOURCE_ENERGY] < terminal.store.getFreeCapacity(RESOURCE_ENERGY):
             Memory.receiving_terminal = terminal.id
         else:
-            Memory.receiving_terminal = None
+            if terminal.id == Memory.receiving_terminal:
+                Memory.receiving_terminal = None
 
 
 def spawn_runner(spawn):
@@ -62,7 +64,7 @@ def spawn_runner(spawn):
     create_extension(spawn)
     spawn_memory = spawn.memory
     need_restart = True
-    if spawn_memory.miners >= spawn_memory.need_miners - 1 and spawn_memory.miners >= 1 and spawn_memory.lorries > 0:
+    if spawn_memory.miners >= spawn_memory.need_miners - 1 and spawn_memory.miners >= 1 and spawn_memory.lorries > 1:
         need_restart = False
     desired_job = undefined
     sources = spawn.room.find(FIND_SOURCES)
@@ -436,7 +438,7 @@ def spawn_runner(spawn):
                           str(flag_memory.reservators) + '/' + str(flag_memory.need_reservators) +
                           '. >>     Miners: ' +
                           str(flag_memory.miners) + '/' + str(flag_memory.need_miners) +
-                          '.      Need repairs: ' + str(flag_memory.need_repairs)
+                          '.                Need repairs: ' + str(flag_memory.need_repairs)
                           )
                     flag.memory = flag_memory
                 else:

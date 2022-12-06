@@ -300,6 +300,8 @@ def run_lorry(creep):
         elif duty == 'withdrawing_from_storage':
             actions.withdrawing_from_memory(creep)
             actions.pick_up_energy(creep)
+        elif duty == 'withdrawing_from_closest':
+            actions.withdraw_from_closest(creep)
         elif duty == 'delivering_for_spawn':
             actions.delivering_for_spawning(creep)
             actions.pick_up_energy(creep)
@@ -359,6 +361,8 @@ def define_lorry_target(creep):
         if creep.room != Game.getObjectById(creep.memory.home).room:
             creep.memory.target = 'home'
             creep.memory.duty = 'going_home'
+        if creep.room.energyAvailable < creep.room.energyCapacityAvailable * 0.5:
+            duties_and_targets.define_closest_to_withdraw(creep)
         actions.move_away_from_creeps(creep)
         actions.accidentally_delivering_to_worker(creep)
         duties_and_targets.decrease_lorries_needed(creep)
