@@ -106,10 +106,10 @@ def spawn_runner(spawn):
             elif container_fullest.store.getFreeCapacity(RESOURCE_ENERGY) == 0:
                 need_lorries = need_lorries + 0.01
             else:
-                if need_lorries > 1:
+                if need_lorries > 1.5:
                     need_lorries = need_lorries - 0.001
             if spawn.spawning and spawn.room.energyAvailable >= spawn.room.energyCapacityAvailable:
-                if need_lorries > 1:
+                if need_lorries > 1.5:
                     need_lorries = need_lorries - 0.02
             spawn_memory.need_lorries = need_lorries
 
@@ -176,7 +176,7 @@ def spawn_runner(spawn):
         defended = True
 
     spawn_jobs = ['defender', 'miner', 'lorry', 'worker', 'claimer', 'spawn_builder',
-                  'reservator', 'stealer', 'starter', 'healer', 'truck', 'offender', 'steaminer']
+                  'reservator', 'stealer', 'starter', 'truck', 'offender', 'steaminer']
     my_creeps = _.filter(Game.creeps, lambda c: c.memory != undefined)
     my_creeps_with_memory = _.filter(my_creeps, lambda c: c.memory.job != undefined)
     actual_spawn_builders = _.filter(my_creeps_with_memory,
@@ -204,18 +204,13 @@ def spawn_runner(spawn):
 
         elif job_name == 'offender':
             if not need_restart and defended and enough_lorries and enough_miners:
-                spawn_memory.offenders = number_of_creeps_filtered
-                if spawn_memory.need_offenders > number_of_creeps_filtered:
-                    desired_job = job_name
-                    flag_name = None
-                    spawning_creep(spawn, job_name, flag_name)
-
-        elif job_name == 'healer':
-            spawn_memory.healers = number_of_creeps_filtered
-            if spawn_memory.healers < spawn_memory.defenders + spawn_memory.offenders:
-                desired_job = job_name
-                flag_name = None
-                spawning_creep(spawn, job_name, flag_name)
+                for flag_name in Object.keys(Game.flags):
+                    if flag_name[:2] == 'o' + spawn.name[5:6]:
+                        spawn_memory.offenders = number_of_creeps_filtered
+                        if int(flag_name[2:3]) > number_of_creeps_filtered:
+                            desired_job = job_name
+                            flag_name = None
+                            spawning_creep(spawn, job_name, flag_name)
 
         elif job_name == 'starter':
             spawn_memory.starters = number_of_creeps_filtered
@@ -252,8 +247,7 @@ def spawn_runner(spawn):
         elif job_name == 'reservator':
             if not need_restart and defended and enough_lorries and enough_miners \
                     and spawn.room.energyCapacityAvailable >= 700:
-                flags = Object.keys(Game.flags)
-                for flag_name in flags:
+                for flag_name in Object.keys(Game.flags):
                     if flag_name[:6] == 'Steal' + spawn.name[5:6]:
                         flag = Game.flags[flag_name]
                         flag_memory = flag.memory
@@ -458,11 +452,20 @@ def define_body(spawn, job_name):
     desired_body = []
     if job_name == 'defender' or job_name == 'offender':
         for a in range(1, 5):
-            if spawn.room.energyAvailable >= a * 380:
-                desired_body.extend([TOUGH, TOUGH, TOUGH, MOVE, MOVE])
+            if spawn.room.energyAvailable >= a * 600:
+                desired_body.extend([TOUGH, TOUGH])
         for a in range(1, 5):
-            if spawn.room.energyAvailable >= a * 380:
-                desired_body.extend([MOVE, MOVE, RANGED_ATTACK])
+            if spawn.room.energyAvailable >= a * 600:
+                desired_body.extend([MOVE, MOVE])
+        for a in range(1, 5):
+            if spawn.room.energyAvailable >= a * 600:
+                desired_body.extend([ATTACK])
+        for a in range(1, 5):
+            if spawn.room.energyAvailable >= a * 600:
+                desired_body.extend([RANGED_ATTACK])
+        for a in range(1, 5):
+            if spawn.room.energyAvailable >= a * 600:
+                desired_body.extend([HEAL])
     if job_name == 'healer':
         for a in range(1, 4):
             if spawn.room.energyAvailable >= a * 480:

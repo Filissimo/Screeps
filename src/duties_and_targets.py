@@ -16,7 +16,8 @@ def define_closest_to_withdraw(creep):
         container = _(creep.room.find(FIND_STRUCTURES)) \
             .filter(lambda s: (s.structureType == STRUCTURE_CONTAINER or
                                s.structureType == STRUCTURE_STORAGE
-                               or s.structureType == STRUCTURE_LINK) and
+                               or s.structureType == STRUCTURE_LINK
+                               or s.structureType == STRUCTURE_TERMINAL) and
                               s.store[RESOURCE_ENERGY] >= creep.store.getCapacity()) \
             .sortBy(lambda s: s.pos.getRangeTo(creep)).first()
         if container:

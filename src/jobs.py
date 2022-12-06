@@ -391,20 +391,16 @@ def define_truck_target(creep):
 
 
 def run_defender(creep):
+    actions.healing(creep)
     duty = creep.memory.duty
     if duty:
-        healer = Game.getObjectById(creep.memory.healer)
-        if healer:
-            if healer.hits < healer.hitsMax / 4 or healer.memory.target != creep.id:
-                del creep.memory.healer
-        else:
-            del creep.memory.healer
         if duty != 'defending' or actions.move_away_from_creeps(creep):
             creep.memory.start_point = 0
         if duty == 'attacking':
             actions.attacking(creep)
         elif duty == 'defending' and not actions.move_away_from_creeps(creep):
-            actions.defending(creep)
+            if not actions.just_heal_anything(creep):
+                actions.defending(creep)
         elif duty == 'going_to_help':
             actions.going_to_help(creep)
     else:
@@ -418,7 +414,7 @@ def define_defender_targets(creep):
             if not actions.going_home(creep):
                 creep.memory.duty = 'defending'
     else:
-        if 5 < creep.pos.x < 45 and 5 < creep.pos.y < 45:
+        if not 5 < creep.pos.x < 45 and not 5 < creep.pos.y < 45:
             flag = Game.flags[creep.memory.flag]
             if flag:
                 creep.moveTo(flag)
@@ -430,14 +426,9 @@ def define_defender_targets(creep):
 
 
 def run_offender(creep):
+    actions.healing(creep)
     duty = creep.memory.duty
     if duty:
-        healer = Game.getObjectById(creep.memory.healer)
-        if healer:
-            if healer.hits < healer.hitsMax / 4 or healer.memory.target != creep.id:
-                del creep.memory.healer
-        else:
-            del creep.memory.healer
         if duty == 'attacking':
             actions.attacking(creep)
         if duty == 'go_to_flag':
@@ -452,7 +443,7 @@ def define_offender_targets(creep):
             if flag_name[:1] == 'o':
                 creep.memory.flag = flag_name
     if not duties_and_targets.define_going_to_flag(creep):
-        if 2 < creep.pos.x < 47 and 2 < creep.pos.y < 47:
+        if not 2 < creep.pos.x < 47 and not 2 < creep.pos.y < 47:
             flag = Game.flags[creep.memory.flag]
             if flag:
                 creep.moveTo(flag)
@@ -463,6 +454,11 @@ def define_offender_targets(creep):
                 creep.memory.job = 'defender'
                 del creep.memory.duty
         else:
+            enemy = creep.room.find(FIND_HOSTILE_CREEPS, {'filter': lambda e: e.owner.username != 'rep71Le'})
+            if len(enemy) == 0:
+                flag = Game.flags[creep.memory.flag]
+                if flag:
+                    creep.moveTo(flag)
             creep.memory.duty = 'attacking'
 
     if not creep.memory.target:

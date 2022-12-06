@@ -82,7 +82,8 @@ def withdraw_from_closest(creep):
         target = _(creep.room.find(FIND_STRUCTURES)) \
             .filter(lambda s: (s.structureType == STRUCTURE_CONTAINER or
                                s.structureType == STRUCTURE_STORAGE
-                               or s.structureType == STRUCTURE_LINK) and
+                               or s.structureType == STRUCTURE_LINK
+                               or s.structureType == STRUCTURE_TERMINAL) and
                               s.store[RESOURCE_ENERGY] >= creep.store.getCapacity()) \
             .sortBy(lambda s: s.pos.getRangeTo(creep)).first()
         if target:
@@ -347,7 +348,7 @@ def paving_roads(creep):
                 roads_memory.append(road_coors_new_object)
             else:
                 if new_counter:
-                    if new_counter >= 3000:
+                    if new_counter >= 5000:
                         construction_sites = _.sum(creep.room.find(FIND_CONSTRUCTION_SITES),
                                                    lambda cs: cs.progress < cs.progressTotal)
                         if construction_sites <= 4:
@@ -527,19 +528,31 @@ def attacking(creep):
     if enemy:
         creep.say('⚔')
         if creep.pos.inRangeTo(enemy, 3):
-            creep.rangedAttack(enemy)
-            if enemy.getActiveBodyparts(RANGED_ATTACK) > 0 or enemy.getActiveBodyparts(ATTACK) > 0:
-                flee_condition = _.map(creep.room.find(FIND_HOSTILE_CREEPS), lambda c: {'pos': c.pos, 'range': 5})
-                flee_path = PathFinder.search(
-                    creep.pos,
-                    flee_condition,
-                    {'flee': True}
-                ).path
-                creep.moveByPath(flee_path)
+            if creep.pos.isNearTo(enemy):
+                creep.attack(enemy)
+                enemies = _.filter(creep.pos.findInRange(FIND_HOSTILE_CREEPS, 3),
+                                   lambda e: e.owner.username != 'rep71Le')
+                structures = _.filter(creep.pos.findInRange(FIND_HOSTILE_STRUCTURES, 3),
+                                      lambda e: e.owner.username != 'rep71Le')
+                all_targets = enemies + structures
+                if len(all_targets) > 0:
+                    creep.rangedMassAttack(all_targets)
+            else:
+                creep.rangedAttack(enemy)
+            # if enemy.getActiveBodyparts(RANGED_ATTACK) > 0 or enemy.getActiveBodyparts(ATTACK) > 0:
+            #     flee_condition = _.map(creep.room.find(FIND_HOSTILE_CREEPS), lambda c: {'pos': c.pos, 'range': 5})
+            #     flee_path = PathFinder.search(
+            #         creep.pos,
+            #         flee_condition,
+            #         {'flee': True}
+            #     ).path
+            #     creep.moveByPath(flee_path)
         else:
             creep.moveTo(enemy)
+            attack_structure(creep)
     else:
-        structure = creep.pos.findClosestByRange(FIND_HOSTILE_STRUCTURES)
+        structure = creep.pos.findClosestByRange(FIND_HOSTILE_STRUCTURES,
+                                                 {'filter': lambda e: e.owner.username != 'rep71Le'})
         if structure:
             if structure.structureType != STRUCTURE_CONTROLLER:
                 creep.say('⚔')
@@ -551,6 +564,16 @@ def attacking(creep):
                 jobs.define_target(creep)
         else:
             jobs.define_target(creep)
+
+
+def attack_structure(creep):
+    structure = creep.pos.findClosestByRange(FIND_HOSTILE_STRUCTURES,
+                                             {'filter': lambda e: e.owner.username != 'rep71Le'})
+    if structure:
+        if structure.structureType != STRUCTURE_CONTROLLER:
+            creep.say('⚔')
+            if creep.pos.inRangeTo(structure, 3):
+                creep.rangedAttack(structure)
 
 
 def move_away_from_creeps(creep):
@@ -892,24 +915,7 @@ def nursing(creep):
             creep.memory.work_place = True
         else:
             creep.memory.work_place = False
-            # enemy = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS,
-            #                                      {'filter': lambda e: e.owner.username != 'rep71Le'})
-            # if enemy:
-            #     if creep.pos.inRangeTo(enemy, 4):
-            #         if 4 < creep.pos.x < 45 and 4 < creep.pos.y < 45:
-            #             if enemy.getActiveBodyparts(RANGED_ATTACK) > 0 or enemy.getActiveBodyparts(ATTACK) > 0:
-            #                 flee_condition = _.map(creep.room.find(FIND_HOSTILE_CREEPS),
-            #                                        lambda c: {'pos': c.pos, 'range': 5})
-            #                 flee_path = PathFinder.search(
-            #                     creep.pos,
-            #                     flee_condition,
-            #                     {'flee': True}
-            #                 ).path
-            #                 creep.moveByPath(flee_path)
-            #     else:
             creep.moveTo(target)
-            # else:
-            #     moving_by_path(creep, target)
         patient = _(creep.pos.findInRange(FIND_MY_CREEPS, 3)) \
             .filter(lambda c: c.hits < c.hitsMax) \
             .sortBy(lambda c: c.hitsMax / c.hits).first()
@@ -922,6 +928,19 @@ def nursing(creep):
             creep.heal(creep)
     else:
         jobs.define_target(creep)
+
+
+def healing(creep):
+    patient = _(creep.pos.findInRange(FIND_MY_CREEPS, 3)) \
+        .filter(lambda c: c.hits < c.hitsMax) \
+        .sortBy(lambda c: c.hitsMax / c.hits).first()
+    if patient:
+        if creep.pos.isNearTo(patient):
+            creep.heal(patient)
+        else:
+            creep.rangedHeal(patient)
+    else:
+        creep.heal(creep)
 
 
 def just_heal_anything(creep):
