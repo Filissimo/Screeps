@@ -458,7 +458,13 @@ def define_offender_targets(creep):
             if len(enemy) == 0:
                 flag = Game.flags[creep.memory.flag]
                 if flag:
-                    creep.moveTo(flag)
+                    if creep.pos.inRangeTo(flag, 1):
+                        actions.move_away_from_creeps(creep)
+                    else:
+                        creep.say('🤸')
+                        creep.moveTo(flag)
+                else:
+                    actions.move_away_from_creeps(creep)
             creep.memory.duty = 'attacking'
 
     if not creep.memory.target:

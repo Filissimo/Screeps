@@ -14,12 +14,12 @@ def run_links(spawn):
     links = _.filter(spawn.room.find(FIND_STRUCTURES), lambda s: s.structureType == STRUCTURE_LINK)
     if len(links) > 1:
         sorted_links = _.sortBy(links, lambda l: l.store[RESOURCE_ENERGY])
-        if sorted_links[len(sorted_links) - 1].cooldown == 0 and sorted_links[0].cooldown < 10:
-            if sorted_links[len(sorted_links) - 1].store[RESOURCE_ENERGY] \
-                    > sorted_links[0].store[RESOURCE_ENERGY]:
-                amount_to_transfer = (sorted_links[len(sorted_links) - 1].store[RESOURCE_ENERGY]
-                                      - sorted_links[0].store[RESOURCE_ENERGY]) * 0.48
-                sorted_links[len(sorted_links) - 1].transferEnergy(sorted_links[0], round(amount_to_transfer))
+        source_next_max = len(sorted_links[len(sorted_links) - 1].pos.findInRange(FIND_SOURCES, 2))
+        source_next_min = len(sorted_links[0].pos.findInRange(FIND_SOURCES_ACTIVE, 2))
+        if source_next_max > 0 and source_next_min == 0:
+            if sorted_links[len(sorted_links) - 1].cooldown == 0:
+                if sorted_links[0].store.getFreeCapacity(RESOURCE_ENERGY) > 0:
+                    print(sorted_links[len(sorted_links) - 1].transferEnergy(sorted_links[0]))
 
 
 def spawning_creep(spawn, job_name, flag_name):
@@ -46,12 +46,12 @@ def spawning_creep(spawn, job_name, flag_name):
 def run_terminals(spawn):
     terminal = spawn.room.terminal
     if terminal:
-        if terminal.store[RESOURCE_ENERGY] >= terminal.store.getFreeCapacity(RESOURCE_ENERGY):
+        if terminal.store[RESOURCE_ENERGY] >= terminal.store.getCapacity() * 0.2:
             Memory.sending_terminal = terminal.id
         else:
             if terminal.id == Memory.sending_terminal:
                 Memory.sending_terminal = None
-        if terminal.store[RESOURCE_ENERGY] < terminal.store.getFreeCapacity(RESOURCE_ENERGY):
+        if terminal.store[RESOURCE_ENERGY] < terminal.store.getCapacity() * 0.2:
             Memory.receiving_terminal = terminal.id
         else:
             if terminal.id == Memory.receiving_terminal:
@@ -90,24 +90,26 @@ def spawn_runner(spawn):
                 if need_workers > 2:
                     need_workers = need_workers - 0.001
             else:
-                need_workers = need_workers + 0.01
+                need_workers = need_workers + 0.003
             storage = _(spawn.room.find(FIND_STRUCTURES)) \
                 .filter(lambda s: s.structureType == STRUCTURE_STORAGE).sample()
             if storage:
                 if storage.store.getFreeCapacity() < storage.store.getCapacity() / 2:
                     if need_workers < 10:
-                        need_workers = need_workers + 0.005
+                        need_workers = need_workers + 0.002
             spawn_memory.need_workers = need_workers
+
             need_lorries = spawn_memory.need_lorries
-            if container_fullest.store.getFreeCapacity(RESOURCE_ENERGY) * 4 \
-                    < container_fullest.store[RESOURCE_ENERGY] \
-                    and container_fullest.structureType == STRUCTURE_CONTAINER:
-                need_lorries = need_lorries + 0.01
-            elif container_fullest.store.getFreeCapacity(RESOURCE_ENERGY) == 0:
-                need_lorries = need_lorries + 0.01
-            else:
-                if need_lorries > 1.5:
-                    need_lorries = need_lorries - 0.001
+            if container_fullest:
+                if container_fullest.store.getFreeCapacity(RESOURCE_ENERGY) * 4 \
+                        < container_fullest.store[RESOURCE_ENERGY] \
+                        and container_fullest.structureType == STRUCTURE_CONTAINER:
+                    need_lorries = need_lorries + 0.01
+                elif container_fullest.store.getFreeCapacity(RESOURCE_ENERGY) == 0:
+                    need_lorries = need_lorries + 0.01
+                else:
+                    if need_lorries > 1.5:
+                        need_lorries = need_lorries - 0.003
             if spawn.spawning and spawn.room.energyAvailable >= spawn.room.energyCapacityAvailable:
                 if need_lorries > 1.5:
                     need_lorries = need_lorries - 0.02
@@ -121,10 +123,6 @@ def spawn_runner(spawn):
         spawn_memory.need_starters = len(sources)
     need_starters = spawn_memory.need_starters
     enough_miners = False
-    if spawn_memory.miners >= spawn_memory.need_miners:
-        enough_miners = True
-        if not spawn_memory.need_lorries:
-            spawn_memory.need_lorries = 1
     enough_lorries = False
     if spawn_memory.lorries >= spawn_memory.need_lorries:
         enough_lorries = True
@@ -141,11 +139,17 @@ def spawn_runner(spawn):
         starters = spawn_memory.starters
         if need_restart:
             if source.energy > source.ticksToRegeneration * 15 or source.energy >= 2800:
-                if need_starters < len(sources) * 3:
+                if need_starters < len(sources) * 5:
                     need_starters = need_starters + 0.01
             if source.energy < source.ticksToRegeneration * 5:
                 if need_starters >= starters - 2:
                     need_starters = need_starters - 0.03
+
+    if spawn_memory.miners >= spawn_memory.need_miners and mines_near_container > 0:
+        enough_miners = True
+        if not spawn_memory.need_lorries:
+            spawn_memory.need_lorries = 2
+
     if not need_restart:
         need_starters = 0
     spawn_memory.need_starters = need_starters
@@ -402,7 +406,7 @@ def spawn_runner(spawn):
                             flag_memory.need_stealers = 3
                         elif need_repairs and len(constructions) == 0:
                             do_not_repairs = Memory.deconstructions
-                            if do_not_repairs:
+                            if len(do_not_repairs) > 0:
                                 for do_not_repair in do_not_repairs:
                                     if need_repairs:
                                         if need_repairs.id == do_not_repair:
@@ -412,6 +416,9 @@ def spawn_runner(spawn):
                                         else:
                                             flag_memory.need_repairs = True
                                             flag_memory.need_stealers = 2
+                            else:
+                                flag_memory.need_repairs = True
+                                flag_memory.need_stealers = 2
                         else:
                             flag_memory.need_repairs = False
                             flag_memory.need_stealers = 1
@@ -452,19 +459,19 @@ def define_body(spawn, job_name):
     desired_body = []
     if job_name == 'defender' or job_name == 'offender':
         for a in range(1, 5):
-            if spawn.room.energyAvailable >= a * 600:
-                desired_body.extend([TOUGH, TOUGH])
+            if spawn.room.energyAvailable >= a * 590:
+                desired_body.extend([TOUGH])
         for a in range(1, 5):
-            if spawn.room.energyAvailable >= a * 600:
+            if spawn.room.energyAvailable >= a * 590:
                 desired_body.extend([MOVE, MOVE])
         for a in range(1, 5):
-            if spawn.room.energyAvailable >= a * 600:
+            if spawn.room.energyAvailable >= a * 590:
                 desired_body.extend([ATTACK])
         for a in range(1, 5):
-            if spawn.room.energyAvailable >= a * 600:
+            if spawn.room.energyAvailable >= a * 590:
                 desired_body.extend([RANGED_ATTACK])
         for a in range(1, 5):
-            if spawn.room.energyAvailable >= a * 600:
+            if spawn.room.energyAvailable >= a * 590:
                 desired_body.extend([HEAL])
     if job_name == 'healer':
         for a in range(1, 4):

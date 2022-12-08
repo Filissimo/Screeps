@@ -39,6 +39,7 @@ def creep_mining(creep):
         else:
             creep.say('⛏')
         if creep.pos.isNearTo(source):
+            creep.memory.work_place = True
             close_creep = _(creep.pos.findInRange(FIND_MY_CREEPS, 1)).sortBy(lambda c: c.store[RESOURCE_ENERGY]).first()
             if close_creep:
                 if creep.store[RESOURCE_ENERGY] >= close_creep.store[RESOURCE_ENERGY]:
@@ -529,15 +530,17 @@ def attacking(creep):
         creep.say('⚔')
         if creep.pos.inRangeTo(enemy, 3):
             if creep.pos.isNearTo(enemy):
-                creep.attack(enemy)
                 enemies = _.filter(creep.pos.findInRange(FIND_HOSTILE_CREEPS, 3),
                                    lambda e: e.owner.username != 'rep71Le')
                 structures = _.filter(creep.pos.findInRange(FIND_HOSTILE_STRUCTURES, 3),
                                       lambda e: e.owner.username != 'rep71Le')
                 all_targets = enemies + structures
-                if len(all_targets) > 0:
+                if len(all_targets) > 3:
                     creep.rangedMassAttack(all_targets)
+                else:
+                    creep.attack(enemy)
             else:
+                creep.moveTo(enemy)
                 creep.rangedAttack(enemy)
             # if enemy.getActiveBodyparts(RANGED_ATTACK) > 0 or enemy.getActiveBodyparts(ATTACK) > 0:
             #     flee_condition = _.map(creep.room.find(FIND_HOSTILE_CREEPS), lambda c: {'pos': c.pos, 'range': 5})
@@ -557,7 +560,16 @@ def attacking(creep):
             if structure.structureType != STRUCTURE_CONTROLLER:
                 creep.say('⚔')
                 if creep.pos.inRangeTo(structure, 3):
-                    creep.rangedAttack(structure)
+                    if creep.pos.isNearTo(structure):
+                        enemies = _.filter(creep.pos.findInRange(FIND_HOSTILE_CREEPS, 3),
+                                           lambda e: e.owner.username != 'rep71Le')
+                        structures = _.filter(creep.pos.findInRange(FIND_HOSTILE_STRUCTURES, 3),
+                                              lambda e: e.owner.username != 'rep71Le')
+                        all_targets = enemies + structures
+                        if len(all_targets) > 3:
+                            creep.rangedMassAttack(all_targets)
+                        else:
+                            creep.attack(structure)
                 else:
                     creep.moveTo(structure)
             else:
@@ -573,7 +585,16 @@ def attack_structure(creep):
         if structure.structureType != STRUCTURE_CONTROLLER:
             creep.say('⚔')
             if creep.pos.inRangeTo(structure, 3):
-                creep.rangedAttack(structure)
+                if creep.pos.isNearTo(structure):
+                    enemies = _.filter(creep.pos.findInRange(FIND_HOSTILE_CREEPS, 3),
+                                       lambda e: e.owner.username != 'rep71Le')
+                    structures = _.filter(creep.pos.findInRange(FIND_HOSTILE_STRUCTURES, 3),
+                                          lambda e: e.owner.username != 'rep71Le')
+                    all_targets = enemies + structures
+                    if len(all_targets) > 3:
+                        creep.rangedMassAttack(all_targets)
+                    else:
+                        creep.attack(structure)
 
 
 def move_away_from_creeps(creep):
@@ -742,7 +763,7 @@ def not_going_to_bs(creep):
 def moving_by_path(creep, target):
     result = undefined
     if target:
-        if creep.pos.inRangeTo(target, 2):
+        if creep.pos.inRangeTo(target, 1):
             if creep.pos.isNearTo(target):
                 creep.memory.work_place = True
             else:
@@ -1057,25 +1078,26 @@ def unloading_lorry(creep):
         target = Game.getObjectById(creep.memory.home)
         if creep.room != target.room:
             creep.say('🏡')
-            creep.moveTo(target)
+            moving_by_path(creep, target)
             creep.memory.work_place = False
         else:
-            creep.say('🚛')
-            target = _(creep.room.find(FIND_STRUCTURES)) \
-                .filter(lambda s: (s.structureType == STRUCTURE_CONTAINER or
-                                   s.structureType == STRUCTURE_STORAGE
-                                   or s.structureType == STRUCTURE_TOWER
-                                   or s.structureType == STRUCTURE_LINK) and
-                                  s.store[RESOURCE_ENERGY] < s.store.getCapacity()) \
-                .sortBy(lambda s: (s.pos.getRangeTo(creep))).first()
-            if target:
-                is_close = creep.pos.isNearTo(target)
-                if is_close:
-                    result = creep.transfer(target, RESOURCE_ENERGY)
-                    if result != OK:
-                        print("[{}] Unknown result from creep.transfer({}):"
-                              " {}".format(creep.name, 'transfer', result))
-                moving_by_path(creep, target)
+            jobs.define_target(creep)
+            # creep.say('🚛')
+            # target = _(creep.room.find(FIND_STRUCTURES)) \
+            #     .filter(lambda s: (s.structureType == STRUCTURE_CONTAINER or
+            #                        s.structureType == STRUCTURE_STORAGE
+            #                        or s.structureType == STRUCTURE_TOWER
+            #                        or s.structureType == STRUCTURE_LINK) and
+            #                       s.store[RESOURCE_ENERGY] < s.store.getCapacity()) \
+            #     .sortBy(lambda s: (s.pos.getRangeTo(creep))).first()
+            # if target:
+            #     is_close = creep.pos.isNearTo(target)
+            #     if is_close:
+            #         result = creep.transfer(target, RESOURCE_ENERGY)
+            #         if result != OK:
+            #             print("[{}] Unknown result from creep.transfer({}):"
+            #                   " {}".format(creep.name, 'transfer', result))
+            #     moving_by_path(creep, target)
     else:
         jobs.define_target(creep)
 
