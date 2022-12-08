@@ -86,11 +86,11 @@ def spawn_runner(spawn):
             if not spawn_memory.need_workers:
                 spawn_memory.need_workers = 1
             need_workers = spawn_memory.need_workers
-            if total_capacity / total_energy > 1.5:
+            if total_capacity / total_energy > 1.8:
                 if need_workers > 2:
                     need_workers = need_workers - 0.001
             else:
-                need_workers = need_workers + 0.003
+                need_workers = need_workers + 0.01
             storage = _(spawn.room.find(FIND_STRUCTURES)) \
                 .filter(lambda s: s.structureType == STRUCTURE_STORAGE).sample()
             if storage:
@@ -176,7 +176,7 @@ def spawn_runner(spawn):
             del starter_to_worker.memory.path
 
     defended = False
-    if spawn_memory.defenders >= 2:
+    if spawn_memory.defenders >= 2 or spawn.room.energyCapacityAvailable < 590:
         defended = True
 
     spawn_jobs = ['defender', 'miner', 'lorry', 'worker', 'claimer', 'spawn_builder',
@@ -197,14 +197,15 @@ def spawn_runner(spawn):
         number_of_creeps_filtered = len(creeps_filtered)
 
         if job_name == 'defender':
-            need_defenders = len(spawn.room.find(FIND_HOSTILE_CREEPS,
-                                                 {'filter': lambda e: e.owner.username != 'rep71Le'}))
-            spawn_memory.need_defenders = need_defenders + 2
-            spawn_memory.defenders = number_of_creeps_filtered
-            if spawn_memory.need_defenders > number_of_creeps_filtered:
-                desired_job = job_name
-                flag_name = None
-                spawning_creep(spawn, job_name, flag_name)
+            if spawn.room.energyCapacityAvailable >= 590:
+                need_defenders = len(spawn.room.find(FIND_HOSTILE_CREEPS,
+                                                     {'filter': lambda e: e.owner.username != 'rep71Le'}))
+                spawn_memory.need_defenders = need_defenders + 2
+                spawn_memory.defenders = number_of_creeps_filtered
+                if spawn_memory.need_defenders > number_of_creeps_filtered:
+                    desired_job = job_name
+                    flag_name = None
+                    spawning_creep(spawn, job_name, flag_name)
 
         elif job_name == 'offender':
             if not need_restart and defended and enough_lorries and enough_miners:
