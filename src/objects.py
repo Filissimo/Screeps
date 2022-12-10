@@ -1,3 +1,5 @@
+import clusters
+import roles
 from defs import *
 from src import jobs, spawns, flags
 
@@ -18,6 +20,7 @@ class SpawnRunner:
 
     def spawning_spawn(self):
         spawns.spawn_runner(self.spawn)
+        clusters.cluster_runner(self.spawn)
 
     def towering_towers(self, spawn):
         towers = _.filter(spawn.room.find(FIND_STRUCTURES), lambda s: s.structureType == STRUCTURE_TOWER)
@@ -44,6 +47,7 @@ class CreepRunner:
 
     def creeping_creep(self):
         jobs.job_runner(self.creep)
+        roles.role_runner(self.creep)
 
 
 class FlagRunner:

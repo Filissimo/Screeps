@@ -254,6 +254,7 @@ def run_worker(creep):
             elif duty == 'building':
                 actions.building(creep)
             elif duty == 'upgrading':
+                duties_and_targets.decrease_workers_needed(creep)
                 actions.accidentally_delivering_for_spawning(creep)
                 actions.upgrading(creep)
         else:
@@ -567,10 +568,10 @@ def define_stealer_targets(creep):
     if not duties_and_targets.define_going_to_flag_empty(creep):
         if not duties_and_targets.removed_flag(creep):
             if not duties_and_targets.define_creep_to_pickup_tombstone(creep):
-                if not duties_and_targets.define_closest_to_withdraw(creep):
-                    duties_and_targets.decrease_stealers_needed(creep)
-                    if not duties_and_targets.define_mining_target(creep):
-                        if not duties_and_targets.define_dismantling_target(creep):
+                if not duties_and_targets.define_dismantling_target(creep):
+                    if not duties_and_targets.define_closest_to_withdraw(creep):
+                        duties_and_targets.decrease_stealers_needed(creep)
+                        if not duties_and_targets.define_mining_target(creep):
                             if not duties_and_targets.define_repairing_target_for_stealers(creep):
                                 if not duties_and_targets.define_building_target(creep):
                                     if not duties_and_targets.define_closest_to_transfer(creep):
@@ -610,6 +611,7 @@ def run_spawn_builder(creep):
                 actions.pick_up_tombstone(creep)
             elif duty == 'mining':
                 actions.creep_mining(creep)
+                actions.pick_up_energy(creep)
                 actions.paving_roads(creep)
             elif duty == 'building':
                 actions.building(creep)

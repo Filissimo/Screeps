@@ -25,6 +25,18 @@ def define_deconstructions(flag):
 
 
 def flag_runner(flag):
+    if flag.name[:3] == 'res':
+        spawn = Game.spawns['Spawn' + flag.name[3:4]]
+        if not spawn.memory.reserved_rooms:
+            spawn.memory.reserved_rooms = []
+        reserved_rooms = spawn.memory.reserved_rooms
+        reserved_rooms.append(flag.name)
+        if flag.room:
+            reserved_room_containers = _.filter(flag.room.find(FIND_STRUCTURES),
+                                                lambda s: s.structureType == STRUCTURE_CONTAINER)
+            flag.memory.containers = reserved_room_containers
+        # flag.remove()
+
     if flag.name[:3] == 'tow':
         if flag.room:
             if len(flag.room.find(FIND_CONSTRUCTION_SITES)) == 0:
@@ -79,10 +91,13 @@ def flag_runner(flag):
                 flag.pos.createFlag(flag.name[1:])
                 flag.remove()
     if flag.name[:2] == 'dc':
-        define_deconstructions(flag)
+        if flag.room:
+            define_deconstructions(flag)
     if flag.name[:5] == 'claim':
         Memory.claim = flag.name
     if flag.name == 'BS':
+        if Memory.claim:
+            del Memory.claim
         need_spawn_builders = flag.memory.need_spawn_builders
         spawn_builders = flag.memory.spawn_builders
         sources = flag.room.find(FIND_SOURCES)

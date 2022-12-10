@@ -244,7 +244,7 @@ def define_emptiest(creep):
                     emptiest_container = _(containers).sortBy(lambda c: c.total_energy_of_container).first()
                     # print(emptiest_container.total_energy_of_container + '  emptiest  ' + emptiest_container.id)
     if emptiest_container:
-        if emptiest_container.total_energy_of_container < emptiest_container.store.getCapacity() * 0.4:
+        if emptiest_container.total_energy_of_container < emptiest_container.store.getCapacity() * 0.5:
             creep.memory.duty = 'delivering_to_emptiest'
             target = emptiest_container
             creep.memory.target = target.id
@@ -288,7 +288,7 @@ def define_fullest(creep):
                     # print(fullest_container.total_energy_of_container + '  fullest  ' + fullest_container.id)
 
     if fullest_container:
-        if fullest_container.total_energy_of_container > fullest_container.store.getCapacity() * 0.3:
+        if fullest_container.total_energy_of_container > fullest_container.store.getCapacity() * 0.6:
             target = fullest_container
             creep.memory.duty = 'withdrawing_from_fullest'
             creep.memory.target = target.id
@@ -569,9 +569,17 @@ def define_stealer_to_help(creep):
 def decrease_lorries_needed(creep):
     home = Game.getObjectById(creep.memory.home)
     need_lorries = home.memory.need_lorries
-    if need_lorries > 1:
-        need_lorries = need_lorries - 0.001
+    if need_lorries > 1.5:
+        need_lorries = need_lorries - 0.003
     home.memory.need_lorries = need_lorries
+
+
+def decrease_workers_needed(creep):
+    home = Game.getObjectById(creep.memory.home)
+    need_workers = home.memory.need_workers
+    if need_workers > 1.5:
+        need_workers = need_workers - 0.001
+    home.memory.need_workers = need_workers
 
 
 def increase_lorries_needed(creep):

@@ -603,10 +603,11 @@ def move_away_from_creeps(creep):
         .filter(lambda c: c.id != creep.id and c.id != creep.memory.healer) \
         .sortBy(lambda c: c.pos.getRangeTo(creep)).first()
     if creep_to_flee:
-        if creep.pos.inRangeTo(creep_to_flee, 3):
+        creep.memory.work_place = True
+        if creep.pos.inRangeTo(creep_to_flee, 2):
             creep.say('👣')
             all_creeps_except_me = _.filter(creep.room.find(FIND_MY_CREEPS), lambda c: (c.id != creep.id))
-            flee_condition = _.map(all_creeps_except_me, lambda c: {'pos': c.pos, 'range': 5})
+            flee_condition = _.map(all_creeps_except_me, lambda c: {'pos': c.pos, 'range': 4})
             flee_path = PathFinder.search(
                 creep.pos,
                 flee_condition,
