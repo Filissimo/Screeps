@@ -18,7 +18,7 @@ class SpawnRunner:
         self.spawn = spawn
 
     def spawning_spawn(self):
-        spawns.spawn_runner(self.spawn)
+        # spawns.spawn_runner(self.spawn)
         clusters.cluster_runner(self.spawn)
 
     def towering_towers(self, spawn):
@@ -40,12 +40,12 @@ class SpawnRunner:
 
 
 # noinspection PyMethodMayBeStatic
-class CreepRunner:
-    def __init__(self, creep):
-        self.creep = creep
-
-    def creeping_creep(self):
-        jobs.job_runner(self.creep)
+# class CreepRunner:
+#     def __init__(self, creep):
+#         self.creep = creep
+#
+#     def creeping_creep(self):
+#         jobs.job_runner(self.creep)
 
 
 class FlagRunner:

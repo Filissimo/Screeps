@@ -24,7 +24,6 @@ def cluster_runner(spawn):
 def define_role_to_spawn(spawn, cluster_memory):
     my_creeps = _.filter(Game.creeps, lambda c: c.memory != undefined)
     this_cluster_creeps = _.filter(my_creeps, lambda c: c.memory.cluster == spawn.name)
-
     for creep in this_cluster_creeps:
         task = creep.memory.task
         if task:
@@ -41,7 +40,7 @@ def define_role_to_spawn(spawn, cluster_memory):
     define_creeps_needed(spawn, cluster_memory)
     spawn_memory.cluster_memory = cluster_memory
 
-    all_roles = ['hauler', 'miner']
+    all_roles = ['hauler', 'miner', 'worker']
     for role_name in all_roles:
         creeps_filtered = _.filter(this_cluster_creeps,
                                    lambda c: c.memory.role == role_name)
@@ -51,13 +50,18 @@ def define_role_to_spawn(spawn, cluster_memory):
             cluster_memory.creeps_exist.append({'haulers': creeps_virtual})
             if number_of_creeps_filtered < spawn_memory.creeps_needed.haulers:
                 spawning_creep(spawn, role_name)
+        if role_name == 'worker':
+            creeps_virtual = define_virtual_creeps(creeps_filtered)
+            cluster_memory.creeps_exist.append({'worker': creeps_virtual})
+            if number_of_creeps_filtered < spawn_memory.creeps_needed.workers:
+                spawning_creep(spawn, role_name)
 
 
 def define_creeps_needed(spawn, cluster_memory):
     spawn_memory = spawn.memory
     if not spawn_memory.creeps_needed:
         spawn_memory.creeps_needed = {}
-    spawn_memory.creeps_needed.haulers = 1
+    spawn_memory.creeps_needed.workers = 1
     spawn.memory = spawn_memory
 
 
