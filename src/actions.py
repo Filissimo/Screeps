@@ -229,34 +229,58 @@ def recalculate_miners_path(creep):
             if place1.y == place2.y:
                 place2.y = place2.y + 1
                 road = _.sum(place2.lookFor(LOOK_STRUCTURES), lambda s: s.structureType == STRUCTURE_ROAD)
-                if place2.lookFor(LOOK_TERRAIN).type == 'wall' and road == 0:
+                if place2.lookFor(LOOK_TERRAIN) == 'wall' and road == 0:
                     place2.y = place2.y - 2
+                road = _.sum(place1.lookFor(LOOK_STRUCTURES), lambda s: s.structureType == STRUCTURE_ROAD)
+                if place1.lookFor(LOOK_TERRAIN) == 'wall' and road == 0:
+                    place1.y = place1.y - 1
+                    road = _.sum(place1.lookFor(LOOK_STRUCTURES), lambda s: s.structureType == STRUCTURE_ROAD)
+                    if place1.lookFor(LOOK_TERRAIN) == 'wall' and road == 0:
+                        place1.y = place1.y + 2
         elif source.pos.x - container.pos.x == - 2:
             place1.x = place1.x + 1
             place2.x = place2.x - 1
             if place1.y == place2.y:
                 place2.y = place2.y + 1
                 road = _.sum(place2.lookFor(LOOK_STRUCTURES), lambda s: s.structureType == STRUCTURE_ROAD)
-                if place2.lookFor(LOOK_TERRAIN).type == 'wall' and road == 0:
+                if place2.lookFor(LOOK_TERRAIN) == 'wall' and road == 0:
                     place2.y = place2.y - 2
+                road = _.sum(place1.lookFor(LOOK_STRUCTURES), lambda s: s.structureType == STRUCTURE_ROAD)
+                if place1.lookFor(LOOK_TERRAIN) == 'wall' and road == 0:
+                    place1.y = place1.y - 1
+                    road = _.sum(place1.lookFor(LOOK_STRUCTURES), lambda s: s.structureType == STRUCTURE_ROAD)
+                    if place1.lookFor(LOOK_TERRAIN) == 'wall' and road == 0:
+                        place1.y = place1.y + 2
         elif source.pos.y - container.pos.y == 2:
             place1.y = place1.y - 1
             place2.y = place2.y + 1
             if place1.x == place2.x:
                 place2.x = place2.x + 1
                 road = _.sum(place2.lookFor(LOOK_STRUCTURES), lambda s: s.structureType == STRUCTURE_ROAD)
-                if place2.lookFor(LOOK_TERRAIN).type == 'wall' and road == 0:
+                if place2.lookFor(LOOK_TERRAIN) == 'wall' and road == 0:
                     place2.x = place2.x - 2
+                road = _.sum(place1.lookFor(LOOK_STRUCTURES), lambda s: s.structureType == STRUCTURE_ROAD)
+                if place1.lookFor(LOOK_TERRAIN) == 'wall' and road == 0:
+                    place1.x = place1.x - 1
+                    road = _.sum(place1.lookFor(LOOK_STRUCTURES), lambda s: s.structureType == STRUCTURE_ROAD)
+                    if place1.lookFor(LOOK_TERRAIN) == 'wall' and road == 0:
+                        place1.x = place1.x + 2
         elif source.pos.y - container.pos.y == - 2:
             place1.y = place1.y + 1
             place2.y = place2.y - 1
             if place1.x == place2.x:
                 place2.x = place2.x + 1
                 road = _.sum(place2.lookFor(LOOK_STRUCTURES), lambda s: s.structureType == STRUCTURE_ROAD)
-                if place2.lookFor(LOOK_TERRAIN).type == 'wall' and road == 0:
+                if place2.lookFor(LOOK_TERRAIN) == 'wall' and road == 0:
                     place2.x = place2.x - 2
+                road = _.sum(place1.lookFor(LOOK_STRUCTURES), lambda s: s.structureType == STRUCTURE_ROAD)
+                if place1.lookFor(LOOK_TERRAIN) == 'wall' and road == 0:
+                    place1.x = place1.x - 1
+                    road = _.sum(place1.lookFor(LOOK_STRUCTURES), lambda s: s.structureType == STRUCTURE_ROAD)
+                    if place1.lookFor(LOOK_TERRAIN) == 'wall' and road == 0:
+                        place1.x = place1.x + 2
 
-        # print(str(place1) + '  ' + str(place2) + '   ' + creep.name)
+        print(str(place1) + '  ' + str(place2) + '   ' + creep.name)
 
         miner = _.sum(place2.lookFor(LOOK_CREEPS), lambda c: c.memory.job == 'miner' or
                                                              c.memory.job == 'steaminer')
@@ -695,7 +719,6 @@ def transferring_to_closest(creep):
         target = _(creep.room.find(FIND_STRUCTURES)) \
             .filter(lambda s: (s.structureType == STRUCTURE_CONTAINER or
                                s.structureType == STRUCTURE_STORAGE
-                               or s.structureType == STRUCTURE_TOWER
                                or s.structureType == STRUCTURE_LINK)) \
             .sortBy(lambda s: (s.pos.getRangeTo(creep))).first()
         if target:

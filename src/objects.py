@@ -1,5 +1,4 @@
 import clusters
-import roles
 from defs import *
 from src import jobs, spawns, flags
 
@@ -47,7 +46,6 @@ class CreepRunner:
 
     def creeping_creep(self):
         jobs.job_runner(self.creep)
-        roles.role_runner(self.creep)
 
 
 class FlagRunner:

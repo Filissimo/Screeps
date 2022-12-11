@@ -1,3 +1,4 @@
+import operations
 import tasks
 from defs import *
 
@@ -11,13 +12,8 @@ __pragma__('noalias', 'type')
 __pragma__('noalias', 'update')
 
 
-def role_runner(creep):
-    task = creep.memory.task
-    target = creep.memory.target
-    if task and target:
-        if task == 'withdraw_by_memory':
-            tasks.withdraw_by_memory(creep)
-        elif task == 'transfer_by_memory':
-            tasks.transfer_by_memory(creep)
-    else:
-        tasks.define_task(creep)
+def operate_creep(creep, cluster_memory, task):
+    if task == 'withdraw_by_memory':
+        operations.withdraw_by_memory(creep, cluster_memory)
+    elif task == 'transfer_by_memory':
+        operations.transfer_by_memory(creep, cluster_memory)
