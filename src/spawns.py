@@ -124,7 +124,6 @@ def spawn_runner(spawn):
         # print('                ' + spawn.name + '. Containers and links: '
         #       + '    ' + total_capacity + '/' + total_energy)
 
-    mines_near_container = 0
     if not spawn_memory.need_starters:
         spawn_memory.need_starters = len(sources)
     need_starters = spawn_memory.need_starters
@@ -132,6 +131,7 @@ def spawn_runner(spawn):
     enough_lorries = False
     if spawn_memory.lorries >= spawn_memory.need_lorries:
         enough_lorries = True
+    mines_near_container = 0
     for source in sources:
         mine_near_container = _.filter(source.pos.findInRange(FIND_STRUCTURES, 2),
                                        lambda s: (s.structureType == STRUCTURE_CONTAINER

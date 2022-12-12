@@ -1,3 +1,4 @@
+import tasks
 from defs import *
 
 __pragma__('noalias', 'name')
@@ -48,6 +49,7 @@ def move_away_from_source(creep):
                 move_away_bool = True
     return move_away_bool
 
+
 def pick_up_tombstone(creep):
     target = Game.getObjectById(creep.memory.target)
     if target:
@@ -75,19 +77,20 @@ def pick_up_energy(creep):
         creep.withdraw(tombstone, RESOURCE_ENERGY)
 
 
+def verify_targets_energy_on_the_way(creep, target, cluster_memory):
+    for target_in_memory in cluster_memory.claimed_room.containers:
+        if target_in_memory.id == target.id:
+            target_in_memory.energy_on_the_way = target_in_memory.energy_on_the_way + \
+                                                 creep.store[RESOURCE_ENERGY] - creep.store.getCapacity()
+
+
 def withdraw_by_memory(creep, cluster_memory):
     if creep.store[RESOURCE_ENERGY] <= 0:
         creep.say('🚚')
         target = Game.getObjectById(creep.memory.target)
         if target:
-            for target_in_memory in cluster_memory.claimed_room.containers:
-                if target_in_memory.id == target.id:
-                    if not target_in_memory.energy_on_the_way:
-                        target_in_memory.energy_on_the_way = creep.store[RESOURCE_ENERGY] - creep.store.getCapacity()
-                    else:
-                        target_in_memory.energy_on_the_way = target_in_memory.energy_on_the_way + \
-                                                             creep.store[RESOURCE_ENERGY] - creep.store.getCapacity()
-            if target.store[RESOURCE_ENERGY] >= creep.store.getCapacity():
+            verify_targets_energy_on_the_way(creep, target, cluster_memory)
+            if target.store[RESOURCE_ENERGY] > 0:
                 is_close = creep.pos.isNearTo(target)
                 if is_close:
                     result = creep.withdraw(target, RESOURCE_ENERGY)
@@ -112,11 +115,8 @@ def transfer_by_memory(creep, cluster_memory):
                 creep.say('🚛')
                 for target_in_memory in cluster_memory.claimed_room.containers:
                     if target_in_memory.id == target.id:
-                        if not target_in_memory.energy_on_the_way:
-                            target_in_memory.energy_on_the_way = creep.store[RESOURCE_ENERGY]
-                        else:
-                            target_in_memory.energy_on_the_way = \
-                                target_in_memory.energy_on_the_way + creep.store[RESOURCE_ENERGY]
+                        target_in_memory.energy_on_the_way = \
+                            target_in_memory.energy_on_the_way + creep.store[RESOURCE_ENERGY]
             else:
                 creep.say('⚙')
             is_close = creep.pos.isNearTo(target)
@@ -171,29 +171,44 @@ def moving_by_path(creep, target):
         del creep.memory.path
 
 
-def transfer_to_spawning_structure(creep):
-    if creep.store[RESOURCE_ENERGY] > 0 and creep.room.energyAvailable < creep.room.energyCapacityAvailable:
+def transfer_to_spawning_structure(creep, cluster_memory):
+    while creep.store[RESOURCE_ENERGY] > 0 and cluster_memory.claimed_room.energy_percentage < 100:
+        accidentally_delivering_for_spawning(creep)
         target = Game.getObjectById(creep.memory.target)
         if target:
+            cluster_memory.claimed_room.energy_on_the_way = cluster_memory.claimed_room.energy_on_the_way + \
+                                                            creep.store[RESOURCE_ENERGY]
             if target.energy < target.energyCapacity:
                 if creep.pos.isNearTo(target):
                     creep.say('🪂')
+                    creep.transfer(target, RESOURCE_ENERGY)
+                    tasks.define_another_spawning_structure(creep, cluster_memory)
+                    return
                 else:
                     creep.say('⚙')
                     moving_by_path(creep, target)
+                    return
             else:
-                spawning_structures = _.filter(creep.room.find(FIND_STRUCTURES),
-                                               lambda s: (s.structureType == STRUCTURE_SPAWN or
-                                                          s.structureType == STRUCTURE_EXTENSION) and
-                                                         s.energy < s.energyCapacity)
-                if spawning_structures:
-                    target = _(spawning_structures).sortBy(lambda s: s.pos.getRangeTo(creep)).first()
-                    creep.memory.target = target.id
-                    del creep.memory.path
+                tasks.define_another_spawning_structure(creep, cluster_memory)
         else:
-            del creep.memory.task
+            tasks.define_another_spawning_structure(creep, cluster_memory)
     else:
         del creep.memory.task
+
+
+def accidentally_delivering_for_spawning(creep):
+    if creep.store[RESOURCE_ENERGY] > 0:
+        targets = _.filter((creep.pos.findInRange(FIND_STRUCTURES, 1)),
+                           lambda s: (s.structureType == STRUCTURE_SPAWN or
+                                      s.structureType == STRUCTURE_EXTENSION) and
+                                     s.energy < s.energyCapacity)
+        if targets:
+            target_near = _(targets).filter(lambda t: creep.pos.isNearTo(t)).first()
+            if target_near:
+                result = creep.transfer(target_near, RESOURCE_ENERGY)
+                if result != OK:
+                    print("[{}] Unknown result from creep.transfer({}, {}): {}".format(
+                        creep.name, 'accidentally spawning', RESOURCE_ENERGY, result))
 
 
 def withdraw_from_closest(creep):
@@ -222,9 +237,17 @@ def withdraw_from_closest(creep):
         del creep.memory.task
 
 
-def worker_mining(creep):
+def worker_mining(creep, cluster_memory):
     source = Game.getObjectById(creep.memory.target)
-    if creep.store[RESOURCE_ENERGY] < creep.carryCapacity:
+    if creep.store[RESOURCE_ENERGY] < creep.store.getCapacity():
+        for source_in_memory in cluster_memory.claimed_room.sources:
+            if source_in_memory.id == source.id:
+                source_in_memory.energy_on_the_way = source_in_memory.energy_on_the_way + \
+                                                     creep.store[RESOURCE_ENERGY] - creep.store.getCapacity()
+
+                processed_energy_of_source = source_in_memory.energy + source_in_memory.energy_on_the_way
+                source_in_memory.processed_energy_of_source = processed_energy_of_source
+                source_in_memory.processed_energy_to_ticks_ratio = processed_energy_of_source / source_in_memory.ticks
         if creep.store.getCapacity() - creep.store[RESOURCE_ENERGY] == source.energy:
             creep.say('⚖')
             if source.energy <= 25:
@@ -233,7 +256,9 @@ def worker_mining(creep):
             creep.say('⛏')
         if creep.pos.isNearTo(source):
             creep.memory.work_place = True
-            close_creep = _(creep.pos.findInRange(FIND_MY_CREEPS, 1)).sortBy(lambda c: c.store[RESOURCE_ENERGY]).first()
+            close_creep = _(creep.pos.findInRange(FIND_MY_CREEPS, 1)) \
+                .filter(lambda c: c.pos.isNearTo(source)) \
+                .sortBy(lambda c: c.store[RESOURCE_ENERGY]).first()
             if close_creep:
                 if creep.store[RESOURCE_ENERGY] >= close_creep.store[RESOURCE_ENERGY]:
                     creep.transfer(close_creep, RESOURCE_ENERGY)
@@ -327,7 +352,6 @@ def dismantling(creep):
             if is_close:
                 result = creep.dismantle(target)
                 if result != OK:
-                    del creep.memory.target
                     del creep.memory.task
                     print("[{}] Unknown result from creep.dismantle({}): {}"
                           .format(creep.name, 'dismantle', result))
@@ -376,14 +400,13 @@ def building(creep):
     move_away_from_source(creep)
     if creep.store[RESOURCE_ENERGY] > 0:
         creep.say('⚒')
-        target = creep.pos.findClosestByRange(FIND_CONSTRUCTION_SITES)
+        target = Game.getObjectById(creep.memory.target)
         if target:
             is_close = creep.pos.inRangeTo(target, 3)
             if is_close:
                 creep.memory.work_place = True
                 result = creep.build(target)
                 if result != OK:
-                    del creep.memory.target
                     del creep.memory.task
                     print("[{}] Unknown result from creep.build({}): {}".format(creep.name, 'build', result))
             moving_by_path(creep, target)
