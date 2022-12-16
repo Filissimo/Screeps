@@ -13,55 +13,60 @@ __pragma__('noalias', 'update')
 
 
 def operate_creep(creep, cluster_memory, task):
-    if task and task != 'delivered_for_spawning':
-        operations.paving_roads(creep)
-        if task == 'withdraw_by_memory':
-            operations.withdraw_by_memory(creep, cluster_memory)
-        elif task == 'transfer_by_memory':
-            operations.transfer_by_memory(creep, cluster_memory)
-        elif task == 'transfer_to_spawning_structure':
-            operations.transfer_to_spawning_structure(creep, cluster_memory)
-        elif task == 'withdraw_from_closest':
-            operations.withdraw_from_closest(creep)
-        elif task == 'worker_mining':
-            operations.worker_mining(creep, cluster_memory)
-        elif task == 'dismantling':
-            operations.dismantling(creep)
-        elif task == 'repairing':
-            operations.repairing(creep)
-        elif task == 'building':
-            operations.building(creep)
-        elif task == 'upgrading':
-            operations.upgrading(creep)
+    if creep.memory.role != 'guard':
+        if operations.not_fleeing(creep):
+            if task and task != 'delivered_for_spawning':
+                if task == 'withdraw_by_memory':
+                    operations.paving_roads(creep)
+                    operations.withdraw_by_memory(creep, cluster_memory)
+                elif task == 'transfer_by_memory':
+                    operations.paving_roads(creep)
+                    operations.transfer_by_memory(creep, cluster_memory)
+                elif task == 'transfer_to_spawning_structure':
+                    operations.paving_roads(creep)
+                    operations.transfer_to_spawning_structure(creep, cluster_memory)
+                elif task == 'worker_mining':
+                    operations.worker_mining(creep, cluster_memory)
+                elif task == 'miner_mining':
+                    operations.miner_mining(creep)
+                elif task == 'going_to_mining_place':
+                    operations.paving_roads(creep)
+                    operations.going_to_mining_place(creep)
+                elif task == 'dismantling':
+                    operations.dismantling(creep)
+                elif task == 'repairing':
+                    operations.paving_roads(creep)
+                    operations.repairing(creep)
+                elif task == 'building':
+                    operations.paving_roads(creep)
+                    operations.building(creep)
+                elif task == 'upgrading':
+                    operations.paving_roads(creep)
+                    operations.upgrading(creep)
+    else:
+        if task:
+            if task == 'defending':
+                operations.defending(creep)
+            elif task == 'attacking':
+                operations.attacking(creep)
 
 
 def run_creep(creep, cluster_memory):
     task = creep.memory.task
-    # creep_tasks = creep.name + ' - Task in memory: ' + task + '. '
     if task:
         operate_creep(creep, cluster_memory, task)
         task_after = creep.memory.task
-        # creep_tasks = creep_tasks + 'Task in memory after operating: ' + task_after + '. '
-        # if task != task_after:
-        # creep_tasks = '   !!!  ' + creep_tasks
-        if not task_after:
-            tasks.define_task(creep, cluster_memory)
-            new_task = creep.memory.task
-            # creep_tasks = creep_tasks + 'New task after operating: ' + new_task + '. '
-            if new_task:
-                operate_creep(creep, cluster_memory, new_task)
-            else:
-                if not operations.move_away_from_creeps(creep):
-                    creep.say('?')
+        if not task_after or task_after == 'defending':
+            define_task_and_operate(creep, cluster_memory)
     else:
-        tasks.define_task(creep, cluster_memory)
-        brand_new_task = creep.memory.task
-        # creep_tasks = '                !!!    ' + creep_tasks + \
-        #               'New task because there was no task in memory: ' + brand_new_task + '. '
-        if brand_new_task:
-            operate_creep(creep, cluster_memory, brand_new_task)
-        else:
-            if not operations.move_away_from_creeps(creep):
-                creep.say('?')
+        define_task_and_operate(creep, cluster_memory)
 
-    # print(creep_tasks)
+
+def define_task_and_operate(creep, cluster_memory):
+    tasks.define_task(creep, cluster_memory)
+    task = creep.memory.task
+    if task:
+        operate_creep(creep, cluster_memory, task)
+    else:
+        if not operations.move_away_from_creeps(creep):
+            creep.say('?')

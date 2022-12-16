@@ -78,21 +78,33 @@ def pick_up_energy(creep):
 
 
 def verify_targets_energy_on_the_way(creep, target, cluster_memory):
-    for target_in_memory in cluster_memory.claimed_room.containers:
+    containers = cluster_memory.claimed_room.containers
+    for target_in_memory in containers:
         if target_in_memory.id == target.id:
             target_in_memory.energy_on_the_way = target_in_memory.energy_on_the_way + \
                                                  creep.store[RESOURCE_ENERGY] - creep.store.getCapacity()
 
 
+def decrease_creeps_needed(creep):
+    spawn = Game.spawns[creep.memory.cluster]
+    creeps_needed = spawn.memory.creeps_needed
+    if creep.memory.role == 'worker':
+        creeps_needed.workers = creeps_needed.workers - 0.01
+    if creep.memory.role == 'hauler':
+        creeps_needed.haulers = creeps_needed.haulers - 0.01
+
+
 def withdraw_by_memory(creep, cluster_memory):
     if creep.store[RESOURCE_ENERGY] <= 0:
-        creep.say('🚚')
         target = Game.getObjectById(creep.memory.target)
         if target:
+            creep.say('🚚')
             verify_targets_energy_on_the_way(creep, target, cluster_memory)
             if target.store[RESOURCE_ENERGY] > 0:
                 is_close = creep.pos.isNearTo(target)
                 if is_close:
+                    if target.structureType == STRUCTURE_STORAGE:
+                        decrease_creeps_needed(creep)
                     result = creep.withdraw(target, RESOURCE_ENERGY)
                     if result != OK:
                         del creep.memory.task
@@ -111,14 +123,8 @@ def transfer_by_memory(creep, cluster_memory):
     if creep.store[RESOURCE_ENERGY] > 0:
         target = Game.getObjectById(creep.memory.target)
         if target:
-            if target.structureType == STRUCTURE_CONTAINER:
-                creep.say('🚛')
-                for target_in_memory in cluster_memory.claimed_room.containers:
-                    if target_in_memory.id == target.id:
-                        target_in_memory.energy_on_the_way = \
-                            target_in_memory.energy_on_the_way + creep.store[RESOURCE_ENERGY]
-            else:
-                creep.say('⚙')
+            verify_targets_energy_on_the_way(creep, target, cluster_memory)
+            creep.say('🚛')
             is_close = creep.pos.isNearTo(target)
             if is_close:
                 result = creep.transfer(target, RESOURCE_ENERGY)
@@ -459,6 +465,7 @@ def miner_mining(creep):
             elif creep.store[RESOURCE_ENERGY] <= 0:
                 creep.memory.repairing = False
         else:
+            creep.memory.work_place = False
             del creep.memory.task
     else:
         del creep.memory.source
@@ -531,10 +538,9 @@ def recalculate_miners_path(creep):
                     if place1.lookFor(LOOK_TERRAIN) == 'wall' and road == 0:
                         place1.x = place1.x + 2
 
-        print(str(place1) + '  ' + str(place2) + '   ' + creep.name)
+        # print(str(place1) + '  ' + str(place2) + '   ' + creep.name)
 
-        miner = _.sum(place2.lookFor(LOOK_CREEPS), lambda c: c.memory.job == 'miner' or
-                                                             c.memory.job == 'steaminer')
+        miner = _.sum(place2.lookFor(LOOK_CREEPS), lambda c: c.memory.role == 'miner')
         if miner == 0:
             creeps_close = creep.pos.findInRange(FIND_MY_CREEPS, 2)
             busy_creep = _(creeps_close).filter(lambda c: c.memory.work_place is True).sample()
@@ -592,3 +598,109 @@ def going_to_mining_place(creep):
             else:
                 recalculate_miners_path(creep)
     creep.memory = creep_memory
+
+
+def defending(creep):
+    if not just_heal_anything(creep):
+        if not move_away_from_creeps(creep):
+            creep.say('🛡️')
+
+
+def attacking(creep):
+    enemy = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS, {'filter': lambda e: e.owner.username != 'rep71Le'})
+    if enemy:
+        creep.say('⚔')
+        attack_depending_on_range(creep, enemy)
+    else:
+        structure = creep.pos.findClosestByRange(FIND_HOSTILE_STRUCTURES,
+                                                 {'filter': lambda e: e.owner.username != 'rep71Le'})
+        if structure:
+            if structure.structureType != STRUCTURE_CONTROLLER:
+                creep.say('⚔')
+                attack_depending_on_range(creep, structure)
+            else:
+                del creep.memory.task
+        else:
+            del creep.memory.task
+    healing(creep)
+
+
+def attack_nearest_structure(creep):
+    structure = creep.pos.findClosestByRange(FIND_HOSTILE_STRUCTURES,
+                                             {'filter': lambda e: e.owner.username != 'rep71Le'})
+    if structure:
+        if structure.structureType != STRUCTURE_CONTROLLER:
+            creep.say('⚔')
+            attack_depending_on_range(creep, structure)
+
+
+def attack_depending_on_range(creep, target):
+    if creep.pos.inRangeTo(target, 3):
+        if creep.pos.isNearTo(target):
+            enemies = _.filter(creep.pos.findInRange(FIND_HOSTILE_CREEPS, 3),
+                               lambda e: e.owner.username != 'rep71Le')
+            structures = _.filter(creep.pos.findInRange(FIND_HOSTILE_STRUCTURES, 3),
+                                  lambda e: e.owner.username != 'rep71Le')
+            all_targets = enemies + structures
+            if all_targets:
+                creep.rangedMassAttack(all_targets)
+        else:
+            creep.rangedAttack(target)
+            creep.moveTo(target)
+            attack_nearest_structure(creep)
+    else:
+        creep.moveTo(target)
+        attack_nearest_structure(creep)
+
+
+def healing(creep):
+    patient = _(creep.pos.findInRange(FIND_MY_CREEPS, 3)) \
+        .filter(lambda c: c.hits < c.hitsMax) \
+        .sortBy(lambda c: c.hitsMax / c.hits).first()
+    if patient:
+        if creep.pos.isNearTo(patient):
+            creep.heal(patient)
+        else:
+            creep.rangedHeal(patient)
+    else:
+        creep.heal(creep)
+    return patient
+
+
+def just_heal_anything(creep):
+    need_to_heal = False
+    patient = _(creep.room.find(FIND_MY_CREEPS)) \
+        .filter(lambda c: c.hits < c.hitsMax and c.id != creep.id) \
+        .sortBy(lambda c: c.pos.getRangeTo(creep)).first()
+    if patient:
+        need_to_heal = True
+        creep.say('🚑')
+        if creep.pos.isNearTo(patient):
+            creep.memory.work_place = True
+        else:
+            creep.memory.work_place = False
+            moving_by_path(creep, patient)
+            if creep.pos.isNearTo(patient):
+                creep.heal(patient)
+            else:
+                creep.rangedHeal(patient)
+    else:
+        creep.heal(creep)
+    return need_to_heal
+
+
+def not_fleeing(creep):
+    not_fleeing_bool = True
+    enemy = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS, {'filter': lambda e: e.owner.username != 'rep71Le'})
+    if enemy:
+        if creep.pos.inRangeTo(enemy, 7):
+            creep.say('🏳️')
+            flee_condition = _.map(creep.room.find(FIND_HOSTILE_CREEPS), lambda c: {'pos': c.pos, 'range': 9})
+            flee_path = PathFinder.search(
+                creep.pos,
+                flee_condition,
+                {'flee': True}
+            ).path
+            creep.moveByPath(flee_path)
+            not_fleeing_bool = False
+    return not_fleeing_bool

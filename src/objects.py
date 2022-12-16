@@ -30,8 +30,7 @@ class SpawnRunner:
                                               {'filter': lambda e: e.owner.username != 'rep71Le'})).sortBy(
                         lambda e: e.pos.getRangeTo(tower)).first()
                     if enemy:
-                        if tower.pos.inRangeTo(enemy, 15):
-                            tower.attack(enemy)
+                        tower.attack(enemy)
                     damaged_creep = _(tower.pos.findInRange(FIND_MY_CREEPS, 15)) \
                         .filter(lambda c: c.hits < c.hitsMax - 300) \
                         .sortBy(lambda c: c.pos.getRangeTo(tower)).first()
