@@ -22,6 +22,7 @@ def operate_creep(creep, cluster_memory, task):
                 elif task == 'transfer_by_memory':
                     operations.paving_roads(creep)
                     operations.transfer_by_memory(creep, cluster_memory)
+                    operations.accidentally_delivering_to_worker(creep)
                 elif task == 'transfer_to_spawning_structure':
                     operations.paving_roads(creep)
                     operations.transfer_to_spawning_structure(creep, cluster_memory)
@@ -60,6 +61,10 @@ def run_creep(creep, cluster_memory):
             define_task_and_operate(creep, cluster_memory)
     else:
         define_task_and_operate(creep, cluster_memory)
+    if not creep.memory.task:
+        if not operations.move_away_from_creeps(creep):
+            creep.say('?')
+        operations.decrease_creeps_needed(creep)
 
 
 def define_task_and_operate(creep, cluster_memory):

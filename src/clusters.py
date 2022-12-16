@@ -17,7 +17,9 @@ def run_links(cluster_memory):
     links = cluster_memory.claimed_room.links
     if len(links) > 1:
         sorted_links = _.sortBy(links, lambda l: l.energy)
-        if sorted_links[0].free_capacity > 0 and not sorted_links[0].near_active_source:
+        if sorted_links[0].free_capacity > 0 \
+                and not sorted_links[0].near_active_source \
+                and sorted_links[len(sorted_links) - 1].near_source:
             if sorted_links[len(sorted_links) - 1].cooldown == 0:
                 real_link_out = Game.getObjectById(sorted_links[len(sorted_links) - 1].id)
                 real_link_in = Game.getObjectById(sorted_links[0].id)
@@ -155,7 +157,8 @@ def define_creeps_needed(spawn, cluster_memory):
                     spawn_memory.creeps_needed.workers = spawn_memory.creeps_needed.workers - 0.05
     else:
         if cluster_memory.claimed_room.total_containers_percentage > 40:
-            spawn_memory.creeps_needed.workers = spawn_memory.creeps_needed.workers + 0.01
+            spawn_memory.creeps_needed.workers = \
+                spawn_memory.creeps_needed.workers + (0.03 / len(cluster_memory.creeps_exist.workers))
         else:
             if spawn_memory.creeps_needed.workers > 1:
                 spawn_memory.creeps_needed.workers = spawn_memory.creeps_needed.workers - 0.05
@@ -170,7 +173,8 @@ def define_creeps_needed(spawn, cluster_memory):
 
         for container in cluster_memory.claimed_room.containers:
             if container.energy_percentage > 80:
-                spawn_memory.creeps_needed.haulers = spawn_memory.creeps_needed.haulers + 0.01
+                spawn_memory.creeps_needed.haulers = \
+                    spawn_memory.creeps_needed.haulers + (0.03 / len(cluster_memory.creeps_exist.haulers))
             else:
                 if spawn_memory.creeps_needed.haulers > 1:
                     spawn_memory.creeps_needed.haulers = spawn_memory.creeps_needed.haulers - 0.01

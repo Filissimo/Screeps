@@ -41,11 +41,15 @@ def target_fullest_container(creep, cluster_memory):
             if fullest_container.near_source:
                 if fullest_container.energy + fullest_container.energy_on_the_way > fullest_container.capacity * 0.3:
                     target = fullest_container
+                    target.energy_on_the_way = \
+                        target.energy_on_the_way + creep.store[RESOURCE_ENERGY] - creep.store.getCapacity()
                     creep.memory.target = target.id
                     creep.memory.task = 'withdraw_by_memory'
             else:
                 if fullest_container.energy + fullest_container.energy_on_the_way > fullest_container.capacity * 0.8:
                     target = fullest_container
+                    target.energy_on_the_way = \
+                        target.energy_on_the_way + creep.store[RESOURCE_ENERGY] - creep.store.getCapacity()
                     creep.memory.target = target.id
                     creep.memory.task = 'withdraw_by_memory'
     return target
@@ -58,13 +62,17 @@ def target_emptiest_container(creep, cluster_memory):
             .sortBy(lambda c: c.energy + c.energy_on_the_way).first()
         if emptiest_container:
             if emptiest_container.near_source:
-                if emptiest_container.energy + emptiest_container.energy_on_the_way < emptiest_container.capacity * 0.2:
+                if emptiest_container.energy + emptiest_container.energy_on_the_way < emptiest_container.capacity * 0.1:
                     target = emptiest_container
+                    target.energy_on_the_way = \
+                        target.energy_on_the_way + creep.store[RESOURCE_ENERGY]
                     creep.memory.target = target.id
                     creep.memory.task = 'transfer_by_memory'
             else:
                 if emptiest_container.energy + emptiest_container.energy_on_the_way < emptiest_container.capacity:
                     target = emptiest_container
+                    target.energy_on_the_way = \
+                        target.energy_on_the_way + creep.store[RESOURCE_ENERGY]
                     creep.memory.target = target.id
                     creep.memory.task = 'transfer_by_memory'
     return target
@@ -150,6 +158,8 @@ def target_withdraw_from_closest(creep, cluster_memory):
         elif storage and not link and not container:
             target = storage
         if target:
+            target.energy_on_the_way = \
+                target.energy_on_the_way + creep.store[RESOURCE_ENERGY] - creep.store.getCapacity()
             creep.memory.task = 'withdraw_by_memory'
             creep.memory.target = target.id
     return target
@@ -247,8 +257,8 @@ def target_link_to_withdraw(creep, cluster_memory):
                 .sortBy(lambda l: l.pos.getRangeTo(creep)).first()
             if link.energy + link.energy_on_the_way > 700:
                 target = link
-                link.energy_on_the_way = link.energy_on_the_way + \
-                                         creep.store[RESOURCE_ENERGY] - creep.store.getCapacity()
+                link.energy_on_the_way = \
+                    link.energy_on_the_way + creep.store[RESOURCE_ENERGY] - creep.store.getCapacity()
                 creep.memory.task = 'withdraw_by_memory'
                 creep.memory.target = target.id
     return target
@@ -275,6 +285,7 @@ def define_hauler_task(creep, cluster_memory):
 
 def define_miner_task(creep, cluster_memory):
     creep_memory = creep.memory
+    creep_memory.work_place = False
     if creep_memory.source and creep_memory.container:
         if creep.pos.isNearTo(Game.getObjectById(creep_memory.source)) and \
                 creep.pos.isNearTo(Game.getObjectById(creep_memory.container)):
@@ -286,7 +297,7 @@ def define_miner_task(creep, cluster_memory):
             creep_memory.task = 'miner_mining'
             creep_memory.target = 'miner_mining'
         else:
-            creep_memory.task = 'miner_mining'
+            creep_memory.task = 'going_to_mining_place'
     else:
         verify_miners_place(creep, cluster_memory)
     creep.memory = creep_memory

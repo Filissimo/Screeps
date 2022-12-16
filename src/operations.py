@@ -12,7 +12,7 @@ __pragma__('noalias', 'update')
 
 
 def move_away_from_creeps(creep):
-    result = False
+    move_away_bool = False
     creep_to_flee = _(creep.room.find(FIND_MY_CREEPS)) \
         .filter(lambda c: c.id != creep.id and c.id != creep.memory.healer) \
         .sortBy(lambda c: c.pos.getRangeTo(creep)).first()
@@ -28,8 +28,8 @@ def move_away_from_creeps(creep):
                 {'flee': True}
             ).path
             creep.moveByPath(flee_path)
-            result = True
-    return result
+            move_away_bool = True
+    return move_away_bool
 
 
 def move_away_from_source(creep):
@@ -89,9 +89,11 @@ def decrease_creeps_needed(creep):
     spawn = Game.spawns[creep.memory.cluster]
     creeps_needed = spawn.memory.creeps_needed
     if creep.memory.role == 'worker':
-        creeps_needed.workers = creeps_needed.workers - 0.01
+        if creeps_needed.workers > 1:
+            creeps_needed.workers = creeps_needed.workers - 0.001
     if creep.memory.role == 'hauler':
-        creeps_needed.haulers = creeps_needed.haulers - 0.01
+        if creeps_needed.haulers > 1:
+            creeps_needed.haulers = creeps_needed.haulers - 0.001
 
 
 def withdraw_by_memory(creep, cluster_memory):
@@ -467,7 +469,10 @@ def miner_mining(creep):
         else:
             creep.memory.work_place = False
             del creep.memory.task
+            del creep.memory.source
+            del creep.memory.container
     else:
+        creep.memory.work_place = False
         del creep.memory.source
         del creep.memory.container
         del creep.memory.task
@@ -582,7 +587,7 @@ def going_to_mining_place(creep):
         creep_memory.work_place = True
         del creep.memory.task
     else:
-        creeps_close = creep.pos.findInRange(FIND_MY_CREEPS, 1)
+        creeps_close = creep.pos.findInRange(FIND_MY_CREEPS, 2)
         busy_creep = _(creeps_close).filter(lambda c: c.memory.work_place is True).sample()
         not_my_creep_close = _(creep.pos.findInRange(FIND_HOSTILE_CREEPS, 1)).sample()
         if busy_creep or not_my_creep_close:
@@ -704,3 +709,17 @@ def not_fleeing(creep):
             creep.moveByPath(flee_path)
             not_fleeing_bool = False
     return not_fleeing_bool
+
+
+def accidentally_delivering_to_worker(creep):
+    if creep.store[RESOURCE_ENERGY] > 0:
+        targets = creep.pos.findInRange(FIND_MY_CREEPS, 1)
+        if targets:
+            target_empty_worker = _(targets).filter(lambda t: t.memory.role == 'worker' and
+                                                              t.memory.task != 'dismantling' and
+                                                              t.store[RESOURCE_ENERGY] < t.store.getCapacity()).sample()
+            if target_empty_worker:
+                result = creep.transfer(target_empty_worker, RESOURCE_ENERGY)
+                if result != OK:
+                    print("[{}] Unknown result from creep.transfer({}, {}): {}".format(
+                        creep.name, 'accidentally to worker', RESOURCE_ENERGY, result))
