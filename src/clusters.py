@@ -17,14 +17,11 @@ def run_links(cluster_memory):
     links = cluster_memory.claimed_room.links
     if len(links) > 1:
         sorted_links = _.sortBy(links, lambda l: l.energy)
-        # if sorted_links[len(sorted_links) - 1].near_source and not sorted_links[0].near_source:
-        if sorted_links[0].energy < sorted_links[0].free_capacity:
+        if sorted_links[0].free_capacity > 0 and not sorted_links[0].near_active_source:
             if sorted_links[len(sorted_links) - 1].cooldown == 0:
-                # if sorted_links[0].free_capacity > 0:
                 real_link_out = Game.getObjectById(sorted_links[len(sorted_links) - 1].id)
                 real_link_in = Game.getObjectById(sorted_links[0].id)
-                energy_amount = round((sorted_links[len(sorted_links) - 1].energy - sorted_links[0].energy) / 2)
-                real_link_out.transferEnergy(real_link_in, energy_amount)
+                real_link_out.transferEnergy(real_link_in)
 
 
 def cluster_runner(spawn):
@@ -264,6 +261,10 @@ def define_claimed_room_containers(spawn, cluster_memory):
                     if source_virtual.id == source_real.id:
                         source_virtual.near_container = True
                         link_virtual.near_source = True
+                        if source_virtual.energy > 0:
+                            link_virtual.near_active_source = True
+                        else:
+                            link_virtual.near_active_source = False
             else:
                 link_virtual.near_source = False
             claimed_room_links_virtual.append(link_virtual)
