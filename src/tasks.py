@@ -283,7 +283,7 @@ def define_hauler_task(creep, cluster_memory):
                             target_storage_to_transfer(creep, cluster_memory)
 
 
-def define_miner_task(creep, cluster_memory):
+def define_miner_task(creep, cluster_memory, creep_virtual):
     creep_memory = creep.memory
     creep_memory.work_place = False
     if creep_memory.source and creep_memory.container:
@@ -299,25 +299,23 @@ def define_miner_task(creep, cluster_memory):
         else:
             creep_memory.task = 'going_to_mining_place'
     else:
-        verify_miners_place(creep, cluster_memory)
+        verify_miners_place(creep, cluster_memory, creep_virtual)
     creep.memory = creep_memory
 
 
-def verify_miners_place(creep, cluster_memory):
+def verify_miners_place(creep, cluster_memory, creep_virtual):
     creep_memory = creep.memory
     sources = cluster_memory.claimed_room.sources
     for source in sources:
-        container = _.filter(source.pos.findInRange(FIND_STRUCTURES, 2),
-                             lambda s: s.structureType == STRUCTURE_CONTAINER
-                                       or s.structureType == STRUCTURE_LINK)[0]
-        if container:
-            miner = _.filter(creep.room.find(FIND_MY_CREEPS),
+        container_id = source.container_id
+        if container_id:
+            miners = _.filter(creep.room.find(FIND_MY_CREEPS),
                              lambda c: c.memory.role == 'miner' and
                                        c.memory.source == source.id and
-                                       c.memory.container == container.id and
+                                       c.memory.container == container_id and
                                        c.ticksToLive > 50)
-            if len(miner) < 2:
-                creep_memory.container = container.id
+            if len(miners) < 2:
+                creep_memory.container = container_id
                 creep_memory.source = source.id
     creep.memory = creep_memory
 
@@ -330,20 +328,20 @@ def define_guard_task(creep):
         creep.memory.task = 'attacking'
 
 
-def define_task(creep, cluster_memory):
-    del creep.memory.task
-    del creep.memory.target
-    del creep.memory.path
-    del creep.memory.move
-    role = creep.memory.role
+def define_task(creep_real, cluster_memory, creep_virtual):
+    del creep_real.memory.task
+    del creep_real.memory.target
+    del creep_real.memory.path
+    del creep_real.memory.move
+    role = creep_real.memory.role
     if role == 'hauler':
-        define_hauler_task(creep, cluster_memory)
+        define_hauler_task(creep_real, cluster_memory)
     if role == 'worker':
-        define_worker_task(creep, cluster_memory)
+        define_worker_task(creep_real, cluster_memory)
     if role == 'miner':
-        define_miner_task(creep, cluster_memory)
+        define_miner_task(creep_real, cluster_memory, creep_virtual)
     if role == 'guard':
-        define_guard_task(creep)
+        define_guard_task(creep_real)
 
 
 def define_creep_to_deliver_for_spawning(spawn, cluster_memory):

@@ -85,15 +85,15 @@ def verify_targets_energy_on_the_way(creep, target, cluster_memory):
                                                  creep.store[RESOURCE_ENERGY] - creep.store.getCapacity()
 
 
-def decrease_creeps_needed(creep):
-    spawn = Game.spawns[creep.memory.cluster]
+def decrease_creeps_needed(creep_virtual):
+    spawn = Game.spawns[creep_virtual.cluster]
     creeps_needed = spawn.memory.creeps_needed
-    if creep.memory.role == 'worker':
+    if creep_virtual.role == 'worker':
         if creeps_needed.workers > 1:
-            creeps_needed.workers = creeps_needed.workers - 0.001
-    if creep.memory.role == 'hauler':
+            creeps_needed.workers = creeps_needed.workers - 0.01
+    if creep_virtual.role == 'hauler':
         if creeps_needed.haulers > 1:
-            creeps_needed.haulers = creeps_needed.haulers - 0.001
+            creeps_needed.haulers = creeps_needed.haulers - 0.01
 
 
 def withdraw_by_memory(creep, cluster_memory):
@@ -439,10 +439,12 @@ def upgrading(creep):
         del creep.memory.task
 
 
-def miner_mining(creep):
+def miner_mining(creep, creep_virtual):
     creep_memory = creep.memory
     source = Game.getObjectById(creep_memory.source)
     container = Game.getObjectById(creep_memory.container)
+    # creep_virtual.source = source.id
+    # creep_virtual.container = container.id
     if container:
         if creep.pos.isNearTo(source) and creep.pos.isNearTo(container):
             if creep.store[RESOURCE_ENERGY] <= 92 and creep.memory.work_place and not creep.memory.repairing:
@@ -579,10 +581,12 @@ def recalculate_miners_path(creep):
         del creep.memory.task
 
 
-def going_to_mining_place(creep):
+def going_to_mining_place(creep, creep_virtual):
     creep_memory = creep.memory
     source = Game.getObjectById(creep_memory.source)
     container = Game.getObjectById(creep_memory.container)
+    # creep_virtual.source = source.id
+    # creep_virtual.container = container.id
     if creep.pos.isNearTo(source) and creep.pos.isNearTo(container):
         creep_memory.work_place = True
         del creep.memory.task

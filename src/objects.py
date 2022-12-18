@@ -38,15 +38,6 @@ class SpawnRunner:
                         tower.heal(damaged_creep)
 
 
-# noinspection PyMethodMayBeStatic
-# class CreepRunner:
-#     def __init__(self, creep):
-#         self.creep = creep
-#
-#     def creeping_creep(self):
-#         jobs.job_runner(self.creep)
-
-
 class FlagRunner:
     def __init__(self, flag):
         self.flag = flag

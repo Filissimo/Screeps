@@ -57,21 +57,23 @@ def define_role_to_spawn(spawn, cluster_memory):
         creeps_filtered = _.filter(this_cluster_creeps,
                                    lambda c: c.memory.role == role_name)
         if role_name == 'hauler':
-            creeps_virtual = define_virtual_creeps(creeps_filtered)
+            creeps_virtual = define_virtual_creeps(creeps_filtered, cluster_memory)
             cluster_memory.creeps_exist.haulers = creeps_virtual
         elif role_name == 'worker':
-            creeps_virtual = define_virtual_creeps(creeps_filtered)
+            creeps_virtual = define_virtual_creeps(creeps_filtered, cluster_memory)
             cluster_memory.creeps_exist.workers = creeps_virtual
         elif role_name == 'miner':
-            creeps_virtual = define_virtual_creeps(creeps_filtered)
+            creeps_virtual = define_virtual_creeps(creeps_filtered, cluster_memory)
             cluster_memory.creeps_exist.miners = creeps_virtual
         elif role_name == 'guard':
-            creeps_virtual = define_virtual_creeps(creeps_filtered)
+            creeps_virtual = define_virtual_creeps(creeps_filtered, cluster_memory)
             cluster_memory.creeps_exist.guards = creeps_virtual
 
     define_spawning_status(spawn, cluster_memory)
     define_creeps_needed(spawn, cluster_memory)
     spawn_memory.cluster_memory = cluster_memory
+
+    tasks.define_tasks_for_not_creeps(spawn, cluster_memory)
 
     if len(cluster_memory.creeps_exist.workers) < spawn_memory.creeps_needed.workers \
             and cluster_memory.enough_miners and cluster_memory.enough_haulers:
@@ -90,23 +92,26 @@ def define_role_to_spawn(spawn, cluster_memory):
             cluster_memory.enough_miners and cluster_memory.enough_haulers:
         spawning_creep(spawn, 'guard', cluster_memory)
 
-    for creep in this_cluster_creeps:
-        if not creep.spawning:
-            roles.run_creep(creep, cluster_memory)
-
-    tasks.define_tasks_for_not_creeps(spawn, cluster_memory)
-
     print_cluster_status(spawn, cluster_memory)
 
 
-def define_virtual_creeps(creeps_filtered):
+def define_virtual_creeps(creeps_filtered, cluster_memory):
     creeps_virtual = []
-    for creep_filtered in creeps_filtered:
+    for creep_real in creeps_filtered:
         creep_virtual = {}
-        creep_virtual.id = creep_filtered.id
-        if creep_filtered.store.getCapacity() > 0:
-            creep_virtual.energy = creep_filtered.store[RESOURCE_ENERGY]
-            creep_virtual.capacity = creep_filtered.store.getCapacity()
+        creep_virtual.id = creep_real.id
+        if creep_real.store.getCapacity() > 0:
+            creep_virtual.energy = creep_real.store[RESOURCE_ENERGY]
+            creep_virtual.capacity = creep_real.store.getCapacity()
+        creep_real_memory = creep_real.memory
+        creep_virtual.cluster = creep_real_memory.cluster
+        creep_virtual.role = creep_real_memory.role
+        creep_virtual.task = creep_real_memory.task
+        creep_virtual.target = creep_real_memory.target
+        creep_virtual.source = creep_real_memory.source
+        creep_virtual.container = creep_real_memory.container
+        if not creep_real.spawning:
+            roles.run_creep(creep_real, creep_virtual, cluster_memory)
         creeps_virtual.append(creep_virtual)
     return creeps_virtual
 
@@ -173,6 +178,8 @@ def define_creeps_needed(spawn, cluster_memory):
 
         for container in cluster_memory.claimed_room.containers:
             if container.energy_percentage > 80:
+                if spawn_memory.creeps_needed.haulers == 0:
+                    spawn_memory.creeps_needed.haulers = 0.1
                 spawn_memory.creeps_needed.haulers = \
                     spawn_memory.creeps_needed.haulers + (0.03 / len(cluster_memory.creeps_exist.haulers))
             else:
@@ -264,6 +271,7 @@ def define_claimed_room_containers(spawn, cluster_memory):
                 for source_virtual in sources_virtual:
                     if source_virtual.id == source_real.id:
                         source_virtual.near_container = True
+                        source_virtual.container_id = link_virtual.id
                         link_virtual.near_source = True
                         if source_virtual.energy > 0:
                             link_virtual.near_active_source = True
@@ -290,6 +298,7 @@ def define_claimed_room_containers(spawn, cluster_memory):
                 for source_virtual in sources_virtual:
                     if source_virtual.id == source_real.id:
                         source_virtual.near_container = True
+                        source_virtual.container_id = container_virtual.id
                         container_virtual.near_source = True
             else:
                 container_virtual.near_source = False

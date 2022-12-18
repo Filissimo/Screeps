@@ -70,13 +70,6 @@ def main():
 
     # for creep_name in Object.keys(Game.creeps):
     #     creep = Game.creeps[creep_name]
-    #     c = CreepRunner(creep)
-    #     if not creep.spawning:
-    #         target_before = creep.memory.target
-    #         c.creeping_creep()
-    #         target_after = creep.memory.target
-    #         if target_before != target_after:
-    #             c.creeping_creep()
 
     for flag_name in Object.keys(Game.flags):
         flag = Game.flags[flag_name]
