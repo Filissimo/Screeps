@@ -1,6 +1,6 @@
 import clusters
+import flags
 from defs import *
-from src import jobs, spawns, flags
 
 __pragma__('noalias', 'name')
 __pragma__('noalias', 'undefined')
@@ -18,7 +18,6 @@ class SpawnRunner:
         self.spawn = spawn
 
     def spawning_spawn(self):
-        # spawns.spawn_runner(self.spawn)
         clusters.cluster_runner(self.spawn)
 
     def towering_towers(self, spawn):

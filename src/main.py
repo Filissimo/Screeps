@@ -1,5 +1,5 @@
 from defs import *
-from src.objects import SpawnRunner, CreepRunner, FlagRunner
+from src.objects import SpawnRunner, FlagRunner
 
 __pragma__('noalias', 'name')
 __pragma__('noalias', 'undefined')
@@ -67,9 +67,6 @@ def main():
         s = SpawnRunner(spawn)
         s.spawning_spawn()
         s.towering_towers(spawn)
-
-    # for creep_name in Object.keys(Game.creeps):
-    #     creep = Game.creeps[creep_name]
 
     for flag_name in Object.keys(Game.flags):
         flag = Game.flags[flag_name]

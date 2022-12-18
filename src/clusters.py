@@ -1,4 +1,3 @@
-import operations
 import roles
 import tasks
 from defs import *
@@ -163,7 +162,7 @@ def define_creeps_needed(spawn, cluster_memory):
     else:
         if cluster_memory.claimed_room.total_containers_percentage > 40:
             spawn_memory.creeps_needed.workers = \
-                spawn_memory.creeps_needed.workers + (0.03 / len(cluster_memory.creeps_exist.workers))
+                spawn_memory.creeps_needed.workers + (0.01 / len(cluster_memory.creeps_exist.workers))
         else:
             if spawn_memory.creeps_needed.workers > 1:
                 spawn_memory.creeps_needed.workers = spawn_memory.creeps_needed.workers - 0.05
