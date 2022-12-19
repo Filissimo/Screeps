@@ -44,6 +44,9 @@ def operate_creep(creep_real, cluster_memory, task, creep_virtual):
                 elif task == 'upgrading':
                     operations.paving_roads(creep_real)
                     operations.upgrading(creep_real)
+                elif task == 'reserving':
+                    operations.paving_roads(creep_real)
+                    operations.reserving(creep_real)
     else:
         if task:
             if task == 'defending':

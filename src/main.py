@@ -68,6 +68,20 @@ def main():
         s.spawning_spawn()
         s.towering_towers(spawn)
 
+    for creep_name in Object.keys(Game.creeps):
+        creep = Game.creeps[creep_name]
+        if creep.memory.home:
+            spawn_name = Game.getObjectById(creep.memory.home).name
+            creep.memory.cluster = spawn_name
+        if creep.memory.job == 'miner' or creep.memory.job == 'steaminer':
+            creep.memory.role = 'miner'
+        if creep.memory.job == 'worker':
+            creep.memory.role = 'worker'
+        if creep.memory.job == 'lorry':
+            creep.memory.role = 'hauler'
+        if creep.memory.job == 'reservator':
+            creep.memory.role = 'reservator'
+
     for flag_name in Object.keys(Game.flags):
         flag = Game.flags[flag_name]
         s = FlagRunner(flag)

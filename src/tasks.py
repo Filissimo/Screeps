@@ -14,7 +14,7 @@ def target_repairing(creep):
     target = undefined
     if creep.store[RESOURCE_ENERGY] > 0:
         need_repairs = _(creep.room.find(FIND_STRUCTURES)) \
-            .filter(lambda s: (s.hits < s.hitsMax * 0.05) and
+            .filter(lambda s: (s.hits < s.hitsMax * 0.3) and
                               s.structureType != STRUCTURE_WALL) \
             .sortBy(lambda s: (s.hitsMax / s.hits)).last()
         if need_repairs != undefined:
@@ -95,7 +95,7 @@ def target_dismantling(creep):
     return target
 
 
-def target_withdraw_from_closest(creep, cluster_memory):
+def target_withdraw_from_closest_in_claimed_room(creep, cluster_memory):
     target = undefined
     if creep.store[RESOURCE_ENERGY] <= 0:
         containers = cluster_memory.claimed_room.containers
@@ -161,6 +161,107 @@ def target_withdraw_from_closest(creep, cluster_memory):
                 target.energy_on_the_way + creep.store[RESOURCE_ENERGY] - creep.store.getCapacity()
             creep.memory.task = 'withdraw_by_memory'
             creep.memory.target = target.id
+    return target
+
+
+def target_transfer_to_closest_in_claimed_room(creep, cluster_memory):
+    target = undefined
+    if creep.store[RESOURCE_ENERGY] > 0:
+        containers = cluster_memory.claimed_room.containers
+        container = _(containers) \
+            .filter(lambda s: s.energy + s.energy_on_the_way < s.capacity) \
+            .sortBy(lambda s: len(s.pos.findPathTo(creep))).first()
+        links = cluster_memory.claimed_room.links
+        link = _(links) \
+            .filter(lambda s: s.energy + s.energy_on_the_way < s.capacity) \
+            .sortBy(lambda s: len(s.pos.findPathTo(creep))).first()
+        storage_not_filtered = cluster_memory.claimed_room.storage
+        storage = undefined
+        if storage_not_filtered:
+            if storage_not_filtered.energy + storage_not_filtered.energy_on_the_way < storage_not_filtered.capacity:
+                storage = storage_not_filtered
+        if container and not link and not storage:
+            target = container
+        elif container and link and not storage:
+            range_to_container = len(creep.pos.findPathTo(container))
+            range_to_link = len(creep.pos.findPathTo(link))
+            if range_to_container < range_to_link:
+                target = container
+            else:
+                target = link
+        elif link and not container and not storage:
+            target = link
+        elif storage and not container and not link:
+            target = storage
+        elif storage and container and link:
+            range_to_container = len(creep.pos.findPathTo(container))
+            range_to_link = len(creep.pos.findPathTo(link))
+            range_to_storage = len(creep.pos.findPathTo(storage))
+            if range_to_container < range_to_link:
+                if range_to_storage < range_to_container:
+                    target = storage
+                else:
+                    target = container
+            elif range_to_storage < range_to_container:
+                if range_to_link < range_to_storage:
+                    target = link
+                else:
+                    target = storage
+            else:
+                target = link
+        elif storage and container and not link:
+            range_to_container = len(creep.pos.findPathTo(container))
+            range_to_storage = len(creep.pos.findPathTo(storage))
+            if range_to_container < range_to_storage:
+                target = container
+            else:
+                target = storage
+        elif storage and link and not container:
+            range_to_link = len(creep.pos.findPathTo(link))
+            range_to_storage = len(creep.pos.findPathTo(storage))
+            if range_to_link < range_to_storage:
+                target = link
+            else:
+                target = storage
+        elif storage and not link and not container:
+            target = storage
+        if target:
+            target.energy_on_the_way = \
+                target.energy_on_the_way + creep.store[RESOURCE_ENERGY]
+            creep.memory.task = 'transfer_by_memory'
+            creep.memory.target = target.id
+    return target
+
+
+def target_withdraw_from_fullest_in_reserved_room(creep, cluster_memory):
+    target = undefined
+    if creep.store[RESOURCE_ENERGY] <= 0:
+        all_containers = []
+        for res_room in cluster_memory.reserved_rooms:
+            all_containers.append(res_room.containers)
+        fullest_container = _(all_containers) \
+            .sortBy(lambda c: c.energy + c.energy_on_the_way).last()
+        if fullest_container:
+            if fullest_container.energy + fullest_container.energy_on_the_way > creep.store.getCapacity():
+                target = fullest_container
+                target.energy_on_the_way = \
+                    target.energy_on_the_way + creep.store[RESOURCE_ENERGY] - creep.store.getCapacity()
+                creep.memory.target = target.id
+                creep.memory.task = 'withdraw_by_memory'
+    return target
+
+
+def target_broken_res_room_container(creep, cluster_memory):
+    target = undefined
+    all_containers = []
+    for res_room in cluster_memory.reserved_rooms:
+        all_containers.append(res_room.containers)
+    container = _(all_containers).sortBy(lambda c: c.hits_percentage).first()
+    if container:
+        if container.hits_percentage < 20:
+            target = container
+            creep.memory.target = target.id
+            creep.memory.task = 'withdraw_by_memory'
     return target
 
 
@@ -265,21 +366,23 @@ def target_link_to_withdraw(creep, cluster_memory):
 
 def define_worker_task(creep, cluster_memory):
     if not target_dismantling(creep):
-        if not target_withdraw_from_closest(creep, cluster_memory):
-            if not target_worker_mining(creep, cluster_memory):
-                if not target_repairing(creep):
-                    if not target_building(creep):
-                        target_upgrading(creep, cluster_memory)
+        if not target_broken_res_room_container(creep, cluster_memory):
+            if not target_withdraw_from_closest_in_claimed_room(creep, cluster_memory):
+                if not target_worker_mining(creep, cluster_memory):
+                    if not target_repairing(creep):
+                        if not target_building(creep):
+                            target_upgrading(creep, cluster_memory)
 
 
 def define_hauler_task(creep, cluster_memory):
     if not target_fullest_container(creep, cluster_memory):
         if not target_link_to_withdraw(creep, cluster_memory):
-            if not target_storage_to_withdraw(creep, cluster_memory):
-                if not target_tower_to_transfer(creep, cluster_memory):
-                    if not target_emptiest_container(creep, cluster_memory):
-                        if not target_link_to_transfer(creep, cluster_memory):
-                            target_storage_to_transfer(creep, cluster_memory)
+            if not target_withdraw_from_fullest_in_reserved_room(creep, cluster_memory):
+                if not target_storage_to_withdraw(creep, cluster_memory):
+                    if not target_tower_to_transfer(creep, cluster_memory):
+                        if not target_emptiest_container(creep, cluster_memory):
+                            if not target_link_to_transfer(creep, cluster_memory):
+                                target_storage_to_transfer(creep, cluster_memory)
 
 
 def define_miner_task(creep, cluster_memory, creep_virtual):
@@ -309,13 +412,30 @@ def verify_miners_place(creep, cluster_memory, creep_virtual):
         container_id = source.container_id
         if container_id:
             miners = _.filter(creep.room.find(FIND_MY_CREEPS),
-                             lambda c: c.memory.role == 'miner' and
-                                       c.memory.source == source.id and
-                                       c.memory.container == container_id and
-                                       c.ticksToLive > 50)
+                              lambda c: c.memory.role == 'miner' and
+                                        c.memory.source == source.id and
+                                        c.memory.container == container_id and
+                                        c.ticksToLive > 50)
             if len(miners) < 2:
                 creep_memory.container = container_id
                 creep_memory.source = source.id
+    if not creep_memory.source:
+        all_sources = []
+        for res_room in cluster_memory.reserved_rooms:
+            all_sources.append(res_room.sources)
+        if all_sources:
+            for res_room_source in all_sources:
+                res_room_container_id = res_room_source.container_id
+                if res_room_container_id:
+                    miners = _.filter(creep.room.find(FIND_MY_CREEPS),
+                                      lambda c: c.memory.role == 'miner' and
+                                                c.memory.source == res_room_source.id and
+                                                c.memory.container == res_room_container_id and
+                                                c.ticksToLive > 50)
+                    if len(miners) < 2:
+                        creep_memory.container = res_room_container_id
+                        creep_memory.source = res_room_source.id
+
     creep.memory = creep_memory
 
 
@@ -325,6 +445,14 @@ def define_guard_task(creep):
         creep.memory.task = 'defending'
     else:
         creep.memory.task = 'attacking'
+
+
+def define_reservator_task(creep_real):
+    if not creep_real.memory.target:
+        flag = Game.flags[creep_real.memory.flag]
+        if flag:
+            creep_real.memory.target = flag.memory.controller.id
+            creep_real.memory.task = 'reserving'
 
 
 def define_task(creep_real, cluster_memory, creep_virtual):
@@ -341,6 +469,8 @@ def define_task(creep_real, cluster_memory, creep_virtual):
         define_miner_task(creep_real, cluster_memory, creep_virtual)
     if role == 'guard':
         define_guard_task(creep_real)
+    if role == 'reservator':
+        define_reservator_task(creep_real)
 
 
 def define_creep_to_deliver_for_spawning(spawn, cluster_memory):

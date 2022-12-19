@@ -24,6 +24,75 @@ def define_deconstructions(flag):
         Memory.deconstructions = deconstructions
 
 
+def define_res_room_containers(flag):
+    reserved_room_containers_virtual = []
+    reserved_room_containers_real = _.filter(flag.room.find(FIND_STRUCTURES),
+                                             lambda s: s.structureType == STRUCTURE_CONTAINER)
+    if reserved_room_containers_real:
+        for container_real in reserved_room_containers_real:
+            container_virtual = {}
+            container_virtual.id = container_real.id
+            container_virtual.energy = container_real.store[RESOURCE_ENERGY]
+            container_virtual.energy_on_the_way = 0
+            container_virtual.capacity = container_real.store.getCapacity()
+            container_virtual.energy_percentage = round(
+                container_virtual.energy / container_virtual.capacity * 100)
+            container_virtual.pos = container_real.pos
+            sources_virtual = flag.memory.sources
+            source_real = _(container_virtual.pos.findInRange(FIND_SOURCES, 2)).sample()
+            if source_real:
+                for source_virtual in sources_virtual:
+                    if source_virtual.id == source_real.id:
+                        source_virtual.near_container = True
+                        source_virtual.container_id = container_virtual.id
+                        container_virtual.near_source = True
+            else:
+                container_virtual.near_source = False
+
+            container_virtual.hits = container_real.hits
+            container_virtual.hitsMax = container_real.hitsMax
+            container_virtual.hits_percentage = round(
+                container_virtual.hits / container_virtual.hitsMax * 100)
+
+            reserved_room_containers_virtual.append(container_virtual)
+
+    return reserved_room_containers_virtual
+
+
+def define_res_room_sources(flag):
+    reserved_room_sources_virtual = []
+    reserved_room_sources_real = flag.room.find(FIND_SOURCES)
+    if reserved_room_sources_real:
+        for source_real in reserved_room_sources_real:
+            source_virtual = {}
+            source_virtual.id = source_real.id
+            source_virtual.energy = source_real.energy
+            source_virtual.energy_on_the_way = 0
+            if source_real.ticksToRegeneration == undefined:
+                source_virtual.ticks = 1
+            else:
+                source_virtual.ticks = source_real.ticksToRegeneration
+            processed_energy_of_source = source_virtual.energy + source_virtual.energy_on_the_way
+            source_virtual.processed_energy_of_source = processed_energy_of_source
+            source_virtual.processed_energy_to_ticks_ratio = round(processed_energy_of_source / source_virtual.ticks, 2)
+            source_virtual.energy_to_ticks_ratio = round(source_virtual.energy / source_virtual.ticks, 2)
+            source_virtual.pos = source_real.pos
+            reserved_room_sources_virtual.append(source_virtual)
+
+    return reserved_room_sources_virtual
+
+
+def define_res_room_controller(flag):
+    controller_real = flag.room.controller
+    controller_virtual = {}
+    controller_virtual.id = controller_real.id
+    if controller_real.reservaton:
+        controller_virtual.reservation = controller_real.reservaton
+    else:
+        controller_virtual.reservation = 0
+    return controller_virtual
+
+
 def flag_runner(flag):
     if flag.name[:3] == 'res':
         spawn = Game.spawns['Spawn' + flag.name[3:4]]
@@ -32,10 +101,15 @@ def flag_runner(flag):
         reserved_rooms = spawn.memory.reserved_rooms
         reserved_rooms.append(flag.name)
         if flag.room:
-            reserved_room_containers = _.filter(flag.room.find(FIND_STRUCTURES),
-                                                lambda s: s.structureType == STRUCTURE_CONTAINER)
-            flag.memory.containers = reserved_room_containers
-        # flag.remove()
+            flag.memory.sources = define_res_room_sources(flag)
+            flag.memory.containers = define_res_room_containers(flag)
+            flag.memory.controller = define_res_room_controller(flag)
+            if not flag.memory.reservators:
+                flag.memory.reservators = []
+            if flag.memory.controller.reservation < 2000:
+                flag.memory.need_reservators = 2
+            else:
+                flag.memory.need_reservators = 1
 
     if flag.name[:3] == 'tow':
         if flag.room:
@@ -75,45 +149,9 @@ def flag_runner(flag):
                     if len(flag.room.find(FIND_CONSTRUCTION_SITES)) == 0:
                         flag.pos.createConstructionSite(STRUCTURE_CONTAINER)
                         flag.remove()
-    if flag.name[:1] == 'A':
-        if flag.room:
-            stealers = _.filter(flag.room.find(FIND_MY_CREEPS), lambda c: c.memory.job == 'stealer')
-            if len(stealers) > 0:
-                for stealer in stealers:
-                    del stealer.memory.duty
-                    del stealer.memory.target
-                    del stealer.memory.flag
-                    del stealer.memory.path
-                    stealer.memory.job = 'worker'
-            defenders = _.sum(flag.room.find(FIND_MY_CREEPS), lambda c: c.memory.job == 'defender')
-            enemies = _.sum(flag.room.find(FIND_HOSTILE_CREEPS))
-            if defenders >= 1 and enemies == 0:
-                flag.pos.createFlag(flag.name[1:])
-                flag.remove()
     if flag.name[:2] == 'dc':
         if flag.room:
             define_deconstructions(flag)
-    if flag.name[:5] == 'claim':
-        Memory.claim = flag.name
-    if flag.name == 'BS':
-        if Memory.claim:
-            del Memory.claim
-        need_spawn_builders = flag.memory.need_spawn_builders
-        spawn_builders = flag.memory.spawn_builders
-        sources = flag.room.find(FIND_SOURCES)
-        flag.pos.createConstructionSite(STRUCTURE_SPAWN)
-        for source in sources:
-            if source.energy > source.ticksToRegeneration * 10 or source.energy >= 2900:
-                if need_spawn_builders <= spawn_builders:
-                    need_spawn_builders = need_spawn_builders + 0.01
-            if source.energy / source.ticksToRegeneration < 8 or source.energy <= 0:
-                if need_spawn_builders >= spawn_builders - 1:
-                    need_spawn_builders = need_spawn_builders - 0.02
-            flag.memory.need_spawn_builders = need_spawn_builders
-        print(flag.name + ': spawn_builders - ' + spawn_builders + ' / ' + round(need_spawn_builders, 3))
-        if flag.room.energyCapacityAvailable > 0:
-            flag.remove()
-            del Memory.building_spawn
     if flag.name == 's' or flag.name[:1] == 'e':
         flag_pos = flag.pos
         # flag.remove()

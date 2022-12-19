@@ -485,7 +485,7 @@ def recalculate_miners_path(creep):
     source = Game.getObjectById(creep_memory.source)
     container = Game.getObjectById(creep_memory.container)
     if container:
-        creep.say('?')
+        creep.say('🔍')
         place1 = source.pos
         place2 = container.pos
         if source.pos.x - container.pos.x == 2:
@@ -592,7 +592,8 @@ def going_to_mining_place(creep, creep_virtual):
         del creep.memory.task
     else:
         creeps_close = creep.pos.findInRange(FIND_MY_CREEPS, 2)
-        busy_creep = _(creeps_close).filter(lambda c: c.memory.work_place is True).sample()
+        busy_creep = _(creeps_close)\
+            .filter(lambda c: c.memory.work_place is True and c.id != creep.id).sample()
         not_my_creep_close = _(creep.pos.findInRange(FIND_HOSTILE_CREEPS, 1)).sample()
         if busy_creep or not_my_creep_close:
             recalculate_miners_path(creep)
@@ -600,7 +601,7 @@ def going_to_mining_place(creep, creep_virtual):
             creep_memory.work_place = False
             path = creep_memory.path
             if len(path):
-                creep.say('🔍')
+                creep.say('🔎')
                 result = creep.moveByPath(path)
                 if result == -5:
                     del creep_memory.path
@@ -727,3 +728,10 @@ def accidentally_delivering_to_worker(creep):
                 if result != OK:
                     print("[{}] Unknown result from creep.transfer({}, {}): {}".format(
                         creep.name, 'accidentally to worker', RESOURCE_ENERGY, result))
+
+
+def reserving(creep):
+    target = Game.getObjectById(creep.memory.target)
+    if target:
+        if creep.reserveController(target) == ERR_NOT_IN_RANGE:
+            moving_by_path(creep, target)

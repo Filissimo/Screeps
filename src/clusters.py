@@ -44,13 +44,38 @@ def print_cluster_status(spawn, cluster_memory):
           '  ')
 
 
+def define_virtual_reservators(creeps_filtered, cluster_memory, spawn):
+    for creep_real in creeps_filtered:
+        creep_virtual = {}
+        creep_virtual.id = creep_real.id
+        if creep_real.store.getCapacity() > 0:
+            creep_virtual.energy = creep_real.store[RESOURCE_ENERGY]
+            creep_virtual.capacity = creep_real.store.getCapacity()
+        creep_real_memory = creep_real.memory
+        creep_virtual.cluster = creep_real_memory.cluster
+        creep_virtual.role = creep_real_memory.role
+        creep_virtual.task = creep_real_memory.task
+        creep_virtual.target = creep_real_memory.target
+        creep_virtual.flag = creep_real_memory.flag
+        flag = Game.flags[creep_virtual.flag]
+        if flag:
+            if not flag.memory.reservators:
+                flag.memory.reservators = []
+            for reservator in flag.memory.reservators:
+                if reservator.id == creep_virtual.id:
+                    flag.memory.reservators.remove(reservator)
+            flag.memory.reservators.append(creep_virtual)
+        if not creep_real.spawning:
+            roles.run_creep(creep_real, creep_virtual, cluster_memory)
+
+
 def define_role_to_spawn(spawn, cluster_memory):
     my_creeps = _.filter(Game.creeps, lambda c: c.memory != undefined)
     this_cluster_creeps = _.filter(my_creeps, lambda c: c.memory.cluster == spawn.name)
 
     spawn_memory = spawn.memory
 
-    all_roles = ['hauler', 'miner', 'worker', 'guard']
+    all_roles = ['hauler', 'miner', 'worker', 'guard', 'reservator']
     cluster_memory.creeps_exist = {}
     for role_name in all_roles:
         creeps_filtered = _.filter(this_cluster_creeps,
@@ -67,6 +92,8 @@ def define_role_to_spawn(spawn, cluster_memory):
         elif role_name == 'guard':
             creeps_virtual = define_virtual_creeps(creeps_filtered, cluster_memory)
             cluster_memory.creeps_exist.guards = creeps_virtual
+        elif role_name == 'reservator':
+            define_virtual_reservators(creeps_filtered, cluster_memory, spawn)
 
     define_spawning_status(spawn, cluster_memory)
     define_creeps_needed(spawn, cluster_memory)
@@ -76,20 +103,27 @@ def define_role_to_spawn(spawn, cluster_memory):
 
     if len(cluster_memory.creeps_exist.workers) < spawn_memory.creeps_needed.workers \
             and cluster_memory.enough_miners and cluster_memory.enough_haulers:
-        spawning_creep(spawn, 'worker', cluster_memory)
+        spawning_creep(spawn, 'worker', cluster_memory, undefined)
     if cluster_memory.need_small_workers:
         if len(cluster_memory.creeps_exist.workers) < spawn_memory.creeps_needed.workers:
-            spawning_creep(spawn, 'worker', cluster_memory)
+            spawning_creep(spawn, 'worker', cluster_memory, undefined)
 
     if len(cluster_memory.creeps_exist.miners) < spawn_memory.creeps_needed.miners:
-        spawning_creep(spawn, 'miner', cluster_memory)
+        spawning_creep(spawn, 'miner', cluster_memory, undefined)
 
     if len(cluster_memory.creeps_exist.haulers) < spawn_memory.creeps_needed.haulers:
-        spawning_creep(spawn, 'hauler', cluster_memory)
+        spawning_creep(spawn, 'hauler', cluster_memory, undefined)
 
     if len(cluster_memory.creeps_exist.guards) < spawn_memory.creeps_needed.guards and \
             cluster_memory.enough_miners and cluster_memory.enough_haulers:
-        spawning_creep(spawn, 'guard', cluster_memory)
+        spawning_creep(spawn, 'guard', cluster_memory, undefined)
+
+    for flag_name in Object.keys(Game.flags):
+        flag = Game.flags[flag_name]
+        if flag_name[:3] == 'res':
+            if len(flag.memory.reservators) < flag.memory.need_reservators and \
+                    cluster_memory.enough_miners and cluster_memory.enough_haulers:
+                spawning_creep(spawn, 'reservator', cluster_memory, flag_name)
 
     print_cluster_status(spawn, cluster_memory)
 
@@ -109,6 +143,7 @@ def define_virtual_creeps(creeps_filtered, cluster_memory):
         creep_virtual.target = creep_real_memory.target
         creep_virtual.source = creep_real_memory.source
         creep_virtual.container = creep_real_memory.container
+
         if not creep_real.spawning:
             roles.run_creep(creep_real, creep_virtual, cluster_memory)
         creeps_virtual.append(creep_virtual)
@@ -162,7 +197,7 @@ def define_creeps_needed(spawn, cluster_memory):
     else:
         if cluster_memory.claimed_room.total_containers_percentage > 40:
             spawn_memory.creeps_needed.workers = \
-                spawn_memory.creeps_needed.workers + (0.01 / len(cluster_memory.creeps_exist.workers))
+                spawn_memory.creeps_needed.workers + (0.03 / len(cluster_memory.creeps_exist.workers))
         else:
             if spawn_memory.creeps_needed.workers > 1:
                 spawn_memory.creeps_needed.workers = spawn_memory.creeps_needed.workers - 0.05
@@ -191,7 +226,7 @@ def define_creeps_needed(spawn, cluster_memory):
     spawn.memory = spawn_memory
 
 
-def spawning_creep(spawn, role_name, cluster_memory):
+def spawning_creep(spawn, role_name, cluster_memory, flag_name):
     if not spawn.spawning:
         if role_name:
             if Memory.Number_of_creep is undefined:
@@ -200,7 +235,7 @@ def spawning_creep(spawn, role_name, cluster_memory):
             desired_body = define_body(spawn, role_name, cluster_memory)
             result = spawn.spawnCreep(desired_body,
                                       role_name + '-' + str(number_of_creep),
-                                      {'memory': {'role': role_name, 'cluster': spawn.name}})
+                                      {'memory': {'role': role_name, 'cluster': spawn.name, 'flag': flag_name}})
             if result == OK:
                 number_of_creep = number_of_creep + 1
                 Memory.Number_of_creep = number_of_creep
@@ -238,6 +273,9 @@ def define_body(spawn, role_name, cluster_memory):
         for a in range(1, 5):
             if spawn.room.energyCapacityAvailable >= a * 560:
                 desired_body.extend([HEAL])
+    elif role_name == 'reservator':
+        if spawn.room.energyCapacityAvailable >= 700:
+            desired_body = [MOVE, MOVE, CLAIM]
     return desired_body
 
 
@@ -259,9 +297,9 @@ def define_claimed_room_containers(spawn, cluster_memory):
             link_virtual.energy_on_the_way = 0
             total_energy = total_energy + link_virtual.energy
             link_virtual.free_capacity = link_real.store.getFreeCapacity(RESOURCE_ENERGY)
-            link_capacity = link_virtual.energy + link_virtual.free_capacity
-            total_capacity = total_capacity + link_capacity
-            link_virtual.energy_percentage = round(link_virtual.energy / link_capacity * 100)
+            link_virtual.capacity = link_virtual.energy + link_virtual.free_capacity
+            total_capacity = total_capacity + link_virtual.capacity
+            link_virtual.energy_percentage = round(link_virtual.energy / link_virtual.capacity * 100)
             link_virtual.cooldown = link_real.cooldown
             link_virtual.pos = link_real.pos
             sources_virtual = cluster_memory.claimed_room.sources
@@ -427,7 +465,8 @@ def generate_cluster_memory(spawn):
     if spawn.memory.reserved_rooms:
         for flag_name in spawn.memory.reserved_rooms:
             flag = Game.flags[flag_name]
-            cluster_memory.reserved_rooms.append(flag.memory)
+            if flag:
+                cluster_memory.reserved_rooms.append(flag.memory)
 
     cluster_memory.creeps_exist = []
 
